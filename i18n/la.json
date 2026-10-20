@@ -1,0 +1,103 @@
+{
+  "common": {
+    "appName": "Materm Admin",
+    "menu": "ເມນູ",
+    "loading": "ກຳລັງໂຫຼດ...",
+    "save": "ບັນທຶກ",
+    "cancel": "ຍົກເລີກ",
+    "search": "ຄົ້ນຫາ",
+    "actions": "ຄຳສັ່ງ",
+    "noPermissionTitle": "ບໍ່ມີສິດເຂົ້າເຖິງ",
+    "noPermissionDescription": "ທ່ານບໍ່ມີສິດເຂົ້າເຖິງໜ້ານີ້.",
+    "language": "ພາສາ",
+    "theme": "ຮູບແບບ",
+    "signOut": "ອອກຈາກລະບົບ",
+    "changePassword": "ປ່ຽນລະຫັດຜ່ານ",
+    "rowsCount": "{count} ແຖວ",
+    "notFound": "ບໍ່ພົບຂໍ້ມູນທີ່ຕົງກັນ",
+    "selectedCount": "ເລືອກແລ້ວ {count} ລາຍການ",
+    "lightMode": "ໂໝດແຈ້ງ",
+    "darkMode": "ໂໝດມືດ",
+    "logoutConfirmTitle": "ອອກຈາກລະບົບ?",
+    "logoutConfirmDescription": "ທ່ານຈະຕ້ອງເຂົ້າສູ່ລະບົບໃໝ່ເພື່ອໃຊ້ງານລະບົບຈັດການ.",
+    "comingSoon": "ໄວໆນີ້",
+    "dateRangeFilter": {
+      "label": "ວັນທີ",
+      "today": "ມື້ນີ້",
+      "yesterday": "ມື້ວານນີ້",
+      "thisWeek": "ອາທິດນີ້",
+      "lastWeek": "ອາທິດແລ້ວ",
+      "thisMonth": "ເດືອນນີ້",
+      "lastMonth": "ເດືອນແລ້ວ",
+      "last7Days": "7 ມື້ຜ່ານມາ",
+      "last30Days": "30 ມື້ຜ່ານມາ",
+      "startDate": "ວັນທີເລີ່ມຕົ້ນ",
+      "endDate": "ວັນທີສິ້ນສຸດ",
+      "startTime": "ເວລາເລີ່ມຕົ້ນ",
+      "endTime": "ເວລາສິ້ນສຸດ",
+      "cancel": "ຍົກເລີກ",
+      "done": "ແລ້ວໆ"
+    }
+  },
+  "changePassword": {
+    "title": "ປ່ຽນລະຫັດຜ່ານ",
+    "description": "ອັບເດດລະຫັດຜ່ານສຳລັບບັນຊີຂອງທ່ານເອງ.",
+    "fields": {
+      "oldPassword": "ລະຫັດຜ່ານປັດຈຸບັນ",
+      "oldPasswordPlaceholder": "ລະຫັດຜ່ານປັດຈຸບັນຂອງທ່ານ",
+      "newPassword": "ລະຫັດຜ່ານໃໝ່",
+      "newPasswordPlaceholder": "ຢ່າງໜ້ອຍ 6 ຕົວອັກສອນ",
+      "confirmPassword": "ຢືນຢັນລະຫັດຜ່ານ",
+      "confirmPasswordPlaceholder": "ປ້ອນລະຫັດຜ່ານໃໝ່ອີກຄັ້ງ"
+    },
+    "validation": {
+      "oldPasswordRequired": "ກະລຸນາປ້ອນລະຫັດຜ່ານປັດຈຸບັນ",
+      "passwordRequired": "ລະຫັດຜ່ານຕ້ອງມີຢ່າງໜ້ອຍ 6 ຕົວອັກສອນ",
+      "confirmPasswordRequired": "ກະລຸນາຢືນຢັນລະຫັດຜ່ານໃໝ່",
+      "passwordMismatch": "ລະຫັດຜ່ານບໍ່ຕົງກັນ"
+    },
+    "buttons": {
+      "cancel": "ຍົກເລີກ",
+      "change": "ປ່ຽນລະຫັດຜ່ານ"
+    },
+    "toast": {
+      "loading": "ກຳລັງປ່ຽນລະຫັດຜ່ານ...",
+      "success": "ປ່ຽນລະຫັດຜ່ານສຳເລັດ",
+      "error": "ປ່ຽນລະຫັດຜ່ານບໍ່ສຳເລັດ"
+    }
+  },
+  "auth": {
+    "title": "ເຂົ້າສູ່ລະບົບ",
+    "description": "ກະລຸນາປ້ອນຊື່ຜູ້ໃຊ້ແລະລະຫັດຜ່ານເພື່ອເຂົ້າໃຊ້ງານ Materm Admin",
+    "usernameLabel": "ຊື່ຜູ້ໃຊ້",
+    "usernamePlaceholder": "ປ້ອນຊື່ຜູ້ໃຊ້ຂອງທ່ານ",
+    "passwordLabel": "ລະຫັດຜ່ານ",
+    "passwordPlaceholder": "••••••••",
+    "rememberMe": "ບັນທືກການເຂົ້າສູ່ລະບົບ",
+    "submitButton": "ເຂົ້າສູ່ລະບົບ",
+    "submittingButton": "ກຳລັງເຂົ້າສູ່ລະບົບ...",
+    "showPassword": "ສະແດງລະຫັດຜ່ານ",
+    "hidePassword": "ເຊື່ອງລະຫັດຜ່ານ",
+    "validation": {
+      "usernameRequired": "ກະລຸນາປ້ອນຊື່ຜູ້ໃຊ້",
+      "usernameTooLong": "ຊື່ຜູ້ໃຊ້ຍາວເກີນໄປ (ສູງສຸດ 100 ຕົວອັກສອນ)",
+      "passwordRequired": "ກະລຸນາປ້ອນລະຫັດຜ່ານ",
+      "passwordTooShort": "ລະຫັດຜ່ານຕ້ອງມີຢ່າງໜ້ອຍ 6 ຕົວອັກສອນ",
+      "passwordTooLong": "ລະຫັດຜ່ານຍາວເກີນໄປ"
+    },
+    "toast": {
+      "success": "ເຂົ້າສູ່ລະບົບສຳເລັດ! 🎉",
+      "error": "ຊື່ຜູ້ໃຊ້ ຫຼື ລະຫັດຜ່ານບໍ່ຖືກຕ້ອງ"
+    }
+  },
+  "nav": {
+    "dashboard": "ແດັຊບອດ"
+  },
+  "breadcrumb": {
+    "admin": "ແດັຊບອດ"
+  },
+  "dashboard": {
+    "title": "ແດັຊບອດ",
+    "description": "ພາບລວມຂອງລະບົບຈັດການ."
+  }
+}

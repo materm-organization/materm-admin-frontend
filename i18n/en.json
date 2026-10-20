@@ -1,0 +1,103 @@
+{
+  "common": {
+    "appName": "Materm Admin",
+    "menu": "Menu",
+    "loading": "Loading...",
+    "save": "Save",
+    "cancel": "Cancel",
+    "search": "Search",
+    "actions": "Actions",
+    "noPermissionTitle": "No permission",
+    "noPermissionDescription": "You don't have permission to access this page.",
+    "language": "Language",
+    "theme": "Theme",
+    "signOut": "Sign out",
+    "changePassword": "Change password",
+    "rowsCount": "{count} rows",
+    "notFound": "No matches found",
+    "selectedCount": "{count} selected",
+    "lightMode": "Light Mode",
+    "darkMode": "Dark Mode",
+    "logoutConfirmTitle": "Sign out?",
+    "logoutConfirmDescription": "You'll need to sign in again to access the admin panel.",
+    "comingSoon": "Coming Soon",
+    "dateRangeFilter": {
+      "label": "Date",
+      "today": "Today",
+      "yesterday": "Yesterday",
+      "thisWeek": "This week",
+      "lastWeek": "Last week",
+      "thisMonth": "This month",
+      "lastMonth": "Last month",
+      "last7Days": "Last 7 days",
+      "last30Days": "Last 30 days",
+      "startDate": "Start date",
+      "endDate": "End date",
+      "startTime": "Start time",
+      "endTime": "End time",
+      "cancel": "Cancel",
+      "done": "Done"
+    }
+  },
+  "changePassword": {
+    "title": "Change password",
+    "description": "Update the password for your own account.",
+    "fields": {
+      "oldPassword": "Current password",
+      "oldPasswordPlaceholder": "Your current password",
+      "newPassword": "New password",
+      "newPasswordPlaceholder": "At least 6 characters",
+      "confirmPassword": "Confirm password",
+      "confirmPasswordPlaceholder": "Re-enter the new password"
+    },
+    "validation": {
+      "oldPasswordRequired": "Current password is required",
+      "passwordRequired": "Password must be at least 6 characters",
+      "confirmPasswordRequired": "Please confirm the new password",
+      "passwordMismatch": "Passwords do not match"
+    },
+    "buttons": {
+      "cancel": "Cancel",
+      "change": "Change password"
+    },
+    "toast": {
+      "loading": "Changing password...",
+      "success": "Password changed",
+      "error": "Failed to change password"
+    }
+  },
+  "auth": {
+    "title": "Sign In",
+    "description": "Enter your username and password to access Materm Admin",
+    "usernameLabel": "Username",
+    "usernamePlaceholder": "Enter your username",
+    "passwordLabel": "Password",
+    "passwordPlaceholder": "••••••••",
+    "rememberMe": "Remember me",
+    "submitButton": "Sign In",
+    "submittingButton": "Signing in...",
+    "showPassword": "Show password",
+    "hidePassword": "Hide password",
+    "validation": {
+      "usernameRequired": "Please enter your username",
+      "usernameTooLong": "Username is too long (max 100 characters)",
+      "passwordRequired": "Please enter your password",
+      "passwordTooShort": "Password must be at least 6 characters",
+      "passwordTooLong": "Password is too long"
+    },
+    "toast": {
+      "success": "Sign in successful! 🎉",
+      "error": "Invalid username or password"
+    }
+  },
+  "nav": {
+    "dashboard": "Dashboard"
+  },
+  "breadcrumb": {
+    "admin": "Dashboard"
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "description": "Overview of the admin panel."
+  }
+}
