@@ -1,5 +1,6 @@
 import { axiosInstance } from "@/lib/axios";
 import { API_ENDPOINTS } from "@/lib/constants/api-endpoints";
+import { idempotencyHeaders } from "@/lib/idempotency";
 import type { ApiResponse, ApiResponsePagination } from "@/types/api";
 import type {
   CreateUserPayload,
@@ -19,10 +20,12 @@ export const UsersAPI = {
   },
   // POST /users with delivery=temporary_password. The response carries the
   // temporary password ONCE — pass it to the dialog, never store or log it.
-  Create: async (payload: CreateUserPayload) => {
+  // `idempotencyKey`: one key per dialog open (useIdempotencyKey), so a retry is a replay.
+  Create: async (payload: CreateUserPayload, idempotencyKey?: string) => {
     const { data } = await axiosInstance.post<ApiResponse<CreateUserResult>>(
       API_ENDPOINTS.USERS.CREATE,
-      payload
+      payload,
+      idempotencyHeaders(idempotencyKey)
     );
     return data;
   },

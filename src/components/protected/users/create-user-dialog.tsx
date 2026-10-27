@@ -28,6 +28,7 @@ import {
 } from "@/components/ui/select";
 import { Spinner } from "@/components/ui/spinner";
 import { useApiErrorHandler } from "@/hooks/use-api-error";
+import { useIdempotencyKey } from "@/hooks/use-idempotency-key";
 import { useMutationCreateUser, useRoles } from "@/hooks/use-users";
 
 const USERNAME_PATTERN = /^[A-Za-z0-9._@-]{3,64}$/;
@@ -63,6 +64,8 @@ export function CreateUserDialog({
   const mutation = useMutationCreateUser();
   const roles = useRoles(open);
   const { handleFormError } = useApiErrorHandler();
+  // One key per open of the dialog: a double click / retry after a lost response replays the same request.
+  const idempotencyKey = useIdempotencyKey(open);
 
   const form = useForm<CreateUserFormValues>({
     resolver: zodResolver(createUserSchema(t)),
@@ -78,11 +81,14 @@ export function CreateUserDialog({
   const onSubmit = (values: CreateUserFormValues) => {
     mutation.mutate(
       {
-        name: values.name,
-        username: values.username,
-        role_id: Number(values.role_id),
-        delivery: "temporary_password",
-        ...(values.email ? { email: values.email } : {}),
+        payload: {
+          name: values.name,
+          username: values.username,
+          role_id: Number(values.role_id),
+          delivery: "temporary_password",
+          ...(values.email ? { email: values.email } : {}),
+        },
+        idempotencyKey,
       },
       {
         onSuccess: (res) => {

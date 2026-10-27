@@ -19,7 +19,8 @@ and no business domain yet.
 | Forms | react-hook-form + zod |
 | UI kit | shadcn/ui ("new-york" style) + Tailwind v4 |
 | i18n | next-intl, cookie-based locale (`la` default, `en`) — no `[locale]` route segment |
-| Auth | JWT in cookies (`js-cookie`), client-side `(protected)` route-group guard, no edge middleware |
+| Auth | JWT in cookies (`js-cookie`), client-side `(protected)` route-group guard; no edge auth gate (`src/proxy.ts` only sets the CSP) |
+| Tests | Vitest + Testing Library + MSW (`npm run test`) |
 
 ## Run it
 
@@ -28,7 +29,15 @@ npm install
 npm run dev     # http://localhost:3000
 npm run build
 npm run lint
+npm run typecheck   # tsc --noEmit
+npm run test        # Vitest (unit + component, MSW for HTTP); `npm run test:watch` while developing
 ```
+
+Tests live next to the code (`*.test.ts(x)`); helpers in `src/test/` (`renderWithIntl` renders with the real
+`i18n/en.json`, `apiError()` builds an AxiosError, `server` is the MSW server — an unmocked request fails the
+test). Verify UI work in a CLONED copy of the repo (`next build` + a click-through, e.g. with `playwright-core` +
+system Chrome installed OUTSIDE the project; the sign-in `Globe` needs `--use-angle=swiftshader`), not in the
+working folder.
 
 Env vars: `.env.development` / `.env.production`, both `NEXT_PUBLIC_API_BASE_URL` only — no
 secrets in this layer.
@@ -54,7 +63,8 @@ This project is at its initial skeleton stage. What exists:
   (data table, pagination, filters, empty state, export-csv dialog, theme/language toggles),
   `src/components/provider/`, `src/lib/axios.ts` (authenticated + public instance, token refresh),
   `src/lib/constants/`, `src/redux/` (store + one small `ui` slice), `src/i18n/request.ts`,
-  `i18n/{en,la}.json` (only `common`, `changePassword`, `auth`, `nav`, `breadcrumb`, `dashboard`).
+  `i18n/{en,la}.json` (`common`, `changePassword`, `auth`, `nav`, `breadcrumb`, `dashboard`, `errors`, `users`,
+  plus the W0 namespaces `states`, `list`, `dialogs`, `dateTimeField`).
 
 There are **no business modules** yet. To add one, follow the feature-vertical pattern:
 `src/app/(protected)/(routes)/admin/<feature>/page.tsx` + `src/services/<feature>.api.ts` +
@@ -81,5 +91,30 @@ i18n namespace in both `i18n/en.json` and `i18n/la.json`.
 - `actions: []` / missing key = NO access (`userHasAction`, `useHasAction`). Routes/nav need `read`
   (`getReadablePermissionKeys`). `NEXT_PUBLIC_DISABLE_AUTH_GUARD=true` (dev) gives a bypass user with all
   22 keys / 15 actions (`lib/constants/permissions.ts`, mirror of the backend catalog seed).
-- Not built yet: `If-Match`/ETag handling for `PATCH /users/{id}` and `PUT /roles/{id}/permissions`
-  (mandatory for the latter) — add it with the roles/users edit UI.
+- **Route guard is default-deny** (`lib/nav-main-items.ts`): `getPermissionsForPath(pathname)` returns
+  `{kind: "open" | "requires" | "unknown"}`. A page must be covered by a sidebar entry (longest-prefix; its
+  sub-pages inherit it) or by an entry of `ROUTE_ONLY_PERMISSIONS` (`open: true` or `anyPermission`); `/admin`
+  itself matches exactly, so an unregistered `/admin/foo` is `unknown` -> "Page not found" (+ `console.warn` in
+  dev), it does NOT inherit the dashboard's open access. **Adding a page = registering its route.** The guard
+  only checks `read`; action-level rules (create/update…) go in the page with `<PermissionGate>`.
+- **Optimistic locking (`lib/etag.ts`)**: a service for a resource with a lock reads `withEtag(response)` ->
+  `{data, etag}` (keep it in the query data), writes send `If-Match` with `ifMatch(etag)` /
+  `ifMatchHeaders(etag, {required: true})` (mandatory for `PUT /roles/{id}/permissions`, `PATCH /roles/{id}`
+  and cms/forms roots; it throws `MissingEtagError` instead of sending a request that would get 428). A
+  response with a new ETag goes into the cache with `setQueryData`. 409 `CONFLICT_LOCK_VERSION` / 412 =
+  `isConflictError(error)` -> open `ConflictDialog` (no force-overwrite); `handleFormError(..., {onConflict})`
+  hands it over. 428 is a client bug: toast + `console.error` (QueryProvider).
+- Other W0 building blocks (doc/07 section 5.2): `ListPage` + `useListParams` (URL = list state, invalid values
+  dropped), `PermissionGate` / `useCan` / `useCanEditOwn`, `ConfirmDialog` (`requireTyping`),
+  `OneTimeSecretDialog` (secret shown once, not dismissable, never stored), `NavigationGuardProvider` +
+  `useUnsavedChangesGuard(isDirty, {onSave})` + `useGuardedNavigate` (tab close, in-app links, Back button =
+  best effort), `BreadcrumbProvider` + `useBreadcrumbTitle(name)`, states in `components/global/states/`
+  (`ForbiddenState` = `NoPermission`, `NotFoundState`, `ErrorState`, `EmptyFiltered`, `FetchingBar`,
+  `EditorSkeleton`), `DateTimeField` + `lib/datetime.ts` (Asia/Vientiane <-> UTC), `lib/idempotency.ts`
+  (`Idempotency-Key` once per dialog open: `useIdempotencyKey`), `pointerToFieldPath` /
+  `applyFieldErrors(..., {nested: true, onLocatedError})` for nested JSON-Pointer errors, `Accept-Language`
+  (UI locale cookie) on every request.
+- **CSP / security headers**: `src/proxy.ts` sets a per-request `Content-Security-Policy` with a nonce
+  (`src/lib/security/csp.ts` holds the policy: strict `script-src`, `connect-src` = the app + the API origin
+  from `NEXT_PUBLIC_API_BASE_URL`); static headers are in `next.config.ts`. A new external origin (file/media
+  host, iframe preview) must be added to the policy. The root layout passes the nonce to `next-themes`.

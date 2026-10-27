@@ -26,7 +26,8 @@ export const useRoles = (enabled = true) =>
 export const useMutationCreateUser = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (payload: CreateUserPayload) => UsersAPI.Create(payload),
+    mutationFn: ({ payload, idempotencyKey }: { payload: CreateUserPayload; idempotencyKey?: string }) =>
+      UsersAPI.Create(payload, idempotencyKey),
     gcTime: 0,
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.USERS.LIST] });

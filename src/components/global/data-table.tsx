@@ -2,13 +2,20 @@
 
 import {
   type ColumnDef,
+  type OnChangeFn,
+  type RowSelectionState,
+  type SortingState,
   flexRender,
   getCoreRowModel,
   useReactTable,
 } from "@tanstack/react-table";
+import { ArrowDownIcon, ArrowUpDownIcon, ArrowUpIcon } from "lucide-react";
+import { useTranslations } from "next-intl";
+import { type ReactNode, useMemo } from "react";
 
 import { EmptyMuted } from "@/components/global/empty";
 import { Card, CardContent } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table,
@@ -26,6 +33,13 @@ import { cn } from "@/lib/utils";
 // empty state — for free instead of re-implementing it per feature.
 //
 // Visuals: Card wrapper, uppercase header row, zebra-striped body rows.
+//
+// Optional (doc/07 section 5.2), all off unless the props are passed:
+//  - `sorting` + `onSortingChange`: SERVER-side sorting (the table never sorts rows itself). Only columns that
+//    set `enableSorting: true` get a sort button (use the endpoint's allow-list); the column `id` /
+//    `accessorKey` is the API sort field. Header cycles asc -> desc -> none.
+//  - `rowSelection` + `onRowSelectionChange`: a leading checkbox column (select page / select row). Only for
+//    lists whose endpoint has a bulk command (needs `getRowId` so selection survives a refetch).
 export function DataTable<TData>({
   columns,
   data,
@@ -34,6 +48,11 @@ export function DataTable<TData>({
   skeletonRowCount,
   emptyTitle,
   emptyDescription,
+  emptyContent,
+  sorting,
+  onSortingChange,
+  rowSelection,
+  onRowSelectionChange,
 }: {
   columns: ColumnDef<TData>[];
   data: TData[];
@@ -42,12 +61,68 @@ export function DataTable<TData>({
   skeletonRowCount: number;
   emptyTitle: string;
   emptyDescription?: string;
+  // Replaces the default empty panel (e.g. `EmptyFiltered`, or an empty state with a create CTA).
+  emptyContent?: ReactNode;
+  sorting?: SortingState;
+  onSortingChange?: (sorting: SortingState) => void;
+  rowSelection?: RowSelectionState;
+  onRowSelectionChange?: (selection: RowSelectionState) => void;
 }) {
+  const t = useTranslations("list");
+  const selectable = rowSelection !== undefined && onRowSelectionChange !== undefined;
+  const sortable = sorting !== undefined && onSortingChange !== undefined;
+
+  const allColumns = useMemo<ColumnDef<TData>[]>(
+    () =>
+      selectable
+        ? [
+            {
+              id: "__select",
+              enableSorting: false,
+              header: ({ table }) => (
+                <Checkbox
+                  checked={
+                    table.getIsAllPageRowsSelected() ||
+                    (table.getIsSomePageRowsSelected() && "indeterminate")
+                  }
+                  onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+                  aria-label={t("selectAll")}
+                />
+              ),
+              cell: ({ row }) => (
+                <Checkbox
+                  checked={row.getIsSelected()}
+                  onCheckedChange={(value) => row.toggleSelected(!!value)}
+                  aria-label={t("selectRow")}
+                />
+              ),
+            },
+            ...columns,
+          ]
+        : columns,
+    [columns, selectable, t]
+  );
+
   const table = useReactTable({
     data,
-    columns,
+    columns: allColumns,
     getCoreRowModel: getCoreRowModel(),
     getRowId: getRowId ? (row) => getRowId(row) : undefined,
+    // Sorting is the server's job; a column is sortable only when it opts in.
+    manualSorting: true,
+    defaultColumn: { enableSorting: false },
+    enableSortingRemoval: true,
+    sortDescFirst: false,
+    enableRowSelection: selectable,
+    state: { sorting: sorting ?? [], rowSelection: rowSelection ?? {} },
+    onSortingChange: ((updater) => {
+      if (!onSortingChange) return;
+      onSortingChange(typeof updater === "function" ? updater(sorting ?? []) : updater);
+    }) as OnChangeFn<SortingState>,
+    onRowSelectionChange: ((updater) => {
+      if (!onRowSelectionChange) return;
+      onRowSelectionChange(typeof updater === "function" ? updater(rowSelection ?? {}) : updater);
+    }) as OnChangeFn<RowSelectionState>,
   });
 
   const rows = table.getRowModel().rows;
@@ -62,16 +137,47 @@ export function DataTable<TData>({
                 key={headerGroup.id}
                 className="border-b border-border/80 bg-muted/40 hover:bg-muted/40"
               >
-                {headerGroup.headers.map((header) => (
-                  <TableHead
-                    key={header.id}
-                    className="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wide"
-                  >
-                    {header.isPlaceholder
-                      ? null
-                      : flexRender(header.column.columnDef.header, header.getContext())}
-                  </TableHead>
-                ))}
+                {headerGroup.headers.map((header) => {
+                  const canSort = sortable && header.column.getCanSort();
+                  const sorted = header.column.getIsSorted();
+                  const content = header.isPlaceholder
+                    ? null
+                    : flexRender(header.column.columnDef.header, header.getContext());
+                  return (
+                    <TableHead
+                      key={header.id}
+                      aria-sort={
+                        canSort
+                          ? sorted === "asc"
+                            ? "ascending"
+                            : sorted === "desc"
+                              ? "descending"
+                              : "none"
+                          : undefined
+                      }
+                      className="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wide"
+                    >
+                      {canSort ? (
+                        <button
+                          type="button"
+                          onClick={header.column.getToggleSortingHandler()}
+                          className="-mx-1 inline-flex items-center gap-1 rounded px-1 uppercase hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring"
+                        >
+                          {content}
+                          {sorted === "asc" ? (
+                            <ArrowUpIcon className="size-3.5" aria-hidden />
+                          ) : sorted === "desc" ? (
+                            <ArrowDownIcon className="size-3.5" aria-hidden />
+                          ) : (
+                            <ArrowUpDownIcon className="size-3.5 opacity-50" aria-hidden />
+                          )}
+                        </button>
+                      ) : (
+                        content
+                      )}
+                    </TableHead>
+                  );
+                })}
               </TableRow>
             ))}
           </TableHeader>
@@ -79,7 +185,7 @@ export function DataTable<TData>({
             {isLoading ? (
               Array.from({ length: skeletonRowCount }).map((_, i) => (
                 <TableRow key={i}>
-                  {columns.map((_, c) => (
+                  {allColumns.map((_, c) => (
                     <TableCell key={c} className="px-3 py-3">
                       <Skeleton className="h-4 w-full" />
                     </TableCell>
@@ -90,6 +196,7 @@ export function DataTable<TData>({
               rows.map((row, index) => (
                 <TableRow
                   key={row.id}
+                  data-state={row.getIsSelected() ? "selected" : undefined}
                   className={cn(
                     "border-b border-border/25 transition-colors",
                     index % 2 === 0
@@ -106,8 +213,8 @@ export function DataTable<TData>({
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={columns.length} className="h-48 text-center">
-                  <EmptyMuted title={emptyTitle} description={emptyDescription} />
+                <TableCell colSpan={allColumns.length} className="h-48 text-center">
+                  {emptyContent ?? <EmptyMuted title={emptyTitle} description={emptyDescription} />}
                 </TableCell>
               </TableRow>
             )}

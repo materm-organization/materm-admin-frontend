@@ -11,7 +11,12 @@ import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
-import { isGloballyToasted, isNoPermissionError, parseApiError } from "@/lib/api-error";
+import {
+  isGloballyToasted,
+  isNoPermissionError,
+  isPreconditionRequiredError,
+  parseApiError,
+} from "@/lib/api-error";
 import { translateApiError } from "@/lib/api-error-messages";
 import { setAuthEventHandler } from "@/lib/axios";
 import { API_ENDPOINTS } from "@/lib/constants/api-endpoints";
@@ -31,6 +36,10 @@ export function QueryProvider({ children }: { children: React.ReactNode }) {
     reportGlobalError = (error) => {
       const parsed = parseApiError(error);
       if (!isGloballyToasted(parsed)) return;
+      // 428 PRECONDITION_REQUIRED = the client forgot `If-Match`: a bug, not a user mistake (doc/07 2.5.6).
+      if (isPreconditionRequiredError(error)) {
+        console.error("Missing If-Match header on a request that requires it", parsed.requestId ?? "");
+      }
       toast.error(translateApiError(t, parsed), {
         id: parsed.code ?? (parsed.isNetworkError ? "NETWORK_ERROR" : String(parsed.status)),
       });

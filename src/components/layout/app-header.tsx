@@ -3,22 +3,31 @@
 import { useTranslations } from "next-intl";
 import { usePathname } from "next/navigation";
 
+import { Fragment } from "react";
+import Link from "next/link";
+
+import { useBreadcrumbDetail } from "@/components/layout/breadcrumb-context";
 import {
   Breadcrumb,
   BreadcrumbItem,
+  BreadcrumbLink,
   BreadcrumbList,
   BreadcrumbPage,
+  BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
-import { getBreadcrumbKeyForPath } from "@/lib/constants/breadcrumb";
+import { buildBreadcrumbTrail } from "@/lib/constants/breadcrumb";
 
 // Header: SidebarTrigger + a breadcrumb driven by the same route-config
-// pattern as nav-main-items.ts.
+// pattern as nav-main-items.ts (`Dashboard › Users › <item name>`: every level a link
+// except the current one; a detail page names its own level via `useBreadcrumbTitle`).
 export function AppHeader() {
   const t = useTranslations();
   const pathname = usePathname();
-  const breadcrumbKey = getBreadcrumbKeyForPath(pathname);
+  const detail = useBreadcrumbDetail();
+  const trail = buildBreadcrumbTrail(pathname, detail);
 
   return (
     // No `border-b` — with `variant="inset"` (see AppSidebar), this header
@@ -42,9 +51,25 @@ export function AppHeader() {
         <Separator orientation="vertical" className="mr-2 data-[orientation=vertical]:h-4" />
         <Breadcrumb>
           <BreadcrumbList>
-            <BreadcrumbItem>
-              <BreadcrumbPage>{breadcrumbKey ? t(breadcrumbKey) : ""}</BreadcrumbPage>
-            </BreadcrumbItem>
+            {trail.map((crumb, index) => {
+              const label = crumb.key ? t(crumb.key) : (crumb.title ?? "");
+              return (
+                <Fragment key={`${index}-${crumb.href ?? crumb.key ?? crumb.title ?? "item"}`}>
+                  {index > 0 ? <BreadcrumbSeparator /> : null}
+                  <BreadcrumbItem>
+                    {crumb.loading ? (
+                      <Skeleton className="h-4 w-[120px]" aria-label={t("common.loading")} />
+                    ) : crumb.href ? (
+                      <BreadcrumbLink asChild>
+                        <Link href={crumb.href}>{label}</Link>
+                      </BreadcrumbLink>
+                    ) : (
+                      <BreadcrumbPage>{label}</BreadcrumbPage>
+                    )}
+                  </BreadcrumbItem>
+                </Fragment>
+              );
+            })}
           </BreadcrumbList>
         </Breadcrumb>
       </div>

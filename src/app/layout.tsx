@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono, Noto_Sans_Lao_Looped } from "next/font/google";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
+import { headers } from "next/headers";
 
 import { QueryProvider } from "@/components/provider/query-provider";
 import { ReduxProvider } from "@/components/provider/redux-provider";
@@ -45,6 +46,8 @@ export const metadata: Metadata = {
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const locale = await getLocale();
   const messages = await getMessages();
+  // Per-request CSP nonce set by src/proxy.ts; next-themes' inline script needs it.
+  const nonce = (await headers()).get("x-nonce") ?? undefined;
   const fontClassName = locale === "la" ? notoSansLao.className : geistSans.className;
 
   return (
@@ -59,6 +62,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           defaultTheme="system"
           enableSystem
           disableTransitionOnChange
+          nonce={nonce}
         >
           <NextIntlClientProvider messages={messages}>
             <ReduxProvider>

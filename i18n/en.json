@@ -104,7 +104,8 @@
   },
   "breadcrumb": {
     "admin": "Dashboard",
-    "users": "Users"
+    "users": "Users",
+    "profile": "Profile"
   },
   "dashboard": {
     "title": "Dashboard",
@@ -236,5 +237,75 @@
       "unavailable": "The temporary password is not available. Reset the user's password to issue a new one.",
       "done": "Done"
     }
+  },
+  "states": {
+    "loading": "Loading...",
+    "notFound": {
+      "title": "Page not found",
+      "description": "This page does not exist or has not been set up.",
+      "back": "Back to the dashboard"
+    },
+    "error": {
+      "title": "Could not load this",
+      "description": "Something went wrong while loading the data. Check your connection and try again.",
+      "reference": "Reference: {requestId}"
+    },
+    "emptyFiltered": {
+      "title": "No items match your filters",
+      "description": "Try different keywords or clear the filters.",
+      "clear": "Clear filters"
+    }
+  },
+  "list": {
+    "searchPlaceholder": "Search",
+    "search": "Search",
+    "clearFilters": "Clear filters",
+    "rowsPerPage": "Rows per page",
+    "total": "{total} in total",
+    "selectAll": "Select all rows on this page",
+    "selectRow": "Select row",
+    "clearSelection": "Clear selection",
+    "bulkActions": "Actions for the selected rows"
+  },
+  "dialogs": {
+    "confirm": {
+      "confirm": "Confirm",
+      "cancel": "Cancel",
+      "typeToConfirm": "Type {value} to confirm"
+    },
+    "conflict": {
+      "title": "Someone else changed this item",
+      "description": "This item was changed after you opened it, so your changes were not saved. Load the latest version, or keep your changes on screen to copy them first.",
+      "reload": "Load the latest version (discard my changes)",
+      "keepMine": "Keep my changes to review",
+      "mineTitle": "My changes",
+      "mineDescription": "These are the values you entered. Copy what you need, then load the latest version.",
+      "back": "Back"
+    },
+    "oneTimeSecret": {
+      "title": "Secret value",
+      "description": "Copy this value now and store it safely.",
+      "label": "Secret",
+      "copy": "Copy",
+      "copied": "Copied",
+      "onceWarning": "This value is shown only once and cannot be retrieved later.",
+      "unavailable": "This value was already shown and cannot be displayed again.",
+      "done": "Done"
+    },
+    "unsavedChanges": {
+      "title": "Discard unsaved changes?",
+      "description": "You have changes that have not been saved. If you leave now they will be lost.",
+      "stay": "Keep editing",
+      "discard": "Discard changes",
+      "saveAndLeave": "Save and leave"
+    }
+  },
+  "dateTimeField": {
+    "pick": "Pick a date and time",
+    "time": "Time",
+    "clear": "Clear date and time",
+    "done": "Done",
+    "timezoneNote": "Times are in {timezone}.",
+    "utcValue": "Sent as UTC: {value}"
   }
 }

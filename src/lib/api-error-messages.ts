@@ -2,7 +2,7 @@
 // namespace (keys: `codes.<CODE>` and `fields.<field code>` — field codes with
 // a dot, e.g. `password_policy.min_length`, are NESTED JSON in the message
 // files). Order: i18n key for the machine code -> the server's own `message`
-// (already localised, `Accept-Language` is not sent so it is English) -> a
+// (localised by the server from the `Accept-Language` header lib/axios.ts sends) -> a
 // generic fallback. Pure (takes `t`) so it can be used from hooks and from
 // QueryProvider's global error toasts.
 import { API_ERROR_CODES, type ParsedApiError } from "@/lib/api-error";

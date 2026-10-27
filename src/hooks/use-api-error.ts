@@ -5,9 +5,9 @@ import { useCallback } from "react";
 import type { FieldValues, Path, UseFormReturn } from "react-hook-form";
 import { toast } from "sonner";
 
-import { isGloballyToasted, parseApiError } from "@/lib/api-error";
+import { isConflictError, isGloballyToasted, parseApiError } from "@/lib/api-error";
 import { translateApiError, translateFieldError } from "@/lib/api-error-messages";
-import { applyFieldErrors } from "@/lib/form-errors";
+import { applyFieldErrors, type ApplyFieldErrorsOptions } from "@/lib/form-errors";
 
 // What a form's mutation `onError` uses. The split of responsibilities:
 //  - network errors, 403 (not PASSWORD_CHANGE_REQUIRED), 429 and 5xx are toasted
@@ -37,15 +37,26 @@ export function useApiErrorHandler() {
     <T extends FieldValues>(
       form: UseFormReturn<T>,
       error: unknown,
-      options: { fieldMap?: Record<string, Path<T>>; fallback?: string } = {}
+      options: {
+        fieldMap?: Record<string, Path<T>>;
+        fallback?: string;
+        // 409 `CONFLICT_LOCK_VERSION` / 412: when given, the conflict is handed over (open the ConflictDialog)
+        // instead of toasting the generic message.
+        onConflict?: () => void;
+      } & ApplyFieldErrorsOptions = {}
     ) => {
       const parsed = parseApiError(error);
       if (isGloballyToasted(parsed)) return;
+      if (options.onConflict && isConflictError(error)) {
+        options.onConflict();
+        return;
+      }
       const applied = applyFieldErrors(
         form,
         parsed.fieldErrors,
         (fe) => translateFieldError(t, fe),
-        options.fieldMap
+        options.fieldMap,
+        { nested: options.nested, onLocatedError: options.onLocatedError }
       );
       if (applied === 0) toast.error(translateApiError(t, parsed, options.fallback));
     },

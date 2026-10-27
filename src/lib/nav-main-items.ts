@@ -77,20 +77,79 @@ export function getFirstAllowedAdminPath(userPermissions: string[]): string | nu
   return null;
 }
 
-// Flatten every group/item into (url, permissions) pairs, then pick the
-// longest matching `url` prefix — a route guard on `/admin/users/5/edit`
-// must not be satisfied by the `/admin/users` list's (possibly looser)
-// permission entry.
-export function getPermissionsForPath(pathname: string): string[] | undefined {
-  const entries: { url: string; anyPermission?: string[] }[] = [];
-  for (const group of NAV_MAIN_CONFIG) {
-    entries.push({ url: group.url, anyPermission: group.anyPermission });
-    if (group.items) entries.push(...group.items);
-  }
+// Routes that are NOT in the sidebar but still need an access rule (doc/07 section 2.3). Every page under
+// `/admin` must be covered by a sidebar entry (longest-prefix) or by an entry here, otherwise the guard
+// treats it as `unknown` and denies it (default-deny). A sub-page of a sidebar entry (`/admin/users/5`) needs
+// no entry of its own: it inherits the entry's keys. `open: true` = any authenticated user;
+// `anyPermission` = the user needs `read` on at least one of the keys.
+export type RouteOnlyPermission = {
+  url: string;
+  anyPermission?: string[];
+  open?: true;
+};
 
-  const match = entries
-    .filter((e) => pathname === e.url || pathname.startsWith(`${e.url}/`))
+export const ROUTE_ONLY_PERMISSIONS: RouteOnlyPermission[] = [
+  // Own profile (SCR-06): open to every authenticated user.
+  { url: "/admin/profile", open: true },
+];
+
+// The dashboard URL. It is matched EXACTLY: an `open` entry that is also a prefix of everything under
+// `/admin` would let an unregistered route (`/admin/foo`) inherit "open to everyone".
+export const ADMIN_ROOT = "/admin";
+
+export type RouteAccess =
+  | { kind: "open" }
+  | { kind: "requires"; keys: string[] }
+  | { kind: "unknown" };
+
+// `/admin/users/` -> `/admin/users`; `/admin//users` -> `/admin/users`; no query/hash (usePathname has none).
+export function normalizePathname(pathname: string): string {
+  const collapsed = pathname.replace(/\/{2,}/g, "/");
+  return collapsed.length > 1 ? collapsed.replace(/\/+$/, "") : collapsed;
+}
+
+type RouteEntry = { url: string; keys: string[]; open: boolean };
+
+function routeEntries(): RouteEntry[] {
+  const entries: RouteEntry[] = [];
+  // Sidebar entries: no `anyPermission` = open to every authenticated user (the dashboard).
+  const addNav = (url: string, anyPermission?: string[]) => {
+    const keys = anyPermission ?? [];
+    entries.push({ url, keys, open: keys.length === 0 });
+  };
+  for (const group of NAV_MAIN_CONFIG) {
+    // `#` = a collapsible parent that has no page of its own.
+    if (group.url !== "#") addNav(group.url, group.anyPermission);
+    for (const item of group.items ?? []) addNav(item.url, item.anyPermission);
+  }
+  // Route-only entries must say so explicitly (`open: true`); one with neither `open` nor keys denies.
+  for (const entry of ROUTE_ONLY_PERMISSIONS) {
+    entries.push({ url: entry.url, keys: entry.anyPermission ?? [], open: entry.open === true });
+  }
+  return entries;
+}
+
+// Default-deny route table. The entry whose `url` is the longest segment-prefix of `pathname` wins (so a
+// guard on `/admin/users/5/edit` is decided by `/admin/users`, never by a looser entry); `/admin` itself
+// only matches exactly. No match = `unknown` (the guard shows "not found" and warns in dev: a page was
+// added without registering its route).
+export function getPermissionsForPath(pathname: string): RouteAccess {
+  const path = normalizePathname(pathname);
+  const match = routeEntries()
+    .filter((e) =>
+      e.url === ADMIN_ROOT ? path === e.url : path === e.url || path.startsWith(`${e.url}/`)
+    )
     .sort((a, b) => b.url.length - a.url.length)[0];
 
-  return match?.anyPermission;
+  if (!match) return { kind: "unknown" };
+  if (match.keys.length > 0) return { kind: "requires", keys: match.keys };
+  // Keys win over `open`; an entry with neither denies (empty key list -> nobody has `read` on it).
+  return match.open ? { kind: "open" } : { kind: "requires", keys: [] };
+}
+
+// True when a user whose readable keys are `userPermissions` may open `access`.
+export function isRouteAllowed(access: RouteAccess, userPermissions: string[]): boolean {
+  if (access.kind === "open") return true;
+  if (access.kind === "unknown") return false;
+  return access.keys.some((key) => userPermissions.includes(key));
 }

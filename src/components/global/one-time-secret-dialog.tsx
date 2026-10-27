@@ -2,7 +2,7 @@
 
 import { CheckIcon, CopyIcon, KeyRoundIcon, TriangleAlertIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { useRef, useState } from "react";
+import { useId, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -16,31 +16,46 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-// Shows the one-time temporary password of a freshly created user. The value
-// only lives in the parent's React state for as long as this dialog is open —
-// it is never put in the query cache, storage, the URL or a log. Not
-// dismissable by Esc / outside click (an accidental click would lose the
-// password for good): the admin confirms with "Done".
-export function TemporaryPasswordDialog({
-  username,
-  password,
+// Shows a secret exactly once: a temporary password, an API key secret, a webhook secret (doc/07 section 1.1
+// (6), BR-35, F-9). The value lives only in the parent's React state while this dialog is mounted — never in
+// the query cache (`gcTime: 0` on the mutation + `reset()`), storage, the URL or a log. Not dismissable by
+// Esc / outside click / a close button (an accidental click would lose the secret for good): the admin
+// confirms with "Done". `secret === null` = the server did not return it (an idempotent replay): the
+// `unavailable` text is shown instead and nothing can be copied.
+//
+// Mount it only while a secret is pending (`{issued ? <OneTimeSecretDialog …/> : null}`) and clear the
+// parent state in `onDone`. Texts default to the generic `dialogs.oneTimeSecret.*` set; pass the page's own
+// (`title`, `description`, `label`, `onceWarning`, `unavailable`) where the wording is specific.
+export function OneTimeSecretDialog({
+  secret,
   onDone,
+  title,
+  description,
+  label,
+  onceWarning,
+  unavailable,
+  doneLabel,
 }: {
-  username: string;
-  // null = the server did not return one (e.g. an idempotent replay).
-  password: string | null;
+  secret: string | null;
   onDone: () => void;
+  title?: string;
+  description?: string;
+  label?: string;
+  onceWarning?: string;
+  unavailable?: string;
+  doneLabel?: string;
 }) {
-  const t = useTranslations("users.temporaryPassword");
+  const t = useTranslations("dialogs.oneTimeSecret");
+  const inputId = useId();
   const inputRef = useRef<HTMLInputElement>(null);
   const [copied, setCopied] = useState(false);
 
   const copy = async () => {
-    if (!password) return;
+    if (!secret) return;
     let ok = false;
     try {
       // Async clipboard API needs a secure context (https / localhost).
-      await navigator.clipboard.writeText(password);
+      await navigator.clipboard.writeText(secret);
       ok = true;
     } catch {
       // Fallback for plain-http LAN addresses: select + execCommand.
@@ -58,29 +73,30 @@ export function TemporaryPasswordDialog({
   return (
     <Dialog open onOpenChange={() => {}}>
       <DialogContent
-        className="md:max-w-md [&>button]:hidden"
+        showCloseButton={false}
+        className="md:max-w-md"
         onEscapeKeyDown={(e) => e.preventDefault()}
         onInteractOutside={(e) => e.preventDefault()}
         onCloseAutoFocus={(e) => e.preventDefault()}
       >
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <KeyRoundIcon className="size-5" />
-            {t("title")}
+            <KeyRoundIcon className="size-5" aria-hidden />
+            {title ?? t("title")}
           </DialogTitle>
-          <DialogDescription>{t("description", { username })}</DialogDescription>
+          <DialogDescription>{description ?? t("description")}</DialogDescription>
         </DialogHeader>
 
-        {password ? (
+        {secret ? (
           <div className="space-y-3">
             <div className="space-y-2">
-              <Label htmlFor="temporary-password">{t("label")}</Label>
+              <Label htmlFor={inputId}>{label ?? t("label")}</Label>
               <div className="flex gap-2">
                 <Input
-                  id="temporary-password"
+                  id={inputId}
                   ref={inputRef}
                   readOnly
-                  value={password}
+                  value={secret}
                   autoComplete="off"
                   spellCheck={false}
                   className="font-mono"
@@ -93,17 +109,17 @@ export function TemporaryPasswordDialog({
               </div>
             </div>
             <p className="flex items-start gap-2 text-sm text-muted-foreground">
-              <TriangleAlertIcon className="mt-0.5 size-4 shrink-0" />
-              <span>{t("onceWarning")}</span>
+              <TriangleAlertIcon className="mt-0.5 size-4 shrink-0" aria-hidden />
+              <span>{onceWarning ?? t("onceWarning")}</span>
             </p>
           </div>
         ) : (
-          <p className="text-sm text-muted-foreground">{t("unavailable")}</p>
+          <p className="text-sm text-muted-foreground">{unavailable ?? t("unavailable")}</p>
         )}
 
         <DialogFooter>
           <Button type="button" onClick={onDone}>
-            {t("done")}
+            {doneLabel ?? t("done")}
           </Button>
         </DialogFooter>
       </DialogContent>

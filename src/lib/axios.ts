@@ -13,6 +13,7 @@
 //    additionally notifies the app via setAuthEventHandler, which re-reads
 //    /auth/me so the forced change-password dialog opens).
 import axios, { type InternalAxiosRequestConfig } from "axios";
+import Cookies from "js-cookie";
 
 import { API_ERROR_CODES, SESSION_ENDING_CODES, parseApiError } from "@/lib/api-error";
 import {
@@ -24,6 +25,7 @@ import {
   setTokens,
 } from "@/lib/auth-session";
 import { API_ENDPOINTS } from "@/lib/constants/api-endpoints";
+import { DEFAULT_LOCALE, LOCALE_COOKIE_NAME, isSupportedLocale } from "@/lib/constants/locales";
 
 declare module "axios" {
   interface AxiosRequestConfig {
@@ -56,6 +58,17 @@ axiosPublicInstance.interceptors.request.use((config) => {
   config.baseURL = getApiBaseUrl();
   return config;
 });
+
+// `Accept-Language: <UI locale>` (doc/07 section 6.1, F-3, C-19): the server's fallback `message` then matches
+// the UI language. The UI still translates from the machine `code` first. The locale is the `locale` cookie
+// (`la` default); read at call time, so a language switch applies to the very next request.
+function applyAcceptLanguage(config: InternalAxiosRequestConfig) {
+  const cookie = typeof document === "undefined" ? undefined : Cookies.get(LOCALE_COOKIE_NAME);
+  config.headers["Accept-Language"] = isSupportedLocale(cookie) ? cookie : DEFAULT_LOCALE;
+  return config;
+}
+axiosInstance.interceptors.request.use(applyAcceptLanguage);
+axiosPublicInstance.interceptors.request.use(applyAcceptLanguage);
 
 // Attach `Authorization: Bearer <access>` from the cookie on every
 // authenticated request. Read at call time, so a retry (or another tab's

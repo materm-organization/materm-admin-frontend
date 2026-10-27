@@ -1,23 +1,20 @@
 "use client";
 
 import type { ColumnDef } from "@tanstack/react-table";
-import { SearchIcon, UserPlusIcon } from "lucide-react";
+import { UserPlusIcon } from "lucide-react";
 import { useFormatter, useTranslations } from "next-intl";
 import { useMemo, useState } from "react";
 
-import { CustomPagination } from "@/components/global/custom-pagination";
-import { DataTable } from "@/components/global/data-table";
+import { ListPage } from "@/components/global/list/list-page";
+import { OneTimeSecretDialog } from "@/components/global/one-time-secret-dialog";
+import { PermissionGate } from "@/components/global/permission-gate";
 import { CreateUserDialog } from "@/components/protected/users/create-user-dialog";
-import { TemporaryPasswordDialog } from "@/components/protected/users/temporary-password-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { NoPermission } from "@/components/layout/no-permission";
-import { Input } from "@/components/ui/input";
-import { useHasAction } from "@/hooks/use-auth";
+import { useListParams } from "@/hooks/use-list-params";
 import { useUsers } from "@/hooks/use-users";
-import { isNoPermissionError } from "@/lib/api-error";
-import { DEFAULT_PAGE, DEFAULT_PAGE_LIMIT } from "@/lib/constants/pagination";
 import { PERMISSION_ACTIONS, PERMISSION_KEYS } from "@/lib/constants/permissions";
+import type { ListParamsConfig } from "@/lib/list-params";
 import type { User, UserState } from "@/types/iam";
 
 const STATE_VARIANT: Record<UserState, "default" | "secondary" | "outline" | "destructive"> = {
@@ -27,24 +24,21 @@ const STATE_VARIANT: Record<UserState, "default" | "secondary" | "outline" | "de
   locked: "destructive",
 };
 
+// URL state of the list: ?page=&limit=&keyword= (role/state filters and sort come with SCR-07, P1-W1).
+// A module-level constant: `useListParams` needs a stable config object.
+const USERS_LIST_CONFIG: ListParamsConfig = {};
+
 export function UsersList() {
   const t = useTranslations("users");
   const format = useFormatter();
-  const canCreate = useHasAction(PERMISSION_KEYS.IAM_USERS, PERMISSION_ACTIONS.CREATE);
 
-  const [page, setPage] = useState(DEFAULT_PAGE);
-  const [searchInput, setSearchInput] = useState("");
-  const [keyword, setKeyword] = useState("");
+  const list = useListParams(USERS_LIST_CONFIG);
   const [createOpen, setCreateOpen] = useState(false);
   // The one-time temporary password lives ONLY here, until the dialog is
   // confirmed with "Done" — never in the query cache or storage.
   const [issued, setIssued] = useState<{ username: string; password: string | null } | null>(null);
 
-  const { data, isLoading, isFetching, isError, error } = useUsers({
-    page,
-    limit: DEFAULT_PAGE_LIMIT,
-    keyword,
-  });
+  const { data, isLoading, isFetching, error, refetch } = useUsers(list.query);
 
   const columns = useMemo<ColumnDef<User>[]>(
     () => [
@@ -84,58 +78,29 @@ export function UsersList() {
     [t, format]
   );
 
-  const submitSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    setKeyword(searchInput.trim());
-    setPage(DEFAULT_PAGE);
-  };
-
   return (
-    <div className="space-y-4">
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <form onSubmit={submitSearch} className="flex gap-2" role="search">
-          <Input
-            value={searchInput}
-            onChange={(e) => setSearchInput(e.target.value)}
-            placeholder={t("searchPlaceholder")}
-            aria-label={t("searchPlaceholder")}
-            maxLength={100}
-            className="w-full sm:w-72"
-          />
-          <Button type="submit" variant="outline">
-            <SearchIcon />
-            {t("search")}
-          </Button>
-        </form>
-        {canCreate ? (
-          <Button type="button" onClick={() => setCreateOpen(true)}>
-            <UserPlusIcon />
-            {t("create.open")}
-          </Button>
-        ) : null}
-      </div>
-
-      {isError && isNoPermissionError(error) ? (
-        <NoPermission />
-      ) : (
-        <DataTable
-          columns={columns}
-          data={data?.data ?? []}
-          getRowId={(row) => String(row.id)}
-          isLoading={isLoading}
-          skeletonRowCount={DEFAULT_PAGE_LIMIT}
-          emptyTitle={t("empty")}
-        />
-      )}
-      {data?.meta ? (
-        <CustomPagination
-          metaData={data.meta}
-          onPageChange={setPage}
-          isLoading={isFetching}
-          rowLimit={DEFAULT_PAGE_LIMIT}
-          setRowLimit={() => {}}
-        />
-      ) : null}
+    <>
+      <ListPage
+        list={list}
+        columns={columns}
+        data={data?.data ?? []}
+        meta={data?.meta}
+        isLoading={isLoading}
+        isFetching={isFetching}
+        error={error}
+        onRetry={() => void refetch()}
+        getRowId={(row) => String(row.id)}
+        keywordPlaceholder={t("searchPlaceholder")}
+        primaryAction={
+          <PermissionGate permission={PERMISSION_KEYS.IAM_USERS} action={PERMISSION_ACTIONS.CREATE}>
+            <Button type="button" onClick={() => setCreateOpen(true)}>
+              <UserPlusIcon />
+              {t("create.open")}
+            </Button>
+          </PermissionGate>
+        }
+        emptyTitle={t("empty")}
+      />
 
       <CreateUserDialog
         open={createOpen}
@@ -145,12 +110,17 @@ export function UsersList() {
         }
       />
       {issued ? (
-        <TemporaryPasswordDialog
-          username={issued.username}
-          password={issued.password}
+        <OneTimeSecretDialog
+          secret={issued.password}
           onDone={() => setIssued(null)}
+          title={t("temporaryPassword.title")}
+          description={t("temporaryPassword.description", { username: issued.username })}
+          label={t("temporaryPassword.label")}
+          onceWarning={t("temporaryPassword.onceWarning")}
+          unavailable={t("temporaryPassword.unavailable")}
+          doneLabel={t("temporaryPassword.done")}
         />
       ) : null}
-    </div>
+    </>
   );
 }

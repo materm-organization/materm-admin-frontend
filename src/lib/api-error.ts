@@ -20,6 +20,8 @@ export const API_ERROR_CODES = {
   RATE_LIMITED: "RATE_LIMITED",
   VALIDATION_FAILED: "VALIDATION_FAILED",
   CONFLICT_DUPLICATE: "CONFLICT_DUPLICATE",
+  CONFLICT_LOCK_VERSION: "CONFLICT_LOCK_VERSION",
+  PRECONDITION_REQUIRED: "PRECONDITION_REQUIRED",
   INTERNAL_ERROR: "INTERNAL_ERROR",
 } as const;
 
@@ -81,10 +83,6 @@ export function parseApiError(error: unknown): ParsedApiError {
   };
 }
 
-// Errors the app shows as a global toast (QueryProvider's caches) instead of
-// leaving to the calling form: network failures, 403 (but not
-// PASSWORD_CHANGE_REQUIRED, which opens the change-password dialog), 429 and
-// 5xx. Form handlers must NOT toast these again — see useApiErrorHandler.
 // "No permission" in the UI: a 403 (except PASSWORD_CHANGE_REQUIRED, which opens the forced change-password
 // dialog instead) or a 401 that reached the UI without ending the session (the interceptor already refreshed
 // once). Such a read is never retried and is shown as the "no permission" state, not as an error to retry.
@@ -95,9 +93,29 @@ export function isNoPermissionError(error: unknown): boolean {
   return false;
 }
 
+// Optimistic-locking conflict (doc/07 section 2.5.6): 409 `CONFLICT_LOCK_VERSION` (what doc/05 uses) or a
+// 412 (kept as a guard). Callers open the `ConflictDialog` for it instead of toasting. A 409 with another
+// code (e.g. `CONFLICT_DUPLICATE`) is NOT a lock conflict.
+export function isConflictError(error: unknown): boolean {
+  const parsed = parseApiError(error);
+  if (parsed.status === 412) return true;
+  return parsed.status === 409 && parsed.code === API_ERROR_CODES.CONFLICT_LOCK_VERSION;
+}
+
+// 428 `PRECONDITION_REQUIRED` = the client forgot the `If-Match` header: a client bug, not something the user
+// can fix (toast + console.error, never a form error).
+export function isPreconditionRequiredError(error: unknown): boolean {
+  const parsed = parseApiError(error);
+  return parsed.status === 428 || parsed.code === API_ERROR_CODES.PRECONDITION_REQUIRED;
+}
+
+// Errors the app shows as a global toast (QueryProvider's caches) instead of
+// leaving to the calling form: network failures, 403 (but not
+// PASSWORD_CHANGE_REQUIRED, which opens the change-password dialog), 428, 429
+// and 5xx. Form handlers must NOT toast these again — see useApiErrorHandler.
 export function isGloballyToasted(parsed: ParsedApiError): boolean {
   if (parsed.isNetworkError) return true;
   if (parsed.status === 403) return parsed.code !== API_ERROR_CODES.PASSWORD_CHANGE_REQUIRED;
-  if (parsed.status === 429) return true;
+  if (parsed.status === 429 || parsed.status === 428) return true;
   return parsed.status !== undefined && parsed.status >= 500;
 }
