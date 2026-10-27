@@ -1019,5 +1019,158 @@
         "error": "ອັບເດດໂປຣໄຟລ໌ບໍ່ສຳເລັດ"
       }
     }
+  },
+  "sectionEditor": {
+    "types": {}
+  },
+  "schemaForm": {
+    "requiredBeforePublish": " (ຈຳເປັນກ່ອນເຜີຍແຜ່)",
+    "notTranslated": "ຍັງບໍ່ໄດ້ແປ",
+    "copyFromDefault": "ສຳເນົາຈາກ {language}",
+    "compareEmpty": "(ວ່າງ)",
+    "clearChoice": "ລ້າງ",
+    "choose": "ເລືອກ...",
+    "unsupportedField": "ຊະນິດຂອງຊ່ອງນີ້ຍັງບໍ່ມີຕົວແກ້ໄຂ. ສະແດງໃຫ້ເບິ່ງຢ່າງດຽວ ແລະ ຄ່າຖືກເກັບໄວ້ຄືເກົ່າ.",
+    "hiddenHasIssues": "ສ່ວນທີ່ເຊື່ອງໄວ້ \"{field}\" ມີບັນຫາ {count} ລາຍການ.",
+    "clearHidden": "ລ້າງສ່ວນນີ້",
+    "addGroup": "ເພີ່ມ {name}",
+    "removeGroup": "ເອົາ {name} ອອກ",
+    "completenessLabel": "ຄວາມຄົບຖ້ວນຂອງ {locale}",
+    "completeness": "ຕື່ມຊ່ອງທີ່ຈຳເປັນແລ້ວ {percent}% ໃນ {locale} ({filled} ຈາກ {total})",
+    "validatorUnavailable": "ການກວດສອບທັນທີໃຊ້ບໍ່ໄດ້ໃນສະພາບແວດລ້ອມນີ້. ເຊີບເວີຈະກວດທຸກຢ່າງເມື່ອທ່ານບັນທຶກ.",
+    "issueSummary": "ມີ {count} ບັນຫາທີ່ຕ້ອງແກ້ໄຂ",
+    "goToFirst": "ໄປຫາບັນຫາທຳອິດ",
+    "issues": {
+      "required": "ຕ້ອງຕື່ມຊ່ອງນີ້.",
+      "invalid_type": "ຊະນິດຂອງຄ່າບໍ່ຖືກຕ້ອງ.",
+      "invalid_format": "ຮູບແບບຂອງຄ່າບໍ່ຖືກຕ້ອງ.",
+      "pattern_mismatch": "ຄ່າບໍ່ກົງກັບຮູບແບບທີ່ກຳນົດ.",
+      "not_in_enum": "ບໍ່ອະນຸຍາດຄ່ານີ້.",
+      "too_short": "ສັ້ນເກີນໄປ: ຕ້ອງມີຢ່າງໜ້ອຍ {min}.",
+      "too_long": "ຍາວເກີນໄປ: ອະນຸຍາດສູງສຸດ {max}.",
+      "out_of_range": "ຄ່າຢູ່ນອກຂອບເຂດ.",
+      "duplicate": "ບໍ່ອະນຸຍາດຄ່າຊ້ຳກັນ.",
+      "unknown_field": "ບໍ່ຮັບຊ່ອງນີ້.",
+      "unknown_reference": "ລາຍການທີ່ເລືອກບໍ່ມີຢູ່.",
+      "invalid_value": "ຄ່າບໍ່ຖືກຕ້ອງ.",
+      "forbidden": "ບໍ່ອະນຸຍາດຢູ່ບ່ອນນີ້.",
+      "no_match": "ຄ່າບໍ່ກົງກັບຮູບແບບໃດທີ່ອະນຸຍາດ.",
+      "too_deep": "ເນື້ອຫາຊ້ອນກັນເລິກເກີນໄປ.",
+      "too_many_issues": "ມີບັນຫາຫຼາຍກວ່າທີ່ສະແດງລາຍການໄວ້."
+    },
+    "media": {
+      "none": "ບໍ່ມີຮູບ",
+      "missing": "ບໍ່ພົບຮູບ #{id}",
+      "notReady": "({status})",
+      "choose": "ເລືອກຮູບ",
+      "change": "ປ່ຽນຮູບ",
+      "remove": "ເອົາອອກ",
+      "decorative": "ຮູບປະດັບ (ບໍ່ມີຂໍ້ຄວາມແທນຮູບ)",
+      "alt": "ຂໍ້ຄວາມແທນຮູບ",
+      "pickerTitle": "ເລືອກຮູບ",
+      "pickerDescription": "ເລືອກຮູບໜຶ່ງຈາກຄັງສື່.",
+      "search": "ຄົ້ນຫາຕາມຊື່ໄຟລ໌",
+      "loadError": "ໂຫຼດຄັງສື່ບໍ່ໄດ້.",
+      "empty": "ບໍ່ພົບຮູບ."
+    },
+    "link": {
+      "clear": "ລ້າງລິ້ງ",
+      "type": "ຊະນິດລິ້ງ",
+      "page": "ໜ້າ",
+      "url": "URL",
+      "pickPage": "ໜ້າ",
+      "anchor": "ຈຸດຢຶດ (ບໍ່ບັງຄັບ)",
+      "urlKind": "ຊະນິດທີ່ຢູ່",
+      "urlKindOther": "ອື່ນໆ",
+      "kind": {
+        "https": "ເວັບໄຊ (https://)",
+        "path": "ໃນເວັບນີ້ (/path)",
+        "mailto": "ອີເມວ (mailto:)",
+        "tel": "ໂທລະສັບ (tel:)",
+        "anchor": "ຈຸດຢຶດ (#)"
+      },
+      "urlLabel": "ທີ່ຢູ່",
+      "newTab": "ເປີດໃນແທັບໃໝ່",
+      "rel": "ຄວາມສຳພັນຂອງລິ້ງ",
+      "problem": {
+        "empty": "ກະລຸນາໃສ່ທີ່ຢູ່.",
+        "scheme": "ໃຊ້ https://, /path, mailto:, tel: ຫຼື #.",
+        "protocol_relative": "ທີ່ຢູ່ທີ່ຂຶ້ນຕົ້ນດ້ວຍ // ຫຼື /\\ ຈະພາອອກຈາກເວັບນີ້. ສຳລັບເວັບອື່ນໃຫ້ໃຊ້ https://."
+      }
+    },
+    "entity": {
+      "choose": "ເລືອກ...",
+      "loading": "ກຳລັງໂຫຼດ...",
+      "missing": "{value} (ບໍ່ພົບ)",
+      "pickAlbumFirst": "ເລືອກອັລບັ້ມກ່ອນ",
+      "search": "ຄົ້ນຫາ",
+      "loadError": "ໂຫຼດລາຍການບໍ່ໄດ້.",
+      "empty": "ບໍ່ພົບຫຍັງ.",
+      "clear": "ລ້າງການເລືອກ",
+      "warnPost": "ບົດຄວາມນີ້ຢູ່ສະຖານະ {status}: ຈະຖືກຂ້າມໃນເວັບໄຊຈົນກວ່າຈະເຜີຍແຜ່.",
+      "warnPage": "ໜ້ານີ້ຢູ່ສະຖານະ {status}: ລິ້ງຈະຖືກເຊື່ອງໃນເວັບໄຊຈົນກວ່າຈະເຜີຍແຜ່.",
+      "warnOther": "ລາຍການນີ້ຢູ່ສະຖານະ {status}, ຍັງບໍ່ໄດ້ເຜີຍແຜ່."
+    },
+    "array": {
+      "itemFallback": "ລາຍການ {number}",
+      "count": "{count} ລາຍການ",
+      "countOf": "{count} ຈາກ {max}",
+      "empty": "ຍັງບໍ່ມີລາຍການ.",
+      "duplicate": "ສຳເນົາ {item}",
+      "remove": "ລຶບ {item}",
+      "add": "ເພີ່ມລາຍການ",
+      "maxReached": "ຄົບສູງສຸດ {max} ລາຍການແລ້ວ.",
+      "removeConfirmTitle": "ລຶບລາຍການນີ້ບໍ?",
+      "removeConfirmDescription": "ລາຍການນີ້ໃຊ້ຮ່ວມກັນທຸກພາສາ ແລະ ມີຂໍ້ຄວາມໃນພາສາອື່ນດ້ວຍ. ການລຶບຈະລຶບຂໍ້ຄວາມເຫຼົ່ານັ້ນນຳ.",
+      "removeConfirm": "ລຶບລາຍການ",
+      "collapse": "ພັບ {item}",
+      "expand": "ຂະຫຍາຍ {item}",
+      "issues": "{count} ບັນຫາ"
+    }
+  },
+  "richText": {
+    "toolbar": "ການຈັດຮູບແບບຂໍ້ຄວາມ",
+    "paragraph": "ວັກ",
+    "bold": "ໂຕໜາ",
+    "italic": "ໂຕອຽງ",
+    "link": "ລິ້ງ",
+    "bulletList": "ລາຍການຫົວຂໍ້ຍ່ອຍ",
+    "orderedList": "ລາຍການເລກລຳດັບ",
+    "heading2": "ຫົວຂໍ້ 2",
+    "heading3": "ຫົວຂໍ້ 3",
+    "blockquote": "ຄຳອ້າງອີງ",
+    "lead": "ວັກນຳ",
+    "leadShort": "ນຳ",
+    "nodeCount": "{count} / {max} ໂນດ",
+    "linkUrl": "ທີ່ຢູ່ລິ້ງ",
+    "linkProblem": {
+      "empty": "ກະລຸນາໃສ່ທີ່ຢູ່.",
+      "scheme": "ໃຊ້ https://, /path, mailto:, tel: ຫຼື #.",
+      "protocol_relative": "ທີ່ຢູ່ທີ່ຂຶ້ນຕົ້ນດ້ວຍ // ຫຼື /\\ ຈະພາອອກຈາກເວັບນີ້. ສຳລັບເວັບອື່ນໃຫ້ໃຊ້ https://."
+    },
+    "linkNewTab": "ເປີດໃນແທັບໃໝ່",
+    "linkRemove": "ເອົາລິ້ງອອກ",
+    "linkApply": "ນຳໃຊ້"
+  },
+  "sortable": {
+    "list": "ລາຍການທີ່ຈັດລຳດັບໃໝ່ໄດ້",
+    "handle": "ຈັດລຳດັບ {item}: ກົດ Space ເພື່ອຈັບຂຶ້ນ",
+    "moveUp": "ຍ້າຍ {item} ຂຶ້ນ",
+    "moveDown": "ຍ້າຍ {item} ລົງ",
+    "moved": "ຍ້າຍ {item} ໄປຕຳແໜ່ງ {position} ຈາກ {total}",
+    "dragStart": "ຈັບ {item} ຂຶ້ນແລ້ວ",
+    "dragOver": "{item} ຢູ່ຕຳແໜ່ງ {position} ຈາກ {total}",
+    "dragEnd": "ວາງ {item} ທີ່ຕຳແໜ່ງ {position} ຈາກ {total}",
+    "dragCancel": "ຍົກເລີກການຍ້າຍ {item}",
+    "instructions": "ກົດ Space ຫຼື Enter ເພື່ອຈັບລາຍການຂຶ້ນ. ໃຊ້ປຸ່ມລູກສອນເພື່ອຍ້າຍ, Space ຫຼື Enter ເພື່ອວາງ, Escape ເພື່ອຍົກເລີກ."
+  },
+  "localeSwitcher": {
+    "label": "ພາສາທີ່ກຳລັງແກ້ໄຂ",
+    "default": "ຫຼັກ",
+    "complete": "ຄົບຖ້ວນ",
+    "missing": "ຍັງບໍ່ໄດ້ຕື່ມຫຍັງ, ຂາດຊ່ອງທີ່ຈຳເປັນ {count} ຊ່ອງ",
+    "partial": "ຂາດຊ່ອງທີ່ຈຳເປັນ {count} ຊ່ອງ",
+    "issues": "{count} ບັນຫາ",
+    "compare": "ປຽບທຽບກັບພາສາຫຼັກ"
   }
 }

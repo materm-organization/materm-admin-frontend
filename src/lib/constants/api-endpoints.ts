@@ -51,4 +51,38 @@ export const API_ENDPOINTS = {
   SYSTEM: {
     STATUS: "/system/status",
   },
+  // CMS (doc/05 sections 6.2 - 6.12, 10.6). Only what the schema form engine reads (pickers + the registry)
+  // is here; the editors of each feature add their own keys.
+  SECTION_TYPES: {
+    LIST: "/section-types",
+    DETAIL: (key: string) => `/section-types/${encodeURIComponent(key)}`,
+  },
+  MEDIA: {
+    ASSETS: "/media/assets",
+    ASSET: (id: number | string) => `/media/assets/${id}`,
+  },
+  PAGES: {
+    LIST: "/pages",
+    DETAIL: (id: number | string) => `/pages/${id}`,
+  },
+  POSTS: {
+    LIST: "/posts",
+    DETAIL: (id: number | string) => `/posts/${id}`,
+  },
+  ALBUMS: {
+    LIST: "/albums",
+    DETAIL: (id: number | string) => `/albums/${id}`,
+    ITEMS: (id: number | string) => `/albums/${id}/items`,
+  },
+  CATEGORIES: {
+    LIST: "/categories",
+    DETAIL: (id: number | string) => `/categories/${id}`,
+  },
+  FAQ_GROUPS: {
+    LIST: "/faq-groups",
+  },
+  FORMS: {
+    LIST: "/forms",
+    DETAIL: (id: number | string) => `/forms/${id}`,
+  },
 } as const;

@@ -1,0 +1,146 @@
+[
+  {
+    "media_id": 1,
+    "file": "public/images/site/home/hero-bg.png",
+    "storage_key": "static/images/site/home/hero-bg.png",
+    "kind": "image"
+  },
+  {
+    "media_id": 2,
+    "file": "public/images/site/home/our-path-photo-1.jpg",
+    "storage_key": "static/images/site/home/our-path-photo-1.jpg",
+    "kind": "image"
+  },
+  {
+    "media_id": 3,
+    "file": "public/images/site/home/our-path-photo-2.jpg",
+    "storage_key": "static/images/site/home/our-path-photo-2.jpg",
+    "kind": "image"
+  },
+  {
+    "media_id": 4,
+    "file": "public/images/site/home/our-path-photo-3.jpg",
+    "storage_key": "static/images/site/home/our-path-photo-3.jpg",
+    "kind": "image"
+  },
+  {
+    "media_id": 5,
+    "file": "public/images/site/home/blog-card-1.jpg",
+    "storage_key": "static/images/site/home/blog-card-1.jpg",
+    "kind": "image"
+  },
+  {
+    "media_id": 6,
+    "file": "public/images/site/home/blog-card-2.jpg",
+    "storage_key": "static/images/site/home/blog-card-2.jpg",
+    "kind": "image"
+  },
+  {
+    "media_id": 7,
+    "file": "public/images/site/home/blog-card-3.jpg",
+    "storage_key": "static/images/site/home/blog-card-3.jpg",
+    "kind": "image"
+  },
+  {
+    "media_id": 8,
+    "file": "public/images/site/home/blog-card-4.jpg",
+    "storage_key": "static/images/site/home/blog-card-4.jpg",
+    "kind": "image"
+  },
+  {
+    "media_id": 9,
+    "file": "public/images/site/gallery-card-forest-stream.png",
+    "storage_key": "static/images/site/gallery-card-forest-stream.png",
+    "kind": "image"
+  },
+  {
+    "media_id": 10,
+    "file": "public/images/site/our-path/hero-bg-forest.jpg",
+    "storage_key": "static/images/site/our-path/hero-bg-forest.jpg",
+    "kind": "image"
+  },
+  {
+    "media_id": 11,
+    "file": "public/images/site/our-path/about-1-kayak.jpg",
+    "storage_key": "static/images/site/our-path/about-1-kayak.jpg",
+    "kind": "image"
+  },
+  {
+    "media_id": 12,
+    "file": "public/images/site/our-path/about-2-glacier-climbers.jpg",
+    "storage_key": "static/images/site/our-path/about-2-glacier-climbers.jpg",
+    "kind": "image"
+  },
+  {
+    "media_id": 13,
+    "file": "public/images/site/our-path/about-3-rock-climber.jpg",
+    "storage_key": "static/images/site/our-path/about-3-rock-climber.jpg",
+    "kind": "image"
+  },
+  {
+    "media_id": 14,
+    "file": "public/images/site/our-path/gallery-jungle-stream.jpg",
+    "storage_key": "static/images/site/our-path/gallery-jungle-stream.jpg",
+    "kind": "image"
+  },
+  {
+    "media_id": 15,
+    "file": "public/images/site/hero-forest-stream.jpg",
+    "storage_key": "static/images/site/hero-forest-stream.jpg",
+    "kind": "image"
+  },
+  {
+    "media_id": 16,
+    "file": "public/images/site/blog/blog-article-hero-mountains.jpg",
+    "storage_key": "static/images/site/blog/blog-article-hero-mountains.jpg",
+    "kind": "image"
+  },
+  {
+    "media_id": 17,
+    "file": "public/images/site/blog/blog-gallery-rainforest-stream.jpg",
+    "storage_key": "static/images/site/blog/blog-gallery-rainforest-stream.jpg",
+    "kind": "image"
+  },
+  {
+    "media_id": 18,
+    "file": "public/images/site/gallery/story-beneath-the-canopy.jpg",
+    "storage_key": "static/images/site/gallery/story-beneath-the-canopy.jpg",
+    "kind": "image"
+  },
+  {
+    "media_id": 19,
+    "file": "public/images/site/gallery/story-small-unfolding-fern.jpg",
+    "storage_key": "static/images/site/gallery/story-small-unfolding-fern.jpg",
+    "kind": "image"
+  },
+  {
+    "media_id": 20,
+    "file": "public/images/site/gallery/story-water-over-stone.jpg",
+    "storage_key": "static/images/site/gallery/story-water-over-stone.jpg",
+    "kind": "image"
+  },
+  {
+    "media_id": 21,
+    "file": "public/images/site/gallery/story-softer-path.jpg",
+    "storage_key": "static/images/site/gallery/story-softer-path.jpg",
+    "kind": "image"
+  },
+  {
+    "media_id": 22,
+    "file": "public/images/site/gallery/story-light-comes-through.jpg",
+    "storage_key": "static/images/site/gallery/story-light-comes-through.jpg",
+    "kind": "image"
+  },
+  {
+    "media_id": 23,
+    "file": "public/images/site/materm-logo-white.svg",
+    "storage_key": "static/images/site/materm-logo-white.svg",
+    "kind": "brand"
+  },
+  {
+    "media_id": 24,
+    "file": "public/images/site/materm-emblem.svg",
+    "storage_key": "static/images/site/materm-emblem.svg",
+    "kind": "brand"
+  }
+]

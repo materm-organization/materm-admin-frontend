@@ -1,0 +1,237 @@
+{
+  "post": {
+    "id": 1,
+    "category_id": 1,
+    "author_id": null,
+    "hero_media_id": 16,
+    "teaser_media_id": null,
+    "is_featured": false,
+    "status": "published",
+    "published_at": "2026-09-05T00:00:00Z"
+  },
+  "translations": [
+    {
+      "locale_code": "la",
+      "slug": "music-night-under-the-stars",
+      "title": "Music Night Under the Stars — a recap",
+      "excerpt": "On one weekend night in September, the slope of Phou Khao Khouay where Materm’s treehouses sit turned into an impromptu music stage. Three local bands took turns playing. A familiar place became a place to listen.",
+      "label": "Music Night",
+      "location_label": "Phou Khao Khouay · Community journal",
+      "hero_alt": "Snow-capped mountains above a forest lake under heavy clouds",
+      "body": {
+        "type": "doc",
+        "content": [
+          {
+            "type": "lead",
+            "content": [
+              {
+                "type": "text",
+                "text": "On one weekend night in September, the slope of Phou Khao Khouay where Materm’s treehouses sit turned into an impromptu music stage. Three local bands took turns playing. A familiar place became a place to listen."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Music Night belongs to the same story as the treehouses: a reason to come together, with the landscape still at the centre. This recap is a reflection on that meeting of music, community and place — and on what it means to make room for something shared, outdoors."
+              }
+            ]
+          }
+        ]
+      },
+      "gallery_heading": "A visual walk-through is coming",
+      "gallery_description": "What started as a small treehouse site in 2020 has grown into a place where campers, musicians, food lovers, and first-time visitors return to share the same slope of Phou Khao Khouay. Read the full story of how Materm came together.",
+      "seo_title": "Music Night Under the Stars — a recap",
+      "seo_description": null,
+      "og_image_id": null,
+      "is_enabled": true
+    },
+    {
+      "locale_code": "en",
+      "slug": "music-night-under-the-stars",
+      "title": "Music Night Under the Stars — a recap",
+      "excerpt": "On one weekend night in September, the slope of Phou Khao Khouay where Materm’s treehouses sit turned into an impromptu music stage. Three local bands took turns playing. A familiar place became a place to listen.",
+      "label": "Music Night",
+      "location_label": "Phou Khao Khouay · Community journal",
+      "hero_alt": "Snow-capped mountains above a forest lake under heavy clouds",
+      "body": {
+        "type": "doc",
+        "content": [
+          {
+            "type": "lead",
+            "content": [
+              {
+                "type": "text",
+                "text": "On one weekend night in September, the slope of Phou Khao Khouay where Materm’s treehouses sit turned into an impromptu music stage. Three local bands took turns playing. A familiar place became a place to listen."
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Music Night belongs to the same story as the treehouses: a reason to come together, with the landscape still at the centre. This recap is a reflection on that meeting of music, community and place — and on what it means to make room for something shared, outdoors."
+              }
+            ]
+          }
+        ]
+      },
+      "gallery_heading": "A visual walk-through is coming",
+      "gallery_description": "What started as a small treehouse site in 2020 has grown into a place where campers, musicians, food lovers, and first-time visitors return to share the same slope of Phou Khao Khouay. Read the full story of how Materm came together.",
+      "seo_title": "Music Night Under the Stars — a recap",
+      "seo_description": null,
+      "og_image_id": null,
+      "is_enabled": true
+    }
+  ],
+  "tags": [],
+  "media": [
+    {
+      "media_id": 17,
+      "sort_order": 1,
+      "translations": [
+        {
+          "locale_code": "la",
+          "alt": "Music Night photo 1 of 9: a forest stream with ferns and small waterfalls",
+          "caption": null
+        },
+        {
+          "locale_code": "en",
+          "alt": "Music Night photo 1 of 9: a forest stream with ferns and small waterfalls",
+          "caption": null
+        }
+      ]
+    },
+    {
+      "media_id": 17,
+      "sort_order": 2,
+      "translations": [
+        {
+          "locale_code": "la",
+          "alt": "Music Night photo 2 of 9: a forest stream with ferns and small waterfalls",
+          "caption": null
+        },
+        {
+          "locale_code": "en",
+          "alt": "Music Night photo 2 of 9: a forest stream with ferns and small waterfalls",
+          "caption": null
+        }
+      ]
+    },
+    {
+      "media_id": 17,
+      "sort_order": 3,
+      "translations": [
+        {
+          "locale_code": "la",
+          "alt": "Music Night photo 3 of 9: a forest stream with ferns and small waterfalls",
+          "caption": null
+        },
+        {
+          "locale_code": "en",
+          "alt": "Music Night photo 3 of 9: a forest stream with ferns and small waterfalls",
+          "caption": null
+        }
+      ]
+    },
+    {
+      "media_id": 17,
+      "sort_order": 4,
+      "translations": [
+        {
+          "locale_code": "la",
+          "alt": "Music Night photo 4 of 9: a forest stream with ferns and small waterfalls",
+          "caption": null
+        },
+        {
+          "locale_code": "en",
+          "alt": "Music Night photo 4 of 9: a forest stream with ferns and small waterfalls",
+          "caption": null
+        }
+      ]
+    },
+    {
+      "media_id": 17,
+      "sort_order": 5,
+      "translations": [
+        {
+          "locale_code": "la",
+          "alt": "Music Night photo 5 of 9: a forest stream with ferns and small waterfalls",
+          "caption": null
+        },
+        {
+          "locale_code": "en",
+          "alt": "Music Night photo 5 of 9: a forest stream with ferns and small waterfalls",
+          "caption": null
+        }
+      ]
+    },
+    {
+      "media_id": 17,
+      "sort_order": 6,
+      "translations": [
+        {
+          "locale_code": "la",
+          "alt": "Music Night photo 6 of 9: a forest stream with ferns and small waterfalls",
+          "caption": null
+        },
+        {
+          "locale_code": "en",
+          "alt": "Music Night photo 6 of 9: a forest stream with ferns and small waterfalls",
+          "caption": null
+        }
+      ]
+    },
+    {
+      "media_id": 17,
+      "sort_order": 7,
+      "translations": [
+        {
+          "locale_code": "la",
+          "alt": "Music Night photo 7 of 9: a forest stream with ferns and small waterfalls",
+          "caption": null
+        },
+        {
+          "locale_code": "en",
+          "alt": "Music Night photo 7 of 9: a forest stream with ferns and small waterfalls",
+          "caption": null
+        }
+      ]
+    },
+    {
+      "media_id": 17,
+      "sort_order": 8,
+      "translations": [
+        {
+          "locale_code": "la",
+          "alt": "Music Night photo 8 of 9: a forest stream with ferns and small waterfalls",
+          "caption": null
+        },
+        {
+          "locale_code": "en",
+          "alt": "Music Night photo 8 of 9: a forest stream with ferns and small waterfalls",
+          "caption": null
+        }
+      ]
+    },
+    {
+      "media_id": 17,
+      "sort_order": 9,
+      "translations": [
+        {
+          "locale_code": "la",
+          "alt": "Music Night photo 9 of 9: a forest stream with ferns and small waterfalls",
+          "caption": null
+        },
+        {
+          "locale_code": "en",
+          "alt": "Music Night photo 9 of 9: a forest stream with ferns and small waterfalls",
+          "caption": null
+        }
+      ]
+    }
+  ]
+}

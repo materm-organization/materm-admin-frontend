@@ -1,0 +1,78 @@
+{
+  "page": {
+    "id": 3,
+    "key": "blog",
+    "name": "The Blog",
+    "template": "blog_index",
+    "path": "/blog",
+    "is_home": false,
+    "is_system": true,
+    "noindex": false,
+    "in_sitemap": true,
+    "status": "published"
+  },
+  "translations": [
+    {
+      "locale_code": "la",
+      "title": "The Blog",
+      "seo_title": "The Blog",
+      "seo_title_absolute": false,
+      "seo_description": "Stories, recaps and field notes from Materm at Phou Khao Khouay.",
+      "og_image_id": null,
+      "canonical_path": null,
+      "is_enabled": true
+    },
+    {
+      "locale_code": "en",
+      "title": "The Blog",
+      "seo_title": "The Blog",
+      "seo_title_absolute": false,
+      "seo_description": "Stories, recaps and field notes from Materm at Phou Khao Khouay.",
+      "og_image_id": null,
+      "canonical_path": null,
+      "is_enabled": true
+    }
+  ],
+  "sections": [
+    {
+      "section_type": "hero_article",
+      "section_version": 1,
+      "variant": null,
+      "sort_order": 1,
+      "is_visible": true,
+      "anchor_id": null,
+      "props": {
+        "title": {
+          "la": "The Blog",
+          "en": "The Blog"
+        },
+        "meta_items": [
+          {
+            "text": {
+              "la": "Stories and recaps from the slope of Phou Khao Khouay",
+              "en": "Stories and recaps from the slope of Phou Khao Khouay"
+            }
+          }
+        ],
+        "background": {
+          "media_id": 15,
+          "decorative": true
+        },
+        "animate_in": true
+      }
+    },
+    {
+      "section_type": "post_list",
+      "section_version": 1,
+      "variant": null,
+      "sort_order": 2,
+      "is_visible": true,
+      "anchor_id": null,
+      "props": {
+        "show_category_tabs": true,
+        "show_all_tab": true,
+        "page_size": 12
+      }
+    }
+  ]
+}

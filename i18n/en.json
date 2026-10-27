@@ -1019,5 +1019,158 @@
         "error": "Failed to update your profile"
       }
     }
+  },
+  "sectionEditor": {
+    "types": {}
+  },
+  "schemaForm": {
+    "requiredBeforePublish": " (required before publishing)",
+    "notTranslated": "Not translated",
+    "copyFromDefault": "Copy from {language}",
+    "compareEmpty": "(empty)",
+    "clearChoice": "Clear",
+    "choose": "Choose...",
+    "unsupportedField": "This kind of field has no editor yet. It is shown read-only and its value is kept.",
+    "hiddenHasIssues": "The hidden section \"{field}\" has {count, plural, one {# problem} other {# problems}}.",
+    "clearHidden": "Clear this section",
+    "addGroup": "Add {name}",
+    "removeGroup": "Remove {name}",
+    "completenessLabel": "Completeness of {locale}",
+    "completeness": "{percent}% of the required fields are filled in {locale} ({filled} of {total})",
+    "validatorUnavailable": "Live validation is not available in this environment. The server checks everything when you save.",
+    "issueSummary": "{count, plural, one {# problem needs your attention} other {# problems need your attention}}",
+    "goToFirst": "Go to the first problem",
+    "issues": {
+      "required": "This field is required.",
+      "invalid_type": "The value has the wrong type.",
+      "invalid_format": "The value has an invalid format.",
+      "pattern_mismatch": "The value does not match the required pattern.",
+      "not_in_enum": "This value is not allowed.",
+      "too_short": "Too short: at least {min} required.",
+      "too_long": "Too long: at most {max} allowed.",
+      "out_of_range": "The value is out of range.",
+      "duplicate": "Duplicate values are not allowed.",
+      "unknown_field": "This field is not accepted.",
+      "unknown_reference": "The selected item does not exist.",
+      "invalid_value": "The value is not valid.",
+      "forbidden": "This is not allowed here.",
+      "no_match": "The value does not match any allowed form.",
+      "too_deep": "The content is nested too deeply.",
+      "too_many_issues": "There are more problems than are listed."
+    },
+    "media": {
+      "none": "No image",
+      "missing": "Image #{id} was not found",
+      "notReady": "({status})",
+      "choose": "Choose image",
+      "change": "Change image",
+      "remove": "Remove",
+      "decorative": "Decorative image (no alt text)",
+      "alt": "Alt text",
+      "pickerTitle": "Choose an image",
+      "pickerDescription": "Pick one of the images in the media library.",
+      "search": "Search by file name",
+      "loadError": "The media library could not be loaded.",
+      "empty": "No images found."
+    },
+    "link": {
+      "clear": "Clear link",
+      "type": "Link type",
+      "page": "Page",
+      "url": "URL",
+      "pickPage": "Page",
+      "anchor": "Anchor (optional)",
+      "urlKind": "Kind of address",
+      "urlKindOther": "Other",
+      "kind": {
+        "https": "Website (https://)",
+        "path": "This site (/path)",
+        "mailto": "Email (mailto:)",
+        "tel": "Phone (tel:)",
+        "anchor": "Anchor (#)"
+      },
+      "urlLabel": "Address",
+      "newTab": "Open in a new tab",
+      "rel": "Link relation",
+      "problem": {
+        "empty": "Enter an address.",
+        "scheme": "Use https://, /path, mailto:, tel: or #.",
+        "protocol_relative": "An address that starts with // or /\\ leaves the site. Use https:// for other sites."
+      }
+    },
+    "entity": {
+      "choose": "Choose...",
+      "loading": "Loading...",
+      "missing": "{value} (not found)",
+      "pickAlbumFirst": "Choose the album first",
+      "search": "Search",
+      "loadError": "The list could not be loaded.",
+      "empty": "Nothing found.",
+      "clear": "Clear selection",
+      "warnPost": "This post is {status}: it is skipped on the website until it is published.",
+      "warnPage": "This page is {status}: the link is hidden on the website until it is published.",
+      "warnOther": "This item is {status}, not published."
+    },
+    "array": {
+      "itemFallback": "Item {number}",
+      "count": "{count, plural, one {# item} other {# items}}",
+      "countOf": "{count} of {max}",
+      "empty": "No items yet.",
+      "duplicate": "Duplicate {item}",
+      "remove": "Remove {item}",
+      "add": "Add item",
+      "maxReached": "The maximum of {max} items is reached.",
+      "removeConfirmTitle": "Remove this item?",
+      "removeConfirmDescription": "The item is shared by every language and also holds text in other languages. Removing it deletes that text too.",
+      "removeConfirm": "Remove item",
+      "collapse": "Collapse {item}",
+      "expand": "Expand {item}",
+      "issues": "{count, plural, one {# problem} other {# problems}}"
+    }
+  },
+  "richText": {
+    "toolbar": "Text formatting",
+    "paragraph": "Paragraph",
+    "bold": "Bold",
+    "italic": "Italic",
+    "link": "Link",
+    "bulletList": "Bulleted list",
+    "orderedList": "Numbered list",
+    "heading2": "Heading 2",
+    "heading3": "Heading 3",
+    "blockquote": "Quote",
+    "lead": "Lead paragraph",
+    "leadShort": "Lead",
+    "nodeCount": "{count} / {max} nodes",
+    "linkUrl": "Link address",
+    "linkProblem": {
+      "empty": "Enter an address.",
+      "scheme": "Use https://, /path, mailto:, tel: or #.",
+      "protocol_relative": "An address that starts with // or /\\ leaves the site. Use https:// for other sites."
+    },
+    "linkNewTab": "Open in a new tab",
+    "linkRemove": "Remove link",
+    "linkApply": "Apply"
+  },
+  "sortable": {
+    "list": "Reorderable list",
+    "handle": "Reorder {item}: press Space to pick it up",
+    "moveUp": "Move {item} up",
+    "moveDown": "Move {item} down",
+    "moved": "Moved {item} to position {position} of {total}",
+    "dragStart": "Picked up {item}",
+    "dragOver": "{item} is now at position {position} of {total}",
+    "dragEnd": "Dropped {item} at position {position} of {total}",
+    "dragCancel": "Moving {item} was cancelled",
+    "instructions": "To pick up an item press Space or Enter. Use the arrow keys to move it, Space or Enter to drop it, Escape to cancel."
+  },
+  "localeSwitcher": {
+    "label": "Editing language",
+    "default": "default",
+    "complete": "complete",
+    "missing": "nothing filled in yet, {count, plural, one {# required field missing} other {# required fields missing}}",
+    "partial": "{count, plural, one {# required field missing} other {# required fields missing}}",
+    "issues": "{count, plural, one {# problem} other {# problems}}",
+    "compare": "Compare with the default language"
   }
 }

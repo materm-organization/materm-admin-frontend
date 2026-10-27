@@ -1,0 +1,249 @@
+{
+  "page": {
+    "id": 4,
+    "key": "gallery",
+    "name": "Gallery",
+    "template": "standard",
+    "path": "/gallery",
+    "is_home": false,
+    "is_system": true,
+    "noindex": false,
+    "in_sitemap": true,
+    "status": "published"
+  },
+  "translations": [
+    {
+      "locale_code": "la",
+      "title": "Gallery",
+      "seo_title": "Gallery",
+      "seo_title_absolute": false,
+      "seo_description": "A visual walk-through of Materm at Phou Khao Khouay: streams, ferns and light beneath the forest canopy.",
+      "og_image_id": null,
+      "canonical_path": null,
+      "is_enabled": true
+    },
+    {
+      "locale_code": "en",
+      "title": "Gallery",
+      "seo_title": "Gallery",
+      "seo_title_absolute": false,
+      "seo_description": "A visual walk-through of Materm at Phou Khao Khouay: streams, ferns and light beneath the forest canopy.",
+      "og_image_id": null,
+      "canonical_path": null,
+      "is_enabled": true
+    }
+  ],
+  "sections": [
+    {
+      "section_type": "hero_article",
+      "section_version": 1,
+      "variant": null,
+      "sort_order": 1,
+      "is_visible": true,
+      "anchor_id": null,
+      "props": {
+        "title": {
+          "la": "The origin story, since 2020",
+          "en": "The origin story, since 2020"
+        },
+        "meta_items": [
+          {
+            "text": {
+              "la": "Sep. 05.2026",
+              "en": "Sep. 05.2026"
+            }
+          },
+          {
+            "text": {
+              "la": "Music Night",
+              "en": "Music Night"
+            }
+          },
+          {
+            "text": {
+              "la": "Phou Khao Khouay · Community journal",
+              "en": "Phou Khao Khouay · Community journal"
+            }
+          }
+        ],
+        "background": {
+          "media_id": 15,
+          "alt": {
+            "la": "Rainforest stream flowing past ferns",
+            "en": "Rainforest stream flowing past ferns"
+          }
+        },
+        "animate_in": true
+      }
+    },
+    {
+      "section_type": "intro_text",
+      "section_version": 1,
+      "variant": null,
+      "sort_order": 2,
+      "is_visible": true,
+      "anchor_id": null,
+      "props": {
+        "text": {
+          "la": {
+            "type": "doc",
+            "content": [
+              {
+                "type": "paragraph",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "Follow the water into a world of green. A quiet visual journey through rushing streams, textured forest floors and light beneath the canopy. Follow the water into a world of green. A quiet visual journey through rushing streams, textured forest floors and light beneath the canopy. Follow the water into a world of green. A quiet visual journey through rushing streams, textured forest floors and light beneath the canopy."
+                  }
+                ]
+              }
+            ]
+          },
+          "en": {
+            "type": "doc",
+            "content": [
+              {
+                "type": "paragraph",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "Follow the water into a world of green. A quiet visual journey through rushing streams, textured forest floors and light beneath the canopy. Follow the water into a world of green. A quiet visual journey through rushing streams, textured forest floors and light beneath the canopy. Follow the water into a world of green. A quiet visual journey through rushing streams, textured forest floors and light beneath the canopy."
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "section_type": "photo_story",
+      "section_version": 1,
+      "variant": null,
+      "sort_order": 3,
+      "is_visible": true,
+      "anchor_id": null,
+      "props": {
+        "accessible_heading": {
+          "la": "The forest photo story",
+          "en": "The forest photo story"
+        },
+        "album_id": 1,
+        "rows": [
+          {
+            "layout": "wide-narrow",
+            "slots": [
+              {
+                "album_item_id": 1,
+                "size": "wide"
+              },
+              {
+                "album_item_id": 2,
+                "size": "narrow"
+              }
+            ]
+          },
+          {
+            "layout": "staggered-3",
+            "slots": [
+              {
+                "album_item_id": 3,
+                "size": "short"
+              },
+              {
+                "album_item_id": 4,
+                "size": "tall"
+              },
+              {
+                "album_item_id": 5,
+                "size": "medium",
+                "offset": true
+              }
+            ]
+          },
+          {
+            "layout": "narrow-wide",
+            "slots": [
+              {
+                "album_item_id": 2,
+                "size": "narrow"
+              },
+              {
+                "album_item_id": 1,
+                "size": "wide"
+              }
+            ]
+          },
+          {
+            "layout": "staggered-3",
+            "slots": [
+              {
+                "album_item_id": 3,
+                "size": "short"
+              },
+              {
+                "album_item_id": 4,
+                "size": "tall"
+              },
+              {
+                "album_item_id": 5,
+                "size": "medium",
+                "offset": true
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "section_type": "gallery_cards",
+      "section_version": 1,
+      "variant": "showcase",
+      "sort_order": 4,
+      "is_visible": true,
+      "anchor_id": null,
+      "props": {
+        "eyebrow": {
+          "la": "Gallery",
+          "en": "Gallery"
+        },
+        "title": {
+          "la": "A visual walk-through is coming",
+          "en": "A visual walk-through is coming"
+        },
+        "description": {
+          "la": "What started as a small treehouse site in 2020 has grown into a place where campers, musicians, food lovers, and first-time visitors return to share the same slope of Phou Khao Khouay. Read the full story of how Materm came together.",
+          "en": "What started as a small treehouse site in 2020 has grown into a place where campers, musicians, food lovers, and first-time visitors return to share the same slope of Phou Khao Khouay. Read the full story of how Materm came together."
+        },
+        "row_label": {
+          "la": "Forest stream photos",
+          "en": "Forest stream photos"
+        },
+        "source": "manual",
+        "cards": [
+          {
+            "image": {
+              "media_id": 9,
+              "alt": {
+                "la": "Rainforest stream running between ferns and trees",
+                "en": "Rainforest stream running between ferns and trees"
+              }
+            }
+          },
+          {
+            "image": {
+              "media_id": 9,
+              "decorative": true
+            }
+          },
+          {
+            "image": {
+              "media_id": 9,
+              "decorative": true
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

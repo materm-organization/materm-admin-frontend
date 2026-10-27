@@ -1,0 +1,396 @@
+{
+  "page": {
+    "id": 2,
+    "key": "our-path",
+    "name": "Our Path",
+    "template": "standard",
+    "path": "/our-path",
+    "is_home": false,
+    "is_system": true,
+    "noindex": false,
+    "in_sitemap": true,
+    "status": "published"
+  },
+  "translations": [
+    {
+      "locale_code": "la",
+      "title": "Our Path",
+      "seo_title": "Our Path",
+      "seo_title_absolute": false,
+      "seo_description": "From a treehouse idea to a gathering community: the story of Materm at Phou Khao Khouay.",
+      "og_image_id": null,
+      "canonical_path": null,
+      "is_enabled": true
+    },
+    {
+      "locale_code": "en",
+      "title": "Our Path",
+      "seo_title": "Our Path",
+      "seo_title_absolute": false,
+      "seo_description": "From a treehouse idea to a gathering community: the story of Materm at Phou Khao Khouay.",
+      "og_image_id": null,
+      "canonical_path": null,
+      "is_enabled": true
+    }
+  ],
+  "sections": [
+    {
+      "section_type": "hero_brand",
+      "section_version": 1,
+      "variant": "wide",
+      "sort_order": 1,
+      "is_visible": true,
+      "anchor_id": null,
+      "props": {
+        "title": {
+          "la": "Our Path",
+          "en": "Our Path"
+        },
+        "description": {
+          "la": "Travel is all about connecting with the raw beauty of nature. The MATERM logo draws inspiration from majestic mountain peaks, evergreen pine forests, and bold, grounded lines—symbolizing the courage to explore. We invite you to step off the beaten path and immerse yourself in the tranquility, adventure, and freedom of the great outdoors. Start your next adventure with MATERM today.",
+          "en": "Travel is all about connecting with the raw beauty of nature. The MATERM logo draws inspiration from majestic mountain peaks, evergreen pine forests, and bold, grounded lines—symbolizing the courage to explore. We invite you to step off the beaten path and immerse yourself in the tranquility, adventure, and freedom of the great outdoors. Start your next adventure with MATERM today."
+        },
+        "background": {
+          "media_id": 10,
+          "decorative": true
+        },
+        "show_logo": true,
+        "animate_in": true
+      }
+    },
+    {
+      "section_type": "intro_heading",
+      "section_version": 1,
+      "variant": null,
+      "sort_order": 2,
+      "is_visible": true,
+      "anchor_id": null,
+      "props": {
+        "eyebrow": {
+          "la": "Our Path",
+          "en": "Our Path"
+        },
+        "title": {
+          "la": "From a treehouse idea to a gathering community",
+          "en": "From a treehouse idea to a gathering community"
+        },
+        "description": {
+          "la": "What started as a small treehouse site in 2020 has grown into a place where campers, musicians, food lovers, and first-time visitors return to share the same slope of Phou Khao Khouay. Read the full story of how Materm came together.",
+          "en": "What started as a small treehouse site in 2020 has grown into a place where campers, musicians, food lovers, and first-time visitors return to share the same slope of Phou Khao Khouay. Read the full story of how Materm came together."
+        }
+      }
+    },
+    {
+      "section_type": "about_blocks",
+      "section_version": 1,
+      "variant": "soft",
+      "sort_order": 3,
+      "is_visible": true,
+      "anchor_id": null,
+      "props": {
+        "items": [
+          {
+            "date_label": {
+              "la": "12.02.2026",
+              "en": "12.02.2026"
+            },
+            "title": {
+              "la": "We are the guardians of the great unknown",
+              "en": "We are the guardians of the great unknown"
+            },
+            "body": {
+              "la": {
+                "type": "doc",
+                "content": [
+                  {
+                    "type": "paragraph",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "Outdoor Avenger was founded on a simple, raw premise: modern life is too quiet. We believe that to truly find yourself, you must first get comfortably lost in nature."
+                      }
+                    ]
+                  },
+                  {
+                    "type": "paragraph",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "Our logo and craft draw inspiration from the majestic mountain peaks, evergreen pine forests, and bold, grounded lines of the wilderness — symbolizing the courage to explore. We invite you to step off the beaten path and immerse yourself in the adventure and freedom of the deep wild."
+                      }
+                    ]
+                  }
+                ]
+              },
+              "en": {
+                "type": "doc",
+                "content": [
+                  {
+                    "type": "paragraph",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "Outdoor Avenger was founded on a simple, raw premise: modern life is too quiet. We believe that to truly find yourself, you must first get comfortably lost in nature."
+                      }
+                    ]
+                  },
+                  {
+                    "type": "paragraph",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "Our logo and craft draw inspiration from the majestic mountain peaks, evergreen pine forests, and bold, grounded lines of the wilderness — symbolizing the courage to explore. We invite you to step off the beaten path and immerse yourself in the adventure and freedom of the deep wild."
+                      }
+                    ]
+                  }
+                ]
+              }
+            },
+            "image": {
+              "media_id": 11,
+              "alt": {
+                "la": "Two kayakers paddling through whitewater rapids between red canyon walls",
+                "en": "Two kayakers paddling through whitewater rapids between red canyon walls"
+              }
+            },
+            "image_side": "right",
+            "layout": "standard",
+            "image_ratio": "wide"
+          },
+          {
+            "date_label": {
+              "la": "12.02.2026",
+              "en": "12.02.2026"
+            },
+            "title": {
+              "la": "We are the guardians of the great unknown",
+              "en": "We are the guardians of the great unknown"
+            },
+            "body": {
+              "la": {
+                "type": "doc",
+                "content": [
+                  {
+                    "type": "paragraph",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "Outdoor Avenger was founded on a simple, raw premise: modern life is too quiet. We believe that to truly find yourself, you must first get comfortably lost in nature."
+                      }
+                    ]
+                  },
+                  {
+                    "type": "paragraph",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "Our logo and craft draw inspiration from the majestic mountain peaks, evergreen pine forests, and bold, grounded lines of the wilderness — symbolizing the courage to explore. We invite you to step off the beaten path and immerse yourself in the adventure and freedom of the deep wild."
+                      }
+                    ]
+                  }
+                ]
+              },
+              "en": {
+                "type": "doc",
+                "content": [
+                  {
+                    "type": "paragraph",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "Outdoor Avenger was founded on a simple, raw premise: modern life is too quiet. We believe that to truly find yourself, you must first get comfortably lost in nature."
+                      }
+                    ]
+                  },
+                  {
+                    "type": "paragraph",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "Our logo and craft draw inspiration from the majestic mountain peaks, evergreen pine forests, and bold, grounded lines of the wilderness — symbolizing the courage to explore. We invite you to step off the beaten path and immerse yourself in the adventure and freedom of the deep wild."
+                      }
+                    ]
+                  }
+                ]
+              }
+            },
+            "image": {
+              "media_id": 12,
+              "alt": {
+                "la": "Ice climbers ascending a glacier crevasse",
+                "en": "Ice climbers ascending a glacier crevasse"
+              }
+            },
+            "image_side": "left",
+            "layout": "inset",
+            "image_ratio": "pair"
+          },
+          {
+            "date_label": {
+              "la": "12.02.2026",
+              "en": "12.02.2026"
+            },
+            "title": {
+              "la": "We are the guardians of the great unknown",
+              "en": "We are the guardians of the great unknown"
+            },
+            "body": {
+              "la": {
+                "type": "doc",
+                "content": [
+                  {
+                    "type": "paragraph",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "Outdoor Avenger was founded on a simple, raw premise: modern life is too quiet. We believe that to truly find yourself, you must first get comfortably lost in nature."
+                      }
+                    ]
+                  },
+                  {
+                    "type": "paragraph",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "Our logo and craft draw inspiration from the majestic mountain peaks, evergreen pine forests, and bold, grounded lines of the wilderness — symbolizing the courage to explore. We invite you to step off the beaten path and immerse yourself in the adventure and freedom of the deep wild."
+                      }
+                    ]
+                  }
+                ]
+              },
+              "en": {
+                "type": "doc",
+                "content": [
+                  {
+                    "type": "paragraph",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "Outdoor Avenger was founded on a simple, raw premise: modern life is too quiet. We believe that to truly find yourself, you must first get comfortably lost in nature."
+                      }
+                    ]
+                  },
+                  {
+                    "type": "paragraph",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "Our logo and craft draw inspiration from the majestic mountain peaks, evergreen pine forests, and bold, grounded lines of the wilderness — symbolizing the courage to explore. We invite you to step off the beaten path and immerse yourself in the adventure and freedom of the deep wild."
+                      }
+                    ]
+                  }
+                ]
+              }
+            },
+            "image": {
+              "media_id": 13,
+              "alt": {
+                "la": "Rock climber scaling a steep granite wall above a mountain valley",
+                "en": "Rock climber scaling a steep granite wall above a mountain valley"
+              }
+            },
+            "image_side": "right",
+            "layout": "standard",
+            "image_ratio": "tall"
+          }
+        ]
+      }
+    },
+    {
+      "section_type": "gallery_cards",
+      "section_version": 1,
+      "variant": "standard",
+      "sort_order": 4,
+      "is_visible": true,
+      "anchor_id": null,
+      "props": {
+        "eyebrow": {
+          "la": "Gallery",
+          "en": "Gallery"
+        },
+        "title": {
+          "la": "A visual walk-through is coming",
+          "en": "A visual walk-through is coming"
+        },
+        "description": {
+          "la": "What started as a small treehouse site in 2020 has grown into a place where campers, musicians, food lovers, and first-time visitors return to share the same slope of Phou Khao Khouay. Read the full story of how Materm came together.",
+          "en": "What started as a small treehouse site in 2020 has grown into a place where campers, musicians, food lovers, and first-time visitors return to share the same slope of Phou Khao Khouay. Read the full story of how Materm came together."
+        },
+        "cta": {
+          "label": {
+            "la": "View more",
+            "en": "View more"
+          },
+          "link": {
+            "type": "page",
+            "page_id": 4
+          }
+        },
+        "source": "manual",
+        "cards_link": {
+          "type": "page",
+          "page_id": 4
+        },
+        "cards": [
+          {
+            "image": {
+              "media_id": 14,
+              "alt": {
+                "la": "Jungle stream flowing over rocks beneath tropical ferns (preview 1 of 3)",
+                "en": "Jungle stream flowing over rocks beneath tropical ferns (preview 1 of 3)"
+              }
+            },
+            "caption": {
+              "date": {
+                "la": "SEP. 05.2026",
+                "en": "SEP. 05.2026"
+              },
+              "title": {
+                "la": "THE ORIGIN STORY, SINCE 2020",
+                "en": "THE ORIGIN STORY, SINCE 2020"
+              }
+            }
+          },
+          {
+            "image": {
+              "media_id": 14,
+              "alt": {
+                "la": "Jungle stream flowing over rocks beneath tropical ferns (preview 2 of 3)",
+                "en": "Jungle stream flowing over rocks beneath tropical ferns (preview 2 of 3)"
+              }
+            },
+            "caption": {
+              "date": {
+                "la": "SEP. 05.2026",
+                "en": "SEP. 05.2026"
+              },
+              "title": {
+                "la": "THE ORIGIN STORY, SINCE 2020",
+                "en": "THE ORIGIN STORY, SINCE 2020"
+              }
+            }
+          },
+          {
+            "image": {
+              "media_id": 14,
+              "alt": {
+                "la": "Jungle stream flowing over rocks beneath tropical ferns (preview 3 of 3)",
+                "en": "Jungle stream flowing over rocks beneath tropical ferns (preview 3 of 3)"
+              }
+            },
+            "caption": {
+              "date": {
+                "la": "SEP. 05.2026",
+                "en": "SEP. 05.2026"
+              },
+              "title": {
+                "la": "THE ORIGIN STORY, SINCE 2020",
+                "en": "THE ORIGIN STORY, SINCE 2020"
+              }
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

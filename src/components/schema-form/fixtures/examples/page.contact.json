@@ -1,0 +1,139 @@
+{
+  "page": {
+    "id": 5,
+    "key": "contact",
+    "name": "Contact",
+    "template": "contact",
+    "path": "/contact",
+    "is_home": false,
+    "is_system": true,
+    "noindex": false,
+    "in_sitemap": true,
+    "status": "published"
+  },
+  "translations": [
+    {
+      "locale_code": "la",
+      "title": "Contact",
+      "seo_title": "Contact",
+      "seo_title_absolute": false,
+      "seo_description": "Get in touch with Materm — stays, music nights and treks at Phou Khao Khouay.",
+      "og_image_id": null,
+      "canonical_path": null,
+      "is_enabled": true
+    },
+    {
+      "locale_code": "en",
+      "title": "Contact",
+      "seo_title": "Contact",
+      "seo_title_absolute": false,
+      "seo_description": "Get in touch with Materm — stays, music nights and treks at Phou Khao Khouay.",
+      "og_image_id": null,
+      "canonical_path": null,
+      "is_enabled": true
+    }
+  ],
+  "sections": [
+    {
+      "section_type": "hero_brand",
+      "section_version": 1,
+      "variant": "wide",
+      "sort_order": 1,
+      "is_visible": true,
+      "anchor_id": null,
+      "props": {
+        "title": {
+          "la": "Contact",
+          "en": "Contact"
+        },
+        "description": {
+          "la": "Questions about a stay, a music night or a trek? Send us a message and we'll help you find your path.",
+          "en": "Questions about a stay, a music night or a trek? Send us a message and we'll help you find your path."
+        },
+        "background": {
+          "media_id": 15,
+          "decorative": true
+        },
+        "show_logo": true,
+        "animate_in": true
+      }
+    },
+    {
+      "section_type": "contact_section",
+      "section_version": 1,
+      "variant": null,
+      "sort_order": 2,
+      "is_visible": true,
+      "anchor_id": null,
+      "props": {
+        "eyebrow": {
+          "la": "GET IN TOUCH",
+          "en": "GET IN TOUCH"
+        },
+        "title": {
+          "la": "We'd love to hear from you",
+          "en": "We'd love to hear from you"
+        },
+        "description": {
+          "la": "Tell us about your plans — a night in a treehouse, a music evening or a trek. We read every message and reply personally.",
+          "en": "Tell us about your plans — a night in a treehouse, a music evening or a trek. We read every message and reply personally."
+        },
+        "info_items": [
+          {
+            "icon": "map_pin",
+            "label": {
+              "la": "Visit us",
+              "en": "Visit us"
+            },
+            "source": "contact.address"
+          },
+          {
+            "icon": "phone",
+            "label": {
+              "la": "Call us",
+              "en": "Call us"
+            },
+            "source": "contact.phone"
+          },
+          {
+            "icon": "mail",
+            "label": {
+              "la": "Email us",
+              "en": "Email us"
+            },
+            "source": "contact.email"
+          },
+          {
+            "icon": "clock",
+            "label": {
+              "la": "Opening hours",
+              "en": "Opening hours"
+            },
+            "source": "contact.hours"
+          }
+        ],
+        "form_slug": "contact"
+      }
+    },
+    {
+      "section_type": "faq",
+      "section_version": 1,
+      "variant": "soft",
+      "sort_order": 3,
+      "is_visible": true,
+      "anchor_id": null,
+      "props": {
+        "eyebrow": {
+          "la": "GOOD TO KNOW",
+          "en": "GOOD TO KNOW"
+        },
+        "title": {
+          "la": "Before you come",
+          "en": "Before you come"
+        },
+        "group_key": "contact",
+        "open_first": true
+      }
+    }
+  ]
+}

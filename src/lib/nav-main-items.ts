@@ -112,6 +112,9 @@ export type RouteOnlyPermission = {
 export const ROUTE_ONLY_PERMISSIONS: RouteOnlyPermission[] = [
   // Own profile (SCR-06): open to every authenticated user.
   { url: "/admin/profile", open: true },
+  // Developer playgrounds (schema form engine). The pages answer 404 outside `next dev`, so this only lets the
+  // guard through; they are not in the sidebar and there is nothing to read behind them.
+  { url: "/admin/dev-tools", open: true },
 ];
 
 // The dashboard URL. It is matched EXACTLY: an `open` entry that is also a prefix of everything under

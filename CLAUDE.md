@@ -17,7 +17,8 @@ It has no backend of its own; CMS content screens come in later milestones.
 | Server state | TanStack React Query |
 | Client-only state | Redux Toolkit (one small `ui` slice) |
 | HTTP | axios (`src/lib/axios.ts` — one authenticated + one public instance) |
-| Forms | react-hook-form + zod |
+| Forms | react-hook-form + zod (fixed forms); the schema-driven section forms use their own engine (below) |
+| Schema forms | Ajv 2020-12 (client validation), Tiptap 3 (rich text JSON), dnd-kit (sortable lists) |
 | UI kit | shadcn/ui ("new-york" style) + Tailwind v4 |
 | i18n | next-intl, cookie-based locale (`la` default, `en`) — no `[locale]` route segment |
 | Auth | JWT in cookies (`js-cookie`), client-side `(protected)` route-group guard; no edge auth gate (`src/proxy.ts` only sets the CSP) |
@@ -90,6 +91,17 @@ Screens and building blocks built so far (phase P1 milestone M1; contract `../do
   queued / logged_only; `temporary_password` = the old flow with the one-time password dialog; each mode has its
   own `Idempotency-Key` per dialog open).
 
+- **W2a schema-driven form engine (T1.2.10)** — `components/schema-form/` renders a section's props form from
+  `GET /section-types/{key}` (`json_schema` + `ui_schema`); built against MSW, no backend yet. See "Schema form
+  engine" below. Pieces: `SchemaForm` (+ `SchemaFormHandle`), `compile-field-tree.ts`, `validate.ts`,
+  `completeness.ts`, `issues.ts`, `widgets/*`, `data/*` (picker lookups), `use-schema-validation.ts`,
+  `use-schema-form-state.ts`; `components/rich-text/` (`RichTextEditor` lite/full), `components/global/sortable-list.tsx`
+  (`SortableList`), `components/global/locale/editor-locale-switcher.tsx`, `hooks/use-section-types.ts`
+  (`useSectionType(key, version?)`, `useSectionTypes`), `hooks/use-autosave.ts`, `services/section-types.api.ts`,
+  `types/cms.d.ts`. Dev playground: `/admin/dev-tools/schema-form` (not-found page in production, HTTP status 200; not in the sidebar, route-only
+  entry in `lib/nav-main-items.ts`; a folder called `_dev` would NOT be routed by Next.js). Shadcn primitives added:
+  `alert`, `progress`, `radio-group`, `toggle-group`.
+
 To add a module, follow the feature-vertical pattern:
 `src/app/(protected)/(routes)/admin/<feature>/page.tsx` + `src/services/<feature>.api.ts` +
 `src/hooks/use-<feature>.ts` + `src/types/<feature>.d.ts` + `src/components/protected/<feature>/`,
@@ -145,3 +157,66 @@ differ). A public page goes under `src/app/auth/`.
   (`src/lib/security/csp.ts` holds the policy: strict `script-src`, `connect-src` = the app + the API origin
   from `NEXT_PUBLIC_API_BASE_URL`); static headers are in `next.config.ts`. A new external origin (file/media
   host, iframe preview) must be added to the policy. The root layout passes the nonce to `next-themes`.
+
+## Schema form engine (W2a, T1.2.10)
+
+```tsx
+const { data: type } = useSectionType("hero_brand");          // staleTime: Infinity per key@version
+const { data: locales } = useLocales();
+const form = useSchemaFormState(section.props);                 // value, setValue, isDirty, markSaved, reset + unsaved guard
+<SchemaForm ref={handle} sectionType={type} value={form.value} onChange={form.setValue} locales={locales.data}
+            mode="draft" /* "publish" for the pre-check */ serverErrors={errors} serverErrorPrefix="/props"
+            locale={searchParams.locale} onLocaleChange={...} disabled translateOnly onValidationChange={...} />
+```
+
+- **The props object IS the form state** (controlled `value`/`onChange`, no react-hook-form): an edit copies only the
+  objects along its JSON-Pointer path (`pointer.ts`), so `FieldRenderer` (memo) skips untouched branches. A cleared field is
+  REMOVED (never `""`/`null`), so dirty goes back to false; a boolean with a schema `default` shows it but writes nothing
+  until touched. Wait for `useLocales()` before rendering (the default language comes from `is_default`).
+- **Widgets** (`compile-field-tree.ts` decides, doc/07 4.2/4.3): `x-localized` -> `LocalizedTextField` (text / textarea)
+  or `RichTextField`; `$defs/image` -> `MediaField`; `$defs/link` -> `LinkField`; `x-ref` or `*-picker` -> `EntityField`
+  (`EntityPicker` = Popover + cmdk, async); object -> fieldset (optional objects such as a CTA are added/removed as a
+  whole); array -> `ArrayField` (`SortableList`: drag handle, keyboard, always-visible up/down, duplicate, remove,
+  min/maxItems, a fixed-size list like the 3 collage photos shows all its slots); enum -> radio (<= 6) / select;
+  `enum-array` -> checkboxes; unknown shape -> `JsonFallbackField` (read-only, dev warning). `ui:showIf` hides a field but
+  keeps its value; problems inside a hidden field are shown with a "clear" button.
+- **Language**: `EditorLocaleSwitcher` (editor level, not per field) with completeness badges and issue counts; the
+  chosen language is `locale` (controlled for `?locale=`, else internal). "Not translated" badge, fallback text as
+  placeholder, "copy from default", compare mode. Inactive languages are not offered; their stored text is kept.
+  Completeness = `completeness.ts` (required localized leaves per language, same walker `schema-walker.ts` as the
+  publish check); the server decides for real.
+- **Validation (`validate.ts`)** reproduces the BACKEND validator (`materm-admin-backend/pkg/contentschema`, rules and
+  keyword -> code mapping in its `testdata/README.md`): one Ajv validator per schema (`getSchemaValidator(schema,
+  "key@version#hash")`), draft = everything except `required`/`minLength`/`minProperties` (the schema is never edited),
+  publish = everything + every required localized leaf non-blank in the default language. The legacy `link.url` pattern is
+  replaced by the portable R-016 one (`//host`, `/\host` refused; `link-rules.ts` is the same rule for the widgets and the
+  rich-text `href`). The shared suite `fixtures/edge-cases.shared.json` is a verbatim copy of the backend file
+  (`edge-cases.test.ts` runs it, and compares it with the backend copy when `../materm-admin-backend` exists - re-copy
+  after a change there). The 12 section types + 17 example sections in `fixtures/` are copies of `doc/content-schemas`
+  (`fixtures.drift.test.ts` compares them when `../doc` exists).
+- **CSP**: Ajv compiles with `new Function`, which the production CSP (no `'unsafe-eval'`, `lib/security/csp.ts`) refuses.
+  `createSchemaValidator` then returns `available: false` (the form shows a notice, client validation is off, the server
+  still validates on save; editing, completeness and rich text work). Deciding how to get client validation in production
+  (precompiled validators per `schema_hash`, or `'unsafe-eval'`) is an open M3 decision; do not loosen the CSP silently.
+- **Server errors**: `serverErrors` (the 422 `errors[]`, `serverErrorPrefix` strips e.g. `/props`; keep the array of the
+  failed save in state and pass it UNCHANGED - a new array instance is a new batch) become issues keyed by
+  pointer; the first one switches language, opens its array item and focuses the field (`SchemaFormHandle.focusFirstIssue()`
+  does the same for client issues); an error disappears when its field changes. Text: `schemaForm.issues.<code>` then
+  `errors.fields.<code>` then the server's `message`.
+- **Rich text** (`components/rich-text/`): stored as the Tiptap/ProseMirror document JSON of doc/04 3.7, never HTML. The
+  extension set per profile is explicit (StarterKit's extras are off); output is normalised to the allow-listed attributes
+  (no `rel`/`class`/`target: null`); pasted HTML is sanitised; `onChange` never fires on mount or for outside changes;
+  `lite` = paragraph, bold, italic, link, lists, line break; `full` adds headings 2-3, quote, lead, and keeps `image` /
+  `embed` nodes (inserted by the posts editor, not here). Never render stored HTML with `dangerouslySetInnerHTML`.
+- **Lookups** (`data/`): pickers read through `SchemaFormData` (`apiSchemaFormData` over axios by default - the list row
+  shapes of doc/05 section 6 are not final, `data/api-data.ts` is the ONE file to adjust; `memorySchemaFormData` for the
+  playground). Endpoint names are in `API_ENDPOINTS` (`SECTION_TYPES`, `MEDIA`, `PAGES`, `POSTS`, `ALBUMS`, `CATEGORIES`,
+  `FAQ_GROUPS`, `FORMS`).
+- **Autosave** (`hooks/use-autosave.ts`): OFF by default (Q-07-7), per-browser preference `useAutosavePreference()`;
+  saves after 30 s without edits (`strategy: "debounce"`, default; `"interval"` = every 30 s while dirty, the wording of
+  doc/07 C-34), never while `blocked`. The editor passes its own PATCH as `save` and marks the form clean itself.
+- **Tests**: `renderSchemaForm(type, props, options)` in `components/schema-form/test-utils.tsx` (stateful host, MSW handlers
+  `cmsHandlers` from `src/test/cms-handlers.ts`, `validationDelayMs=0`); tests that render `NavigationGuardProvider`
+  (`renderApp`) need `vi.mock("next/navigation")`. `src/test/setup.ts` stubs the DOM measuring Tiptap needs. dnd-kit keyboard
+  drag works in jsdom only with stubbed `getBoundingClientRect` (see `sortable-list.test.tsx`); the up/down buttons are
+  the primary keyboard path. Real-browser check (Playwright, in a clone) covers drag by keyboard.

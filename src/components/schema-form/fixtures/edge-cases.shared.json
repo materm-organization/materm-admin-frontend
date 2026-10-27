@@ -1,0 +1,4035 @@
+{
+ "format": 1,
+ "description": "Shared edge cases of the section props validator (Go pkg/contentschema and the admin frontend ajv). Format and rules: README.md in this folder.",
+ "cases": [
+  {
+   "id": "hero-valid-publish",
+   "comment": "a complete hero_brand",
+   "section_type": "hero_brand",
+   "mode": "publish",
+   "default_locale": "la",
+   "props": {
+    "title": {
+     "la": "Title"
+    },
+    "background": {
+     "media_id": 1,
+     "decorative": true
+    }
+   },
+   "expect": []
+  },
+  {
+   "id": "hero-empty-draft",
+   "comment": "draft saves an empty object (required is not enforced)",
+   "section_type": "hero_brand",
+   "mode": "draft",
+   "props": {},
+   "expect": []
+  },
+  {
+   "id": "hero-empty-publish",
+   "comment": "publish needs the required members",
+   "section_type": "hero_brand",
+   "mode": "publish",
+   "default_locale": "la",
+   "props": {},
+   "expect": [
+    {
+     "path": "/title",
+     "code": "required"
+    },
+    {
+     "path": "/background",
+     "code": "required"
+    }
+   ]
+  },
+  {
+   "id": "hero-default-props-publish",
+   "comment": "default_props pass draft but not publish: required background, and title has no default locale",
+   "section_type": "hero_brand",
+   "mode": "publish",
+   "default_locale": "la",
+   "props": {
+    "title": {},
+    "show_logo": true,
+    "animate_in": true
+   },
+   "expect": [
+    {
+     "path": "/background",
+     "code": "required"
+    },
+    {
+     "path": "/title/la",
+     "code": "required"
+    }
+   ]
+  },
+  {
+   "id": "hero-default-props-draft",
+   "comment": "default_props pass draft",
+   "section_type": "hero_brand",
+   "mode": "draft",
+   "props": {
+    "title": {},
+    "show_logo": true,
+    "animate_in": true
+   },
+   "expect": []
+  },
+  {
+   "id": "title-without-default-locale-publish",
+   "comment": "x-localized required leaf without the default locale",
+   "section_type": "hero_brand",
+   "mode": "publish",
+   "default_locale": "la",
+   "props": {
+    "title": {
+     "en": "Only English"
+    },
+    "background": {
+     "media_id": 1,
+     "decorative": true
+    }
+   },
+   "expect": [
+    {
+     "path": "/title/la",
+     "code": "required"
+    }
+   ]
+  },
+  {
+   "id": "title-without-default-locale-draft",
+   "comment": "same value saves as draft",
+   "section_type": "hero_brand",
+   "mode": "draft",
+   "props": {
+    "title": {
+     "en": "Only English"
+    },
+    "background": {
+     "media_id": 1,
+     "decorative": true
+    }
+   },
+   "expect": []
+  },
+  {
+   "id": "title-blank-default-locale-publish",
+   "comment": "whitespace counts as no value",
+   "section_type": "hero_brand",
+   "mode": "publish",
+   "default_locale": "la",
+   "props": {
+    "title": {
+     "la": "   ",
+     "en": "x"
+    },
+    "background": {
+     "media_id": 1,
+     "decorative": true
+    }
+   },
+   "expect": [
+    {
+     "path": "/title/la",
+     "code": "required"
+    }
+   ]
+  },
+  {
+   "id": "optional-localized-without-default-locale-publish",
+   "comment": "description is not in required, so only required leaves are checked",
+   "section_type": "hero_brand",
+   "mode": "publish",
+   "default_locale": "la",
+   "props": {
+    "title": {
+     "la": "Title"
+    },
+    "background": {
+     "media_id": 1,
+     "decorative": true
+    },
+    "description": {
+     "en": "x"
+    }
+   },
+   "expect": []
+  },
+  {
+   "id": "title-other-default-locale",
+   "comment": "default locale is a parameter",
+   "section_type": "hero_brand",
+   "mode": "publish",
+   "default_locale": "en",
+   "props": {
+    "title": {
+     "la": "x"
+    },
+    "background": {
+     "media_id": 1,
+     "decorative": true
+    }
+   },
+   "expect": [
+    {
+     "path": "/title/en",
+     "code": "required"
+    }
+   ]
+  },
+  {
+   "id": "unknown-root-field",
+   "comment": "additionalProperties:false",
+   "section_type": "hero_brand",
+   "mode": "draft",
+   "props": {
+    "foo": 1
+   },
+   "expect": [
+    {
+     "path": "/foo",
+     "code": "unknown_field"
+    }
+   ]
+  },
+  {
+   "id": "unknown-root-field-pointer-escape",
+   "comment": "~ and / in a property name are escaped in the pointer",
+   "section_type": "hero_brand",
+   "mode": "draft",
+   "props": {
+    "a/b~c": 1
+   },
+   "expect": [
+    {
+     "path": "/a~1b~0c",
+     "code": "unknown_field"
+    }
+   ]
+  },
+  {
+   "id": "title-not-an-object",
+   "comment": "type object",
+   "section_type": "hero_brand",
+   "mode": "draft",
+   "props": {
+    "title": "x",
+    "background": {
+     "media_id": 1,
+     "decorative": true
+    }
+   },
+   "expect": [
+    {
+     "path": "/title",
+     "code": "invalid_type"
+    }
+   ]
+  },
+  {
+   "id": "locale-key-pattern",
+   "comment": "propertyNames pattern: one-letter and upper-case codes are refused",
+   "section_type": "hero_brand",
+   "mode": "draft",
+   "props": {
+    "title": {
+     "la": "x",
+     "X": "y",
+     "en_US": "z"
+    },
+    "background": {
+     "media_id": 1,
+     "decorative": true
+    }
+   },
+   "expect": [
+    {
+     "path": "/title/X",
+     "code": "pattern_mismatch"
+    },
+    {
+     "path": "/title/en_US",
+     "code": "pattern_mismatch"
+    }
+   ]
+  },
+  {
+   "id": "locale-value-not-string",
+   "comment": "additionalProperties schema of the map",
+   "section_type": "hero_brand",
+   "mode": "draft",
+   "props": {
+    "title": {
+     "la": 5
+    },
+    "background": {
+     "media_id": 1,
+     "decorative": true
+    }
+   },
+   "expect": [
+    {
+     "path": "/title/la",
+     "code": "invalid_type"
+    }
+   ]
+  },
+  {
+   "id": "title-too-long",
+   "comment": "maxLength 80",
+   "section_type": "hero_brand",
+   "mode": "draft",
+   "props": {
+    "title": {
+     "la": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    },
+    "background": {
+     "media_id": 1,
+     "decorative": true
+    }
+   },
+   "expect": [
+    {
+     "path": "/title/la",
+     "code": "too_long"
+    }
+   ]
+  },
+  {
+   "id": "title-80-ok",
+   "comment": "maxLength is inclusive",
+   "section_type": "hero_brand",
+   "mode": "draft",
+   "props": {
+    "title": {
+     "la": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    },
+    "background": {
+     "media_id": 1,
+     "decorative": true
+    }
+   },
+   "expect": []
+  },
+  {
+   "id": "title-lao-80-ok",
+   "comment": "maxLength counts code points, not bytes",
+   "section_type": "hero_brand",
+   "mode": "draft",
+   "props": {
+    "title": {
+     "la": "ກກກກກກກກກກກກກກກກກກກກກກກກກກກກກກກກກກກກກກກກກກກກກກກກກກກກກກກກກກກກກກກກກກກກກກກກກກກກກກກກ"
+    },
+    "background": {
+     "media_id": 1,
+     "decorative": true
+    }
+   },
+   "expect": []
+  },
+  {
+   "id": "title-lao-81-too-long",
+   "comment": "81 Lao letters",
+   "section_type": "hero_brand",
+   "mode": "draft",
+   "props": {
+    "title": {
+     "la": "ກກກກກກກກກກກກກກກກກກກກກກກກກກກກກກກກກກກກກກກກກກກກກກກກກກກກກກກກກກກກກກກກກກກກກກກກກກກກກກກກກ"
+    },
+    "background": {
+     "media_id": 1,
+     "decorative": true
+    }
+   },
+   "expect": [
+    {
+     "path": "/title/la",
+     "code": "too_long"
+    }
+   ]
+  },
+  {
+   "id": "title-astral-80-ok",
+   "comment": "80 emoji = 80 code points (160 UTF-16 units)",
+   "section_type": "hero_brand",
+   "mode": "draft",
+   "props": {
+    "title": {
+     "la": "😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀"
+    },
+    "background": {
+     "media_id": 1,
+     "decorative": true
+    }
+   },
+   "expect": []
+  },
+  {
+   "id": "title-astral-81-too-long",
+   "comment": "81 emoji",
+   "section_type": "hero_brand",
+   "mode": "draft",
+   "props": {
+    "title": {
+     "la": "😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀"
+    },
+    "background": {
+     "media_id": 1,
+     "decorative": true
+    }
+   },
+   "expect": [
+    {
+     "path": "/title/la",
+     "code": "too_long"
+    }
+   ]
+  },
+  {
+   "id": "root-is-array",
+   "comment": "root must be an object",
+   "section_type": "hero_brand",
+   "mode": "draft",
+   "props": [],
+   "expect": [
+    {
+     "path": "",
+     "code": "invalid_type"
+    }
+   ]
+  },
+  {
+   "id": "root-is-null",
+   "comment": "root must be an object",
+   "section_type": "hero_brand",
+   "mode": "draft",
+   "props": null,
+   "expect": [
+    {
+     "path": "",
+     "code": "invalid_type"
+    }
+   ]
+  },
+  {
+   "id": "root-is-string",
+   "comment": "root must be an object",
+   "section_type": "hero_brand",
+   "mode": "draft",
+   "props": "x",
+   "expect": [
+    {
+     "path": "",
+     "code": "invalid_type"
+    }
+   ]
+  },
+  {
+   "id": "media-id-zero",
+   "comment": "minimum 1",
+   "section_type": "hero_brand",
+   "mode": "draft",
+   "props": {
+    "title": {
+     "la": "Title"
+    },
+    "background": {
+     "media_id": 0
+    }
+   },
+   "expect": [
+    {
+     "path": "/background/media_id",
+     "code": "out_of_range"
+    }
+   ]
+  },
+  {
+   "id": "media-id-fraction",
+   "comment": "integer",
+   "section_type": "hero_brand",
+   "mode": "draft",
+   "props": {
+    "title": {
+     "la": "Title"
+    },
+    "background": {
+     "media_id": 1.5
+    }
+   },
+   "expect": [
+    {
+     "path": "/background/media_id",
+     "code": "invalid_type"
+    }
+   ]
+  },
+  {
+   "id": "media-id-string",
+   "comment": "integer",
+   "section_type": "hero_brand",
+   "mode": "draft",
+   "props": {
+    "title": {
+     "la": "Title"
+    },
+    "background": {
+     "media_id": "1"
+    }
+   },
+   "expect": [
+    {
+     "path": "/background/media_id",
+     "code": "invalid_type"
+    }
+   ]
+  },
+  {
+   "id": "media-id-1.0-is-integer",
+   "comment": "1.0 is an integer (JSON Schema 2020-12); written as a raw literal",
+   "section_type": "hero_brand",
+   "mode": "draft",
+   "props": {
+    "title": {
+     "la": "Title"
+    },
+    "background": {
+     "media_id": 1.0
+    }
+   },
+   "expect": []
+  },
+  {
+   "id": "media-id-exponent-integer",
+   "comment": "1e2 is an integer",
+   "section_type": "hero_brand",
+   "mode": "draft",
+   "props": {
+    "title": {
+     "la": "Title"
+    },
+    "background": {
+     "media_id": 1e2
+    }
+   },
+   "expect": []
+  },
+  {
+   "id": "media-id-huge",
+   "comment": "1e400 is not a finite number (JSON.parse gives Infinity, which ajv accepts as an integer: Go is stricter, so this case is Go only)",
+   "section_type": "hero_brand",
+   "mode": "draft",
+   "props": {
+    "title": {
+     "la": "Title"
+    },
+    "background": {
+     "media_id": 1e400
+    }
+   },
+   "expect": [
+    {
+     "path": "/background/media_id",
+     "code": "invalid_type"
+    }
+   ],
+   "go_only": true
+  },
+  {
+   "id": "media-id-null",
+   "comment": "null is not an integer",
+   "section_type": "hero_brand",
+   "mode": "draft",
+   "props": {
+    "title": {
+     "la": "Title"
+    },
+    "background": {
+     "media_id": null
+    }
+   },
+   "expect": [
+    {
+     "path": "/background/media_id",
+     "code": "invalid_type"
+    }
+   ]
+  },
+  {
+   "id": "image-unknown-field",
+   "comment": "additionalProperties:false in $defs/image",
+   "section_type": "hero_brand",
+   "mode": "draft",
+   "props": {
+    "title": {
+     "la": "Title"
+    },
+    "background": {
+     "media_id": 1,
+     "foo": true
+    }
+   },
+   "expect": [
+    {
+     "path": "/background/foo",
+     "code": "unknown_field"
+    }
+   ]
+  },
+  {
+   "id": "image-missing-media-id-draft",
+   "comment": "required skipped in draft",
+   "section_type": "hero_brand",
+   "mode": "draft",
+   "props": {
+    "title": {
+     "la": "Title"
+    },
+    "background": {}
+   },
+   "expect": []
+  },
+  {
+   "id": "image-missing-media-id-publish",
+   "comment": "required",
+   "section_type": "hero_brand",
+   "mode": "publish",
+   "default_locale": "la",
+   "props": {
+    "title": {
+     "la": "Title"
+    },
+    "background": {}
+   },
+   "expect": [
+    {
+     "path": "/background/media_id",
+     "code": "required"
+    }
+   ]
+  },
+  {
+   "id": "image-alt-too-long",
+   "comment": "alt is locale_text_short (250)",
+   "section_type": "hero_brand",
+   "mode": "draft",
+   "props": {
+    "title": {
+     "la": "Title"
+    },
+    "background": {
+     "media_id": 1,
+     "alt": {
+      "la": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+     }
+    }
+   },
+   "expect": [
+    {
+     "path": "/background/alt/la",
+     "code": "too_long"
+    }
+   ]
+  },
+  {
+   "id": "boolean-wrong-type",
+   "comment": "show_logo boolean",
+   "section_type": "hero_brand",
+   "mode": "draft",
+   "props": {
+    "title": {
+     "la": "Title"
+    },
+    "background": {
+     "media_id": 1,
+     "decorative": true
+    },
+    "show_logo": "yes"
+   },
+   "expect": [
+    {
+     "path": "/show_logo",
+     "code": "invalid_type"
+    }
+   ]
+  },
+  {
+   "id": "link-page-ok",
+   "comment": "internal link",
+   "section_type": "hero_brand",
+   "mode": "publish",
+   "default_locale": "la",
+   "props": {
+    "title": {
+     "la": "Title"
+    },
+    "background": {
+     "media_id": 1,
+     "decorative": true
+    },
+    "cta": {
+     "label": {
+      "la": "Go"
+     },
+     "link": {
+      "type": "page",
+      "page_id": 3
+     }
+    }
+   },
+   "expect": []
+  },
+  {
+   "id": "link-page-anchor-ok",
+   "comment": "internal link with anchor",
+   "section_type": "hero_brand",
+   "mode": "publish",
+   "default_locale": "la",
+   "props": {
+    "title": {
+     "la": "Title"
+    },
+    "background": {
+     "media_id": 1,
+     "decorative": true
+    },
+    "cta": {
+     "label": {
+      "la": "Go"
+     },
+     "link": {
+      "type": "page",
+      "page_id": 3,
+      "anchor": "faq"
+     }
+    }
+   },
+   "expect": []
+  },
+  {
+   "id": "link-url-https-ok",
+   "comment": "external link",
+   "section_type": "hero_brand",
+   "mode": "publish",
+   "default_locale": "la",
+   "props": {
+    "title": {
+     "la": "Title"
+    },
+    "background": {
+     "media_id": 1,
+     "decorative": true
+    },
+    "cta": {
+     "label": {
+      "la": "Go"
+     },
+     "link": {
+      "type": "url",
+      "url": "https://example.org/a?b=1",
+      "open_in_new_tab": true,
+      "rel": [
+       "nofollow"
+      ]
+     }
+    }
+   },
+   "expect": []
+  },
+  {
+   "id": "link-url-path-ok",
+   "comment": "single leading slash",
+   "section_type": "hero_brand",
+   "mode": "publish",
+   "default_locale": "la",
+   "props": {
+    "title": {
+     "la": "Title"
+    },
+    "background": {
+     "media_id": 1,
+     "decorative": true
+    },
+    "cta": {
+     "label": {
+      "la": "Go"
+     },
+     "link": {
+      "type": "url",
+      "url": "/our-path"
+     }
+    }
+   },
+   "expect": []
+  },
+  {
+   "id": "link-url-root-ok",
+   "comment": "the site root",
+   "section_type": "hero_brand",
+   "mode": "publish",
+   "default_locale": "la",
+   "props": {
+    "title": {
+     "la": "Title"
+    },
+    "background": {
+     "media_id": 1,
+     "decorative": true
+    },
+    "cta": {
+     "label": {
+      "la": "Go"
+     },
+     "link": {
+      "type": "url",
+      "url": "/"
+     }
+    }
+   },
+   "expect": []
+  },
+  {
+   "id": "link-url-anchor-ok",
+   "comment": "in-page anchor",
+   "section_type": "hero_brand",
+   "mode": "publish",
+   "default_locale": "la",
+   "props": {
+    "title": {
+     "la": "Title"
+    },
+    "background": {
+     "media_id": 1,
+     "decorative": true
+    },
+    "cta": {
+     "label": {
+      "la": "Go"
+     },
+     "link": {
+      "type": "url",
+      "url": "#top"
+     }
+    }
+   },
+   "expect": []
+  },
+  {
+   "id": "link-url-mailto-ok",
+   "comment": "mailto",
+   "section_type": "hero_brand",
+   "mode": "publish",
+   "default_locale": "la",
+   "props": {
+    "title": {
+     "la": "Title"
+    },
+    "background": {
+     "media_id": 1,
+     "decorative": true
+    },
+    "cta": {
+     "label": {
+      "la": "Go"
+     },
+     "link": {
+      "type": "url",
+      "url": "mailto:hello@materm.example"
+     }
+    }
+   },
+   "expect": []
+  },
+  {
+   "id": "link-url-tel-ok",
+   "comment": "tel",
+   "section_type": "hero_brand",
+   "mode": "publish",
+   "default_locale": "la",
+   "props": {
+    "title": {
+     "la": "Title"
+    },
+    "background": {
+     "media_id": 1,
+     "decorative": true
+    },
+    "cta": {
+     "label": {
+      "la": "Go"
+     },
+     "link": {
+      "type": "url",
+      "url": "tel:+8562012345678"
+     }
+    }
+   },
+   "expect": []
+  },
+  {
+   "id": "link-page-half-draft",
+   "comment": "a half-filled page link saves as draft",
+   "section_type": "hero_brand",
+   "mode": "draft",
+   "props": {
+    "title": {
+     "la": "Title"
+    },
+    "background": {
+     "media_id": 1,
+     "decorative": true
+    },
+    "cta": {
+     "label": {
+      "la": "Go"
+     },
+     "link": {
+      "type": "page"
+     }
+    }
+   },
+   "expect": []
+  },
+  {
+   "id": "link-page-half-publish",
+   "comment": "required page_id is reported at the missing field",
+   "section_type": "hero_brand",
+   "mode": "publish",
+   "default_locale": "la",
+   "props": {
+    "title": {
+     "la": "Title"
+    },
+    "background": {
+     "media_id": 1,
+     "decorative": true
+    },
+    "cta": {
+     "label": {
+      "la": "Go"
+     },
+     "link": {
+      "type": "page"
+     }
+    }
+   },
+   "expect": [
+    {
+     "path": "/cta/link/page_id",
+     "code": "required"
+    }
+   ]
+  },
+  {
+   "id": "link-url-half-publish",
+   "comment": "required url",
+   "section_type": "hero_brand",
+   "mode": "publish",
+   "default_locale": "la",
+   "props": {
+    "title": {
+     "la": "Title"
+    },
+    "background": {
+     "media_id": 1,
+     "decorative": true
+    },
+    "cta": {
+     "label": {
+      "la": "Go"
+     },
+     "link": {
+      "type": "url"
+     }
+    }
+   },
+   "expect": [
+    {
+     "path": "/cta/link/url",
+     "code": "required"
+    }
+   ]
+  },
+  {
+   "id": "link-no-type-draft",
+   "comment": "an empty link saves as draft",
+   "section_type": "hero_brand",
+   "mode": "draft",
+   "props": {
+    "title": {
+     "la": "Title"
+    },
+    "background": {
+     "media_id": 1,
+     "decorative": true
+    },
+    "cta": {
+     "label": {
+      "la": "Go"
+     },
+     "link": {}
+    }
+   },
+   "expect": []
+  },
+  {
+   "id": "link-no-type-publish",
+   "comment": "only type is reported (neither if matches)",
+   "section_type": "hero_brand",
+   "mode": "publish",
+   "default_locale": "la",
+   "props": {
+    "title": {
+     "la": "Title"
+    },
+    "background": {
+     "media_id": 1,
+     "decorative": true
+    },
+    "cta": {
+     "label": {
+      "la": "Go"
+     },
+     "link": {}
+    }
+   },
+   "expect": [
+    {
+     "path": "/cta/link/type",
+     "code": "required"
+    }
+   ]
+  },
+  {
+   "id": "link-bad-type",
+   "comment": "enum",
+   "section_type": "hero_brand",
+   "mode": "draft",
+   "props": {
+    "title": {
+     "la": "Title"
+    },
+    "background": {
+     "media_id": 1,
+     "decorative": true
+    },
+    "cta": {
+     "label": {
+      "la": "Go"
+     },
+     "link": {
+      "type": "x"
+     }
+    }
+   },
+   "expect": [
+    {
+     "path": "/cta/link/type",
+     "code": "not_in_enum"
+    }
+   ]
+  },
+  {
+   "id": "link-page-with-url",
+   "comment": "not: a page link must not carry url",
+   "section_type": "hero_brand",
+   "mode": "draft",
+   "props": {
+    "title": {
+     "la": "Title"
+    },
+    "background": {
+     "media_id": 1,
+     "decorative": true
+    },
+    "cta": {
+     "label": {
+      "la": "Go"
+     },
+     "link": {
+      "type": "page",
+      "page_id": 1,
+      "url": "https://a.example"
+     }
+    }
+   },
+   "expect": [
+    {
+     "path": "/cta/link/url",
+     "code": "unknown_field"
+    }
+   ]
+  },
+  {
+   "id": "link-page-with-url-publish",
+   "comment": "same in publish",
+   "section_type": "hero_brand",
+   "mode": "publish",
+   "default_locale": "la",
+   "props": {
+    "title": {
+     "la": "Title"
+    },
+    "background": {
+     "media_id": 1,
+     "decorative": true
+    },
+    "cta": {
+     "label": {
+      "la": "Go"
+     },
+     "link": {
+      "type": "page",
+      "page_id": 1,
+      "url": "https://a.example"
+     }
+    }
+   },
+   "expect": [
+    {
+     "path": "/cta/link/url",
+     "code": "unknown_field"
+    }
+   ]
+  },
+  {
+   "id": "link-page-with-url-and-new-tab",
+   "comment": "every forbidden field is reported",
+   "section_type": "hero_brand",
+   "mode": "draft",
+   "props": {
+    "title": {
+     "la": "Title"
+    },
+    "background": {
+     "media_id": 1,
+     "decorative": true
+    },
+    "cta": {
+     "label": {
+      "la": "Go"
+     },
+     "link": {
+      "type": "page",
+      "page_id": 1,
+      "url": "/a",
+      "open_in_new_tab": true
+     }
+    }
+   },
+   "expect": [
+    {
+     "path": "/cta/link/url",
+     "code": "unknown_field"
+    },
+    {
+     "path": "/cta/link/open_in_new_tab",
+     "code": "unknown_field"
+    }
+   ]
+  },
+  {
+   "id": "link-url-with-page-id",
+   "comment": "not: a url link must not carry page_id",
+   "section_type": "hero_brand",
+   "mode": "draft",
+   "props": {
+    "title": {
+     "la": "Title"
+    },
+    "background": {
+     "media_id": 1,
+     "decorative": true
+    },
+    "cta": {
+     "label": {
+      "la": "Go"
+     },
+     "link": {
+      "type": "url",
+      "url": "/a",
+      "page_id": 2
+     }
+    }
+   },
+   "expect": [
+    {
+     "path": "/cta/link/page_id",
+     "code": "unknown_field"
+    }
+   ]
+  },
+  {
+   "id": "link-url-with-anchor",
+   "comment": "not: a url link must not carry anchor",
+   "section_type": "hero_brand",
+   "mode": "draft",
+   "props": {
+    "title": {
+     "la": "Title"
+    },
+    "background": {
+     "media_id": 1,
+     "decorative": true
+    },
+    "cta": {
+     "label": {
+      "la": "Go"
+     },
+     "link": {
+      "type": "url",
+      "url": "/a",
+      "anchor": "x"
+     }
+    }
+   },
+   "expect": [
+    {
+     "path": "/cta/link/anchor",
+     "code": "unknown_field"
+    }
+   ]
+  },
+  {
+   "id": "link-unknown-field",
+   "comment": "additionalProperties:false",
+   "section_type": "hero_brand",
+   "mode": "draft",
+   "props": {
+    "title": {
+     "la": "Title"
+    },
+    "background": {
+     "media_id": 1,
+     "decorative": true
+    },
+    "cta": {
+     "label": {
+      "la": "Go"
+     },
+     "link": {
+      "type": "url",
+      "url": "/a",
+      "target": "_blank"
+     }
+    }
+   },
+   "expect": [
+    {
+     "path": "/cta/link/target",
+     "code": "unknown_field"
+    }
+   ]
+  },
+  {
+   "id": "link-url-javascript",
+   "comment": "scheme not allowed",
+   "section_type": "hero_brand",
+   "mode": "draft",
+   "props": {
+    "title": {
+     "la": "Title"
+    },
+    "background": {
+     "media_id": 1,
+     "decorative": true
+    },
+    "cta": {
+     "label": {
+      "la": "Go"
+     },
+     "link": {
+      "type": "url",
+      "url": "javascript:alert(1)"
+     }
+    }
+   },
+   "expect": [
+    {
+     "path": "/cta/link/url",
+     "code": "pattern_mismatch"
+    }
+   ]
+  },
+  {
+   "id": "link-url-http",
+   "comment": "http:// is not allowed by the schema pattern",
+   "section_type": "hero_brand",
+   "mode": "draft",
+   "props": {
+    "title": {
+     "la": "Title"
+    },
+    "background": {
+     "media_id": 1,
+     "decorative": true
+    },
+    "cta": {
+     "label": {
+      "la": "Go"
+     },
+     "link": {
+      "type": "url",
+      "url": "http://example.org"
+     }
+    }
+   },
+   "expect": [
+    {
+     "path": "/cta/link/url",
+     "code": "pattern_mismatch"
+    }
+   ]
+  },
+  {
+   "id": "link-url-data",
+   "comment": "scheme not allowed",
+   "section_type": "hero_brand",
+   "mode": "draft",
+   "props": {
+    "title": {
+     "la": "Title"
+    },
+    "background": {
+     "media_id": 1,
+     "decorative": true
+    },
+    "cta": {
+     "label": {
+      "la": "Go"
+     },
+     "link": {
+      "type": "url",
+      "url": "data:text/html,x"
+     }
+    }
+   },
+   "expect": [
+    {
+     "path": "/cta/link/url",
+     "code": "pattern_mismatch"
+    }
+   ]
+  },
+  {
+   "id": "link-url-relative",
+   "comment": "a bare relative path is not a site path",
+   "section_type": "hero_brand",
+   "mode": "draft",
+   "props": {
+    "title": {
+     "la": "Title"
+    },
+    "background": {
+     "media_id": 1,
+     "decorative": true
+    },
+    "cta": {
+     "label": {
+      "la": "Go"
+     },
+     "link": {
+      "type": "url",
+      "url": "about"
+     }
+    }
+   },
+   "expect": [
+    {
+     "path": "/cta/link/url",
+     "code": "pattern_mismatch"
+    }
+   ]
+  },
+  {
+   "id": "link-url-protocol-relative",
+   "comment": "R-016: //host is another site",
+   "section_type": "hero_brand",
+   "mode": "draft",
+   "props": {
+    "title": {
+     "la": "Title"
+    },
+    "background": {
+     "media_id": 1,
+     "decorative": true
+    },
+    "cta": {
+     "label": {
+      "la": "Go"
+     },
+     "link": {
+      "type": "url",
+      "url": "//evil.test/login"
+     }
+    }
+   },
+   "expect": [
+    {
+     "path": "/cta/link/url",
+     "code": "pattern_mismatch"
+    }
+   ],
+   "requires": [
+    "R-016"
+   ]
+  },
+  {
+   "id": "link-url-protocol-relative-publish",
+   "comment": "R-016 in publish",
+   "section_type": "hero_brand",
+   "mode": "publish",
+   "default_locale": "la",
+   "props": {
+    "title": {
+     "la": "Title"
+    },
+    "background": {
+     "media_id": 1,
+     "decorative": true
+    },
+    "cta": {
+     "label": {
+      "la": "Go"
+     },
+     "link": {
+      "type": "url",
+      "url": "//evil.test"
+     }
+    }
+   },
+   "expect": [
+    {
+     "path": "/cta/link/url",
+     "code": "pattern_mismatch"
+    }
+   ],
+   "requires": [
+    "R-016"
+   ]
+  },
+  {
+   "id": "link-url-backslash",
+   "comment": "R-016: /\\host is read as //host by browsers",
+   "section_type": "hero_brand",
+   "mode": "draft",
+   "props": {
+    "title": {
+     "la": "Title"
+    },
+    "background": {
+     "media_id": 1,
+     "decorative": true
+    },
+    "cta": {
+     "label": {
+      "la": "Go"
+     },
+     "link": {
+      "type": "url",
+      "url": "/\\evil.test"
+     }
+    }
+   },
+   "expect": [
+    {
+     "path": "/cta/link/url",
+     "code": "pattern_mismatch"
+    }
+   ],
+   "requires": [
+    "R-016"
+   ]
+  },
+  {
+   "id": "link-url-too-long",
+   "comment": "maxLength 500",
+   "section_type": "hero_brand",
+   "mode": "draft",
+   "props": {
+    "title": {
+     "la": "Title"
+    },
+    "background": {
+     "media_id": 1,
+     "decorative": true
+    },
+    "cta": {
+     "label": {
+      "la": "Go"
+     },
+     "link": {
+      "type": "url",
+      "url": "/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+     }
+    }
+   },
+   "expect": [
+    {
+     "path": "/cta/link/url",
+     "code": "too_long"
+    }
+   ]
+  },
+  {
+   "id": "link-rel-duplicate",
+   "comment": "uniqueItems",
+   "section_type": "hero_brand",
+   "mode": "draft",
+   "props": {
+    "title": {
+     "la": "Title"
+    },
+    "background": {
+     "media_id": 1,
+     "decorative": true
+    },
+    "cta": {
+     "label": {
+      "la": "Go"
+     },
+     "link": {
+      "type": "url",
+      "url": "/a",
+      "rel": [
+       "nofollow",
+       "nofollow"
+      ]
+     }
+    }
+   },
+   "expect": [
+    {
+     "path": "/cta/link/rel/1",
+     "code": "duplicate"
+    }
+   ]
+  },
+  {
+   "id": "link-rel-unknown",
+   "comment": "enum of items",
+   "section_type": "hero_brand",
+   "mode": "draft",
+   "props": {
+    "title": {
+     "la": "Title"
+    },
+    "background": {
+     "media_id": 1,
+     "decorative": true
+    },
+    "cta": {
+     "label": {
+      "la": "Go"
+     },
+     "link": {
+      "type": "url",
+      "url": "/a",
+      "rel": [
+       "follow"
+      ]
+     }
+    }
+   },
+   "expect": [
+    {
+     "path": "/cta/link/rel/0",
+     "code": "not_in_enum"
+    }
+   ]
+  },
+  {
+   "id": "link-anchor-pattern",
+   "comment": "anchor pattern",
+   "section_type": "hero_brand",
+   "mode": "draft",
+   "props": {
+    "title": {
+     "la": "Title"
+    },
+    "background": {
+     "media_id": 1,
+     "decorative": true
+    },
+    "cta": {
+     "label": {
+      "la": "Go"
+     },
+     "link": {
+      "type": "page",
+      "page_id": 1,
+      "anchor": "1x"
+     }
+    }
+   },
+   "expect": [
+    {
+     "path": "/cta/link/anchor",
+     "code": "pattern_mismatch"
+    }
+   ]
+  },
+  {
+   "id": "link-not-object",
+   "comment": "type object; the presence-only not still matches a non-object (required is vacuous), as in ajv",
+   "section_type": "hero_brand",
+   "mode": "draft",
+   "props": {
+    "title": {
+     "la": "Title"
+    },
+    "background": {
+     "media_id": 1,
+     "decorative": true
+    },
+    "cta": {
+     "label": {
+      "la": "Go"
+     },
+     "link": [
+      "page"
+     ]
+    }
+   },
+   "expect": [
+    {
+     "path": "/cta/link",
+     "code": "invalid_type"
+    },
+    {
+     "path": "/cta/link",
+     "code": "forbidden"
+    }
+   ]
+  },
+  {
+   "id": "link-page-id-zero",
+   "comment": "minimum 1",
+   "section_type": "hero_brand",
+   "mode": "draft",
+   "props": {
+    "title": {
+     "la": "Title"
+    },
+    "background": {
+     "media_id": 1,
+     "decorative": true
+    },
+    "cta": {
+     "label": {
+      "la": "Go"
+     },
+     "link": {
+      "type": "page",
+      "page_id": 0
+     }
+    }
+   },
+   "expect": [
+    {
+     "path": "/cta/link/page_id",
+     "code": "out_of_range"
+    }
+   ]
+  },
+  {
+   "id": "gallery-manual-ok",
+   "comment": "manual source with cards",
+   "section_type": "gallery_cards",
+   "mode": "publish",
+   "default_locale": "la",
+   "props": {
+    "eyebrow": {
+     "la": "E"
+    },
+    "title": {
+     "la": "T"
+    },
+    "source": "manual",
+    "cards": [
+     {
+      "image": {
+       "media_id": 1,
+       "decorative": true
+      }
+     }
+    ]
+   },
+   "expect": []
+  },
+  {
+   "id": "gallery-manual-no-cards-draft",
+   "comment": "else branch: cards required only in publish",
+   "section_type": "gallery_cards",
+   "mode": "draft",
+   "props": {
+    "eyebrow": {
+     "la": "E"
+    },
+    "title": {
+     "la": "T"
+    },
+    "source": "manual"
+   },
+   "expect": []
+  },
+  {
+   "id": "gallery-manual-no-cards-publish",
+   "comment": "else: required cards",
+   "section_type": "gallery_cards",
+   "mode": "publish",
+   "default_locale": "la",
+   "props": {
+    "eyebrow": {
+     "la": "E"
+    },
+    "title": {
+     "la": "T"
+    },
+    "source": "manual"
+   },
+   "expect": [
+    {
+     "path": "/cards",
+     "code": "required"
+    }
+   ]
+  },
+  {
+   "id": "gallery-album-no-album-publish",
+   "comment": "then: required album_id",
+   "section_type": "gallery_cards",
+   "mode": "publish",
+   "default_locale": "la",
+   "props": {
+    "eyebrow": {
+     "la": "E"
+    },
+    "title": {
+     "la": "T"
+    },
+    "source": "album"
+   },
+   "expect": [
+    {
+     "path": "/album_id",
+     "code": "required"
+    }
+   ]
+  },
+  {
+   "id": "gallery-album-no-album-draft",
+   "comment": "then: required album_id skipped in draft",
+   "section_type": "gallery_cards",
+   "mode": "draft",
+   "props": {
+    "eyebrow": {
+     "la": "E"
+    },
+    "title": {
+     "la": "T"
+    },
+    "source": "album"
+   },
+   "expect": []
+  },
+  {
+   "id": "gallery-album-ok",
+   "comment": "album source",
+   "section_type": "gallery_cards",
+   "mode": "publish",
+   "default_locale": "la",
+   "props": {
+    "eyebrow": {
+     "la": "E"
+    },
+    "title": {
+     "la": "T"
+    },
+    "source": "album",
+    "album_id": 7
+   },
+   "expect": []
+  },
+  {
+   "id": "gallery-bad-source-draft",
+   "comment": "enum; the else branch applies",
+   "section_type": "gallery_cards",
+   "mode": "draft",
+   "props": {
+    "eyebrow": {
+     "la": "E"
+    },
+    "title": {
+     "la": "T"
+    },
+    "source": "x"
+   },
+   "expect": [
+    {
+     "path": "/source",
+     "code": "not_in_enum"
+    }
+   ]
+  },
+  {
+   "id": "gallery-bad-source-publish",
+   "comment": "enum + else requires cards",
+   "section_type": "gallery_cards",
+   "mode": "publish",
+   "default_locale": "la",
+   "props": {
+    "eyebrow": {
+     "la": "E"
+    },
+    "title": {
+     "la": "T"
+    },
+    "source": "x"
+   },
+   "expect": [
+    {
+     "path": "/source",
+     "code": "not_in_enum"
+    },
+    {
+     "path": "/cards",
+     "code": "required"
+    }
+   ]
+  },
+  {
+   "id": "gallery-empty-cards",
+   "comment": "minItems is kept in draft (doc 04 6.1)",
+   "section_type": "gallery_cards",
+   "mode": "draft",
+   "props": {
+    "eyebrow": {
+     "la": "E"
+    },
+    "title": {
+     "la": "T"
+    },
+    "source": "manual",
+    "cards": []
+   },
+   "expect": [
+    {
+     "path": "/cards",
+     "code": "too_short"
+    }
+   ]
+  },
+  {
+   "id": "gallery-limit-high",
+   "comment": "maximum 9",
+   "section_type": "gallery_cards",
+   "mode": "draft",
+   "props": {
+    "eyebrow": {
+     "la": "E"
+    },
+    "title": {
+     "la": "T"
+    },
+    "source": "manual",
+    "limit": 10
+   },
+   "expect": [
+    {
+     "path": "/limit",
+     "code": "out_of_range"
+    }
+   ]
+  },
+  {
+   "id": "gallery-limit-low",
+   "comment": "minimum 1",
+   "section_type": "gallery_cards",
+   "mode": "draft",
+   "props": {
+    "eyebrow": {
+     "la": "E"
+    },
+    "title": {
+     "la": "T"
+    },
+    "source": "manual",
+    "limit": 0
+   },
+   "expect": [
+    {
+     "path": "/limit",
+     "code": "out_of_range"
+    }
+   ]
+  },
+  {
+   "id": "gallery-too-many-cards",
+   "comment": "maxItems 9",
+   "section_type": "gallery_cards",
+   "mode": "draft",
+   "props": {
+    "eyebrow": {
+     "la": "E"
+    },
+    "title": {
+     "la": "T"
+    },
+    "source": "manual",
+    "cards": [
+     {
+      "image": {
+       "media_id": 1
+      }
+     },
+     {
+      "image": {
+       "media_id": 1
+      }
+     },
+     {
+      "image": {
+       "media_id": 1
+      }
+     },
+     {
+      "image": {
+       "media_id": 1
+      }
+     },
+     {
+      "image": {
+       "media_id": 1
+      }
+     },
+     {
+      "image": {
+       "media_id": 1
+      }
+     },
+     {
+      "image": {
+       "media_id": 1
+      }
+     },
+     {
+      "image": {
+       "media_id": 1
+      }
+     },
+     {
+      "image": {
+       "media_id": 1
+      }
+     },
+     {
+      "image": {
+       "media_id": 1
+      }
+     }
+    ]
+   },
+   "expect": [
+    {
+     "path": "/cards",
+     "code": "too_long"
+    }
+   ]
+  },
+  {
+   "id": "gallery-card-missing-image-draft",
+   "comment": "required inside array items skipped in draft",
+   "section_type": "gallery_cards",
+   "mode": "draft",
+   "props": {
+    "eyebrow": {
+     "la": "E"
+    },
+    "title": {
+     "la": "T"
+    },
+    "source": "manual",
+    "cards": [
+     {}
+    ]
+   },
+   "expect": []
+  },
+  {
+   "id": "gallery-card-missing-image-publish",
+   "comment": "required inside array items",
+   "section_type": "gallery_cards",
+   "mode": "publish",
+   "default_locale": "la",
+   "props": {
+    "eyebrow": {
+     "la": "E"
+    },
+    "title": {
+     "la": "T"
+    },
+    "source": "manual",
+    "cards": [
+     {}
+    ]
+   },
+   "expect": [
+    {
+     "path": "/cards/0/image",
+     "code": "required"
+    }
+   ]
+  },
+  {
+   "id": "gallery-card-link-half-publish",
+   "comment": "nested link under items",
+   "section_type": "gallery_cards",
+   "mode": "publish",
+   "default_locale": "la",
+   "props": {
+    "eyebrow": {
+     "la": "E"
+    },
+    "title": {
+     "la": "T"
+    },
+    "source": "manual",
+    "cards": [
+     {
+      "image": {
+       "media_id": 1
+      },
+      "link": {
+       "type": "page"
+      }
+     }
+    ]
+   },
+   "expect": [
+    {
+     "path": "/cards/0/link/page_id",
+     "code": "required"
+    }
+   ]
+  },
+  {
+   "id": "teaser-two-images",
+   "comment": "minItems 3",
+   "section_type": "teaser_collage",
+   "mode": "draft",
+   "props": {
+    "eyebrow": {
+     "la": "E"
+    },
+    "title": {
+     "la": "T"
+    },
+    "images": [
+     {
+      "media_id": 1
+     },
+     {
+      "media_id": 2
+     }
+    ]
+   },
+   "expect": [
+    {
+     "path": "/images",
+     "code": "too_short"
+    }
+   ]
+  },
+  {
+   "id": "teaser-three-images-ok",
+   "comment": "3 images",
+   "section_type": "teaser_collage",
+   "mode": "publish",
+   "default_locale": "la",
+   "props": {
+    "eyebrow": {
+     "la": "E"
+    },
+    "title": {
+     "la": "T"
+    },
+    "images": [
+     {
+      "media_id": 1
+     },
+     {
+      "media_id": 2
+     },
+     {
+      "media_id": 3
+     }
+    ]
+   },
+   "expect": []
+  },
+  {
+   "id": "faq-group-key-number",
+   "comment": "x-ref string",
+   "section_type": "faq",
+   "mode": "draft",
+   "props": {
+    "eyebrow": {
+     "la": "E"
+    },
+    "title": {
+     "la": "T"
+    },
+    "group_key": 5
+   },
+   "expect": [
+    {
+     "path": "/group_key",
+     "code": "invalid_type"
+    }
+   ]
+  },
+  {
+   "id": "faq-group-key-pattern-free",
+   "comment": "group_key has no pattern in the schema",
+   "section_type": "faq",
+   "mode": "publish",
+   "default_locale": "la",
+   "props": {
+    "eyebrow": {
+     "la": "E"
+    },
+    "title": {
+     "la": "T"
+    },
+    "group_key": "main"
+   },
+   "expect": []
+  },
+  {
+   "id": "about-no-items-draft",
+   "comment": "items missing, draft",
+   "section_type": "about_blocks",
+   "mode": "draft",
+   "props": {},
+   "expect": []
+  },
+  {
+   "id": "about-empty-items",
+   "comment": "minItems 1 is kept in draft",
+   "section_type": "about_blocks",
+   "mode": "draft",
+   "props": {
+    "items": []
+   },
+   "expect": [
+    {
+     "path": "/items",
+     "code": "too_short"
+    }
+   ]
+  },
+  {
+   "id": "story-two-slots-ok",
+   "comment": "wide-narrow takes 2 slots",
+   "section_type": "photo_story",
+   "mode": "publish",
+   "default_locale": "la",
+   "props": {
+    "accessible_heading": {
+     "la": "H"
+    },
+    "album_id": 1,
+    "rows": [
+     {
+      "layout": "wide-narrow",
+      "slots": [
+       {
+        "album_item_id": 1,
+        "size": "wide"
+       },
+       {
+        "album_item_id": 2,
+        "size": "wide"
+       }
+      ]
+     }
+    ]
+   },
+   "expect": []
+  },
+  {
+   "id": "story-one-slot",
+   "comment": "then: slots minItems 2",
+   "section_type": "photo_story",
+   "mode": "draft",
+   "props": {
+    "accessible_heading": {
+     "la": "H"
+    },
+    "album_id": 1,
+    "rows": [
+     {
+      "layout": "wide-narrow",
+      "slots": [
+       {
+        "album_item_id": 1,
+        "size": "wide"
+       }
+      ]
+     }
+    ]
+   },
+   "expect": [
+    {
+     "path": "/rows/0/slots",
+     "code": "too_short"
+    }
+   ]
+  },
+  {
+   "id": "story-three-slots",
+   "comment": "then: slots maxItems 2",
+   "section_type": "photo_story",
+   "mode": "draft",
+   "props": {
+    "accessible_heading": {
+     "la": "H"
+    },
+    "album_id": 1,
+    "rows": [
+     {
+      "layout": "narrow-wide",
+      "slots": [
+       {
+        "album_item_id": 1,
+        "size": "wide"
+       },
+       {
+        "album_item_id": 2,
+        "size": "wide"
+       },
+       {
+        "album_item_id": 3,
+        "size": "wide"
+       }
+      ]
+     }
+    ]
+   },
+   "expect": [
+    {
+     "path": "/rows/0/slots",
+     "code": "too_long"
+    }
+   ]
+  },
+  {
+   "id": "story-staggered-needs-three",
+   "comment": "staggered-3 takes 3 slots",
+   "section_type": "photo_story",
+   "mode": "draft",
+   "props": {
+    "accessible_heading": {
+     "la": "H"
+    },
+    "album_id": 1,
+    "rows": [
+     {
+      "layout": "staggered-3",
+      "slots": [
+       {
+        "album_item_id": 1,
+        "size": "wide"
+       },
+       {
+        "album_item_id": 2,
+        "size": "wide"
+       }
+      ]
+     }
+    ]
+   },
+   "expect": [
+    {
+     "path": "/rows/0/slots",
+     "code": "too_short"
+    }
+   ]
+  },
+  {
+   "id": "story-bad-slot-size",
+   "comment": "enum",
+   "section_type": "photo_story",
+   "mode": "draft",
+   "props": {
+    "accessible_heading": {
+     "la": "H"
+    },
+    "album_id": 1,
+    "rows": [
+     {
+      "layout": "staggered-3",
+      "slots": [
+       {
+        "album_item_id": 1,
+        "size": "huge"
+       },
+       {
+        "album_item_id": 2,
+        "size": "wide"
+       },
+       {
+        "album_item_id": 3,
+        "size": "wide"
+       }
+      ]
+     }
+    ]
+   },
+   "expect": [
+    {
+     "path": "/rows/0/slots/0/size",
+     "code": "not_in_enum"
+    }
+   ]
+  },
+  {
+   "id": "contact-too-many-info-items",
+   "comment": "maxItems 6",
+   "section_type": "contact_section",
+   "mode": "draft",
+   "props": {
+    "eyebrow": {
+     "la": "E"
+    },
+    "title": {
+     "la": "T"
+    },
+    "info_items": [
+     {
+      "icon": "phone",
+      "label": {
+       "la": "x"
+      },
+      "source": "contact.phone"
+     },
+     {
+      "icon": "phone",
+      "label": {
+       "la": "x"
+      },
+      "source": "contact.phone"
+     },
+     {
+      "icon": "phone",
+      "label": {
+       "la": "x"
+      },
+      "source": "contact.phone"
+     },
+     {
+      "icon": "phone",
+      "label": {
+       "la": "x"
+      },
+      "source": "contact.phone"
+     },
+     {
+      "icon": "phone",
+      "label": {
+       "la": "x"
+      },
+      "source": "contact.phone"
+     },
+     {
+      "icon": "phone",
+      "label": {
+       "la": "x"
+      },
+      "source": "contact.phone"
+     },
+     {
+      "icon": "phone",
+      "label": {
+       "la": "x"
+      },
+      "source": "contact.phone"
+     }
+    ]
+   },
+   "expect": [
+    {
+     "path": "/info_items",
+     "code": "too_long"
+    }
+   ]
+  },
+  {
+   "id": "contact-info-icon-enum",
+   "comment": "enum",
+   "section_type": "contact_section",
+   "mode": "draft",
+   "props": {
+    "eyebrow": {
+     "la": "E"
+    },
+    "title": {
+     "la": "T"
+    },
+    "info_items": [
+     {
+      "icon": "fax",
+      "label": {
+       "la": "x"
+      },
+      "source": "contact.phone"
+     }
+    ]
+   },
+   "expect": [
+    {
+     "path": "/info_items/0/icon",
+     "code": "not_in_enum"
+    }
+   ]
+  },
+  {
+   "id": "post-list-page-size",
+   "comment": "maximum 48",
+   "section_type": "post_list",
+   "mode": "draft",
+   "props": {
+    "page_size": 49
+   },
+   "expect": [
+    {
+     "path": "/page_size",
+     "code": "out_of_range"
+    }
+   ]
+  },
+  {
+   "id": "post-list-empty-publish",
+   "comment": "no required members",
+   "section_type": "post_list",
+   "mode": "publish",
+   "default_locale": "la",
+   "props": {},
+   "expect": []
+  },
+  {
+   "id": "blog-strip-items-bad-id",
+   "comment": "minimum 1 under items",
+   "section_type": "blog_strip",
+   "mode": "draft",
+   "props": {
+    "eyebrow": {
+     "la": "E"
+    },
+    "title": {
+     "la": "T"
+    },
+    "source": "manual",
+    "items": [
+     {
+      "post_id": 0
+     }
+    ]
+   },
+   "expect": [
+    {
+     "path": "/items/0/post_id",
+     "code": "out_of_range"
+    }
+   ]
+  },
+  {
+   "id": "richtext-ok",
+   "comment": "a lite document",
+   "section_type": "intro_text",
+   "mode": "publish",
+   "default_locale": "la",
+   "props": {
+    "text": {
+     "la": {
+      "type": "doc",
+      "content": [
+       {
+        "type": "paragraph",
+        "content": [
+         {
+          "type": "text",
+          "text": "Hello"
+         }
+        ]
+       }
+      ]
+     }
+    }
+   },
+   "expect": []
+  },
+  {
+   "id": "richtext-empty-doc-publish",
+   "comment": "no text node = empty in the default locale",
+   "section_type": "intro_text",
+   "mode": "publish",
+   "default_locale": "la",
+   "props": {
+    "text": {
+     "la": {
+      "type": "doc",
+      "content": [
+       {
+        "type": "paragraph"
+       }
+      ]
+     }
+    }
+   },
+   "expect": [
+    {
+     "path": "/text/la",
+     "code": "required"
+    }
+   ]
+  },
+  {
+   "id": "richtext-blank-text-publish",
+   "comment": "a blank text node is empty",
+   "section_type": "intro_text",
+   "mode": "publish",
+   "default_locale": "la",
+   "props": {
+    "text": {
+     "la": {
+      "type": "doc",
+      "content": [
+       {
+        "type": "paragraph",
+        "content": [
+         {
+          "type": "text",
+          "text": "  "
+         }
+        ]
+       }
+      ]
+     }
+    }
+   },
+   "expect": [
+    {
+     "path": "/text/la",
+     "code": "required"
+    }
+   ]
+  },
+  {
+   "id": "richtext-empty-doc-draft",
+   "comment": "draft accepts it",
+   "section_type": "intro_text",
+   "mode": "draft",
+   "props": {
+    "text": {
+     "la": {
+      "type": "doc",
+      "content": [
+       {
+        "type": "paragraph"
+       }
+      ]
+     }
+    }
+   },
+   "expect": []
+  },
+  {
+   "id": "richtext-only-english-publish",
+   "comment": "default locale missing",
+   "section_type": "intro_text",
+   "mode": "publish",
+   "default_locale": "la",
+   "props": {
+    "text": {
+     "en": {
+      "type": "doc",
+      "content": [
+       {
+        "type": "paragraph",
+        "content": [
+         {
+          "type": "text",
+          "text": "Hello"
+         }
+        ]
+       }
+      ]
+     }
+    }
+   },
+   "expect": [
+    {
+     "path": "/text/la",
+     "code": "required"
+    }
+   ]
+  },
+  {
+   "id": "richtext-wrong-doc-type",
+   "comment": "const doc",
+   "section_type": "intro_text",
+   "mode": "draft",
+   "props": {
+    "text": {
+     "la": {
+      "type": "paragraph"
+     }
+    }
+   },
+   "expect": [
+    {
+     "path": "/text/la/type",
+     "code": "not_in_enum"
+    }
+   ]
+  },
+  {
+   "id": "richtext-doc-without-type-draft",
+   "comment": "required skipped in draft",
+   "section_type": "intro_text",
+   "mode": "draft",
+   "props": {
+    "text": {
+     "la": {
+      "content": []
+     }
+    }
+   },
+   "expect": []
+  },
+  {
+   "id": "richtext-doc-without-type-publish",
+   "comment": "required type",
+   "section_type": "intro_text",
+   "mode": "publish",
+   "default_locale": "la",
+   "props": {
+    "text": {
+     "la": {
+      "content": []
+     }
+    }
+   },
+   "expect": [
+    {
+     "path": "/text/la/type",
+     "code": "required"
+    },
+    {
+     "path": "/text/la",
+     "code": "required"
+    }
+   ]
+  },
+  {
+   "id": "richtext-content-item-not-object",
+   "comment": "items type object",
+   "section_type": "intro_text",
+   "mode": "draft",
+   "props": {
+    "text": {
+     "la": {
+      "type": "doc",
+      "content": [
+       1
+      ]
+     }
+    }
+   },
+   "expect": [
+    {
+     "path": "/text/la/content/0",
+     "code": "invalid_type"
+    }
+   ]
+  },
+  {
+   "id": "richtext-content-item-without-type",
+   "comment": "items required type",
+   "section_type": "intro_text",
+   "mode": "publish",
+   "default_locale": "la",
+   "props": {
+    "text": {
+     "la": {
+      "type": "doc",
+      "content": [
+       {}
+      ]
+     }
+    }
+   },
+   "expect": [
+    {
+     "path": "/text/la/content/0/type",
+     "code": "required"
+    },
+    {
+     "path": "/text/la",
+     "code": "required"
+    }
+   ]
+  },
+  {
+   "id": "richtext-doc-not-object",
+   "comment": "doc is an object",
+   "section_type": "intro_text",
+   "mode": "draft",
+   "props": {
+    "text": {
+     "la": "plain"
+    }
+   },
+   "expect": [
+    {
+     "path": "/text/la",
+     "code": "invalid_type"
+    }
+   ]
+  },
+  {
+   "id": "richtext-doc-unknown-key",
+   "comment": "additionalProperties is open on the doc in the schema; Go refuses it (allow-list)",
+   "section_type": "intro_text",
+   "mode": "draft",
+   "props": {
+    "text": {
+     "la": {
+      "type": "doc",
+      "extra": 1
+     }
+    }
+   },
+   "expect": [
+    {
+     "path": "/text/la/extra",
+     "code": "unknown_field"
+    }
+   ],
+   "go_only": true
+  },
+  {
+   "id": "richtext-51-blocks",
+   "comment": "schema maxItems 50 on content; Go adds the node-count issue",
+   "section_type": "intro_text",
+   "mode": "draft",
+   "props": {
+    "text": {
+     "la": {
+      "type": "doc",
+      "content": [
+       {
+        "type": "paragraph",
+        "content": [
+         {
+          "type": "text",
+          "text": "a"
+         }
+        ]
+       },
+       {
+        "type": "paragraph",
+        "content": [
+         {
+          "type": "text",
+          "text": "a"
+         }
+        ]
+       },
+       {
+        "type": "paragraph",
+        "content": [
+         {
+          "type": "text",
+          "text": "a"
+         }
+        ]
+       },
+       {
+        "type": "paragraph",
+        "content": [
+         {
+          "type": "text",
+          "text": "a"
+         }
+        ]
+       },
+       {
+        "type": "paragraph",
+        "content": [
+         {
+          "type": "text",
+          "text": "a"
+         }
+        ]
+       },
+       {
+        "type": "paragraph",
+        "content": [
+         {
+          "type": "text",
+          "text": "a"
+         }
+        ]
+       },
+       {
+        "type": "paragraph",
+        "content": [
+         {
+          "type": "text",
+          "text": "a"
+         }
+        ]
+       },
+       {
+        "type": "paragraph",
+        "content": [
+         {
+          "type": "text",
+          "text": "a"
+         }
+        ]
+       },
+       {
+        "type": "paragraph",
+        "content": [
+         {
+          "type": "text",
+          "text": "a"
+         }
+        ]
+       },
+       {
+        "type": "paragraph",
+        "content": [
+         {
+          "type": "text",
+          "text": "a"
+         }
+        ]
+       },
+       {
+        "type": "paragraph",
+        "content": [
+         {
+          "type": "text",
+          "text": "a"
+         }
+        ]
+       },
+       {
+        "type": "paragraph",
+        "content": [
+         {
+          "type": "text",
+          "text": "a"
+         }
+        ]
+       },
+       {
+        "type": "paragraph",
+        "content": [
+         {
+          "type": "text",
+          "text": "a"
+         }
+        ]
+       },
+       {
+        "type": "paragraph",
+        "content": [
+         {
+          "type": "text",
+          "text": "a"
+         }
+        ]
+       },
+       {
+        "type": "paragraph",
+        "content": [
+         {
+          "type": "text",
+          "text": "a"
+         }
+        ]
+       },
+       {
+        "type": "paragraph",
+        "content": [
+         {
+          "type": "text",
+          "text": "a"
+         }
+        ]
+       },
+       {
+        "type": "paragraph",
+        "content": [
+         {
+          "type": "text",
+          "text": "a"
+         }
+        ]
+       },
+       {
+        "type": "paragraph",
+        "content": [
+         {
+          "type": "text",
+          "text": "a"
+         }
+        ]
+       },
+       {
+        "type": "paragraph",
+        "content": [
+         {
+          "type": "text",
+          "text": "a"
+         }
+        ]
+       },
+       {
+        "type": "paragraph",
+        "content": [
+         {
+          "type": "text",
+          "text": "a"
+         }
+        ]
+       },
+       {
+        "type": "paragraph",
+        "content": [
+         {
+          "type": "text",
+          "text": "a"
+         }
+        ]
+       },
+       {
+        "type": "paragraph",
+        "content": [
+         {
+          "type": "text",
+          "text": "a"
+         }
+        ]
+       },
+       {
+        "type": "paragraph",
+        "content": [
+         {
+          "type": "text",
+          "text": "a"
+         }
+        ]
+       },
+       {
+        "type": "paragraph",
+        "content": [
+         {
+          "type": "text",
+          "text": "a"
+         }
+        ]
+       },
+       {
+        "type": "paragraph",
+        "content": [
+         {
+          "type": "text",
+          "text": "a"
+         }
+        ]
+       },
+       {
+        "type": "paragraph",
+        "content": [
+         {
+          "type": "text",
+          "text": "a"
+         }
+        ]
+       },
+       {
+        "type": "paragraph",
+        "content": [
+         {
+          "type": "text",
+          "text": "a"
+         }
+        ]
+       },
+       {
+        "type": "paragraph",
+        "content": [
+         {
+          "type": "text",
+          "text": "a"
+         }
+        ]
+       },
+       {
+        "type": "paragraph",
+        "content": [
+         {
+          "type": "text",
+          "text": "a"
+         }
+        ]
+       },
+       {
+        "type": "paragraph",
+        "content": [
+         {
+          "type": "text",
+          "text": "a"
+         }
+        ]
+       },
+       {
+        "type": "paragraph",
+        "content": [
+         {
+          "type": "text",
+          "text": "a"
+         }
+        ]
+       },
+       {
+        "type": "paragraph",
+        "content": [
+         {
+          "type": "text",
+          "text": "a"
+         }
+        ]
+       },
+       {
+        "type": "paragraph",
+        "content": [
+         {
+          "type": "text",
+          "text": "a"
+         }
+        ]
+       },
+       {
+        "type": "paragraph",
+        "content": [
+         {
+          "type": "text",
+          "text": "a"
+         }
+        ]
+       },
+       {
+        "type": "paragraph",
+        "content": [
+         {
+          "type": "text",
+          "text": "a"
+         }
+        ]
+       },
+       {
+        "type": "paragraph",
+        "content": [
+         {
+          "type": "text",
+          "text": "a"
+         }
+        ]
+       },
+       {
+        "type": "paragraph",
+        "content": [
+         {
+          "type": "text",
+          "text": "a"
+         }
+        ]
+       },
+       {
+        "type": "paragraph",
+        "content": [
+         {
+          "type": "text",
+          "text": "a"
+         }
+        ]
+       },
+       {
+        "type": "paragraph",
+        "content": [
+         {
+          "type": "text",
+          "text": "a"
+         }
+        ]
+       },
+       {
+        "type": "paragraph",
+        "content": [
+         {
+          "type": "text",
+          "text": "a"
+         }
+        ]
+       },
+       {
+        "type": "paragraph",
+        "content": [
+         {
+          "type": "text",
+          "text": "a"
+         }
+        ]
+       },
+       {
+        "type": "paragraph",
+        "content": [
+         {
+          "type": "text",
+          "text": "a"
+         }
+        ]
+       },
+       {
+        "type": "paragraph",
+        "content": [
+         {
+          "type": "text",
+          "text": "a"
+         }
+        ]
+       },
+       {
+        "type": "paragraph",
+        "content": [
+         {
+          "type": "text",
+          "text": "a"
+         }
+        ]
+       },
+       {
+        "type": "paragraph",
+        "content": [
+         {
+          "type": "text",
+          "text": "a"
+         }
+        ]
+       },
+       {
+        "type": "paragraph",
+        "content": [
+         {
+          "type": "text",
+          "text": "a"
+         }
+        ]
+       },
+       {
+        "type": "paragraph",
+        "content": [
+         {
+          "type": "text",
+          "text": "a"
+         }
+        ]
+       },
+       {
+        "type": "paragraph",
+        "content": [
+         {
+          "type": "text",
+          "text": "a"
+         }
+        ]
+       },
+       {
+        "type": "paragraph",
+        "content": [
+         {
+          "type": "text",
+          "text": "a"
+         }
+        ]
+       },
+       {
+        "type": "paragraph",
+        "content": [
+         {
+          "type": "text",
+          "text": "a"
+         }
+        ]
+       },
+       {
+        "type": "paragraph",
+        "content": [
+         {
+          "type": "text",
+          "text": "a"
+         }
+        ]
+       }
+      ]
+     }
+    }
+   },
+   "expect": [
+    {
+     "path": "/text/la/content",
+     "code": "too_long"
+    },
+    {
+     "path": "/text/la",
+     "code": "too_long"
+    }
+   ],
+   "go_only": true
+  },
+  {
+   "id": "richtext-script-node",
+   "comment": "node outside the lite allow-list",
+   "section_type": "intro_text",
+   "mode": "draft",
+   "props": {
+    "text": {
+     "la": {
+      "type": "doc",
+      "content": [
+       {
+        "type": "script"
+       }
+      ]
+     }
+    }
+   },
+   "expect": [
+    {
+     "path": "/text/la/content/0/type",
+     "code": "not_in_enum"
+    }
+   ],
+   "go_only": true
+  },
+  {
+   "id": "richtext-heading-not-lite",
+   "comment": "heading is a full-profile node",
+   "section_type": "intro_text",
+   "mode": "draft",
+   "props": {
+    "text": {
+     "la": {
+      "type": "doc",
+      "content": [
+       {
+        "type": "heading",
+        "attrs": {
+         "level": 2
+        },
+        "content": []
+       }
+      ]
+     }
+    }
+   },
+   "expect": [
+    {
+     "path": "/text/la/content/0/type",
+     "code": "not_in_enum"
+    }
+   ],
+   "go_only": true
+  },
+  {
+   "id": "richtext-link-javascript",
+   "comment": "mark link href",
+   "section_type": "intro_text",
+   "mode": "draft",
+   "props": {
+    "text": {
+     "la": {
+      "type": "doc",
+      "content": [
+       {
+        "type": "paragraph",
+        "content": [
+         {
+          "type": "text",
+          "text": "x",
+          "marks": [
+           {
+            "type": "link",
+            "attrs": {
+             "href": "javascript:alert(1)"
+            }
+           }
+          ]
+         }
+        ]
+       }
+      ]
+     }
+    }
+   },
+   "expect": [
+    {
+     "path": "/text/la/content/0/content/0/marks/0/attrs/href",
+     "code": "pattern_mismatch"
+    }
+   ],
+   "go_only": true
+  },
+  {
+   "id": "richtext-link-protocol-relative",
+   "comment": "R-016 for rich text hrefs",
+   "section_type": "intro_text",
+   "mode": "draft",
+   "props": {
+    "text": {
+     "la": {
+      "type": "doc",
+      "content": [
+       {
+        "type": "paragraph",
+        "content": [
+         {
+          "type": "text",
+          "text": "x",
+          "marks": [
+           {
+            "type": "link",
+            "attrs": {
+             "href": "//evil.test"
+            }
+           }
+          ]
+         }
+        ]
+       }
+      ]
+     }
+    }
+   },
+   "expect": [
+    {
+     "path": "/text/la/content/0/content/0/marks/0/attrs/href",
+     "code": "pattern_mismatch"
+    }
+   ],
+   "go_only": true
+  },
+  {
+   "id": "richtext-link-ok",
+   "comment": "https, mailto, tel, path",
+   "section_type": "intro_text",
+   "mode": "publish",
+   "default_locale": "la",
+   "props": {
+    "text": {
+     "la": {
+      "type": "doc",
+      "content": [
+       {
+        "type": "paragraph",
+        "content": [
+         {
+          "type": "text",
+          "text": "x",
+          "marks": [
+           {
+            "type": "bold"
+           },
+           {
+            "type": "link",
+            "attrs": {
+             "href": "https://a.example",
+             "target": "_blank"
+            }
+           }
+          ]
+         }
+        ]
+       }
+      ]
+     }
+    }
+   },
+   "expect": [],
+   "go_only": true
+  },
+  {
+   "id": "unknown-locale-code",
+   "comment": "KnownLocales = {la,en}: a code that is not in cms_locales",
+   "section_type": "hero_brand",
+   "mode": "draft",
+   "props": {
+    "title": {
+     "la": "x",
+     "fr": "y"
+    },
+    "background": {
+     "media_id": 1,
+     "decorative": true
+    }
+   },
+   "expect": [
+    {
+     "path": "/title/fr",
+     "code": "unknown_reference"
+    }
+   ],
+   "known_locales": [
+    "la",
+    "en"
+   ],
+   "go_only": true
+  },
+  {
+   "id": "syn-minlength-draft",
+   "comment": "minLength is not enforced in draft",
+   "schema": {
+    "type": "object",
+    "properties": {
+     "s": {
+      "type": "string",
+      "minLength": 3
+     }
+    }
+   },
+   "mode": "draft",
+   "props": {
+    "s": ""
+   },
+   "expect": []
+  },
+  {
+   "id": "syn-minlength-publish",
+   "comment": "minLength",
+   "schema": {
+    "type": "object",
+    "properties": {
+     "s": {
+      "type": "string",
+      "minLength": 3
+     }
+    }
+   },
+   "mode": "publish",
+   "default_locale": "la",
+   "props": {
+    "s": "ab"
+   },
+   "expect": [
+    {
+     "path": "/s",
+     "code": "too_short"
+    }
+   ]
+  },
+  {
+   "id": "syn-minproperties-draft",
+   "comment": "minProperties is not enforced in draft",
+   "schema": {
+    "type": "object",
+    "properties": {
+     "o": {
+      "type": "object",
+      "minProperties": 1
+     }
+    }
+   },
+   "mode": "draft",
+   "props": {
+    "o": {}
+   },
+   "expect": []
+  },
+  {
+   "id": "syn-minproperties-publish",
+   "comment": "minProperties",
+   "schema": {
+    "type": "object",
+    "properties": {
+     "o": {
+      "type": "object",
+      "minProperties": 1
+     }
+    }
+   },
+   "mode": "publish",
+   "default_locale": "la",
+   "props": {
+    "o": {}
+   },
+   "expect": [
+    {
+     "path": "/o",
+     "code": "too_short"
+    }
+   ]
+  },
+  {
+   "id": "syn-minitems-draft",
+   "comment": "minItems is kept in draft",
+   "schema": {
+    "type": "object",
+    "properties": {
+     "a": {
+      "type": "array",
+      "minItems": 1
+     }
+    }
+   },
+   "mode": "draft",
+   "props": {
+    "a": []
+   },
+   "expect": [
+    {
+     "path": "/a",
+     "code": "too_short"
+    }
+   ]
+  },
+  {
+   "id": "syn-required-in-not-draft",
+   "comment": "required inside not is a condition, never relaxed: the schema is NOT edited in draft",
+   "schema": {
+    "type": "object",
+    "not": {
+     "anyOf": [
+      {
+       "required": [
+        "a"
+       ]
+      },
+      {
+       "required": [
+        "b"
+       ]
+      }
+     ]
+    }
+   },
+   "mode": "draft",
+   "props": {
+    "a": 1,
+    "b": 2
+   },
+   "expect": [
+    {
+     "path": "/a",
+     "code": "unknown_field"
+    },
+    {
+     "path": "/b",
+     "code": "unknown_field"
+    }
+   ]
+  },
+  {
+   "id": "syn-required-in-not-empty-draft",
+   "comment": "an empty object does not match the not subschema",
+   "schema": {
+    "type": "object",
+    "not": {
+     "anyOf": [
+      {
+       "required": [
+        "a"
+       ]
+      },
+      {
+       "required": [
+        "b"
+       ]
+      }
+     ]
+    }
+   },
+   "mode": "draft",
+   "props": {},
+   "expect": []
+  },
+  {
+   "id": "syn-if-required-is-a-condition",
+   "comment": "required inside if decides the branch in draft",
+   "schema": {
+    "type": "object",
+    "if": {
+     "required": [
+      "k"
+     ]
+    },
+    "then": {
+     "required": [
+      "v"
+     ]
+    }
+   },
+   "mode": "draft",
+   "props": {
+    "k": "x"
+   },
+   "expect": []
+  },
+  {
+   "id": "syn-if-then-publish",
+   "comment": "then.required enforced in publish",
+   "schema": {
+    "type": "object",
+    "if": {
+     "required": [
+      "k"
+     ]
+    },
+    "then": {
+     "required": [
+      "v"
+     ]
+    }
+   },
+   "mode": "publish",
+   "default_locale": "la",
+   "props": {
+    "k": "x"
+   },
+   "expect": [
+    {
+     "path": "/v",
+     "code": "required"
+    }
+   ]
+  },
+  {
+   "id": "syn-exclusive-bounds",
+   "comment": "exclusiveMinimum / exclusiveMaximum",
+   "schema": {
+    "type": "object",
+    "properties": {
+     "n": {
+      "type": "number",
+      "exclusiveMinimum": 5
+     }
+    }
+   },
+   "mode": "draft",
+   "props": {
+    "n": 5
+   },
+   "expect": [
+    {
+     "path": "/n",
+     "code": "out_of_range"
+    }
+   ]
+  },
+  {
+   "id": "syn-number-fraction-ok",
+   "comment": "number accepts fractions",
+   "schema": {
+    "type": "object",
+    "properties": {
+     "n": {
+      "type": "number",
+      "minimum": 1
+     }
+    }
+   },
+   "mode": "draft",
+   "props": {
+    "n": 1.5
+   },
+   "expect": []
+  },
+  {
+   "id": "syn-type-union",
+   "comment": "type as an array",
+   "schema": {
+    "type": "object",
+    "properties": {
+     "v": {
+      "type": [
+       "string",
+       "null"
+      ]
+     }
+    }
+   },
+   "mode": "draft",
+   "props": {
+    "v": true
+   },
+   "expect": [
+    {
+     "path": "/v",
+     "code": "invalid_type"
+    }
+   ]
+  },
+  {
+   "id": "syn-const",
+   "comment": "const",
+   "schema": {
+    "type": "object",
+    "properties": {
+     "v": {
+      "const": 1
+     }
+    }
+   },
+   "mode": "draft",
+   "props": {
+    "v": 2
+   },
+   "expect": [
+    {
+     "path": "/v",
+     "code": "not_in_enum"
+    }
+   ]
+  },
+  {
+   "id": "syn-enum-numbers",
+   "comment": "enum compares by value (1.0 equals 1)",
+   "schema": {
+    "type": "object",
+    "properties": {
+     "v": {
+      "enum": [
+       1,
+       2
+      ]
+     }
+    }
+   },
+   "mode": "draft",
+   "props": {
+    "v": 1.0
+   },
+   "expect": []
+  },
+  {
+   "id": "syn-unique-objects",
+   "comment": "uniqueItems on objects ignores key order",
+   "schema": {
+    "type": "object",
+    "properties": {
+     "a": {
+      "type": "array",
+      "uniqueItems": true
+     }
+    }
+   },
+   "mode": "draft",
+   "props": {
+    "a": [
+     {
+      "x": 1,
+      "y": 2
+     },
+     {
+      "y": 2,
+      "x": 1
+     }
+    ]
+   },
+   "expect": [
+    {
+     "path": "/a/1",
+     "code": "duplicate"
+    }
+   ]
+  },
+  {
+   "id": "syn-unique-number-forms",
+   "comment": "1 and 1.0 are equal",
+   "schema": {
+    "type": "object",
+    "properties": {
+     "a": {
+      "type": "array",
+      "uniqueItems": true
+     }
+    }
+   },
+   "mode": "draft",
+   "props": {
+    "a": [
+     1,
+     1.0
+    ]
+   },
+   "expect": [
+    {
+     "path": "/a/1",
+     "code": "duplicate"
+    }
+   ]
+  },
+  {
+   "id": "syn-addl-schema",
+   "comment": "additionalProperties as a schema",
+   "schema": {
+    "type": "object",
+    "properties": {
+     "m": {
+      "type": "object",
+      "additionalProperties": {
+       "type": "integer"
+      }
+     }
+    }
+   },
+   "mode": "draft",
+   "props": {
+    "m": {
+     "a": 1,
+     "b": "x"
+    }
+   },
+   "expect": [
+    {
+     "path": "/m/b",
+     "code": "invalid_type"
+    }
+   ]
+  },
+  {
+   "id": "syn-oneof",
+   "comment": "oneOf with no match",
+   "schema": {
+    "type": "object",
+    "properties": {
+     "v": {
+      "oneOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "integer"
+       }
+      ]
+     }
+    }
+   },
+   "mode": "draft",
+   "props": {
+    "v": true
+   },
+   "expect": [
+    {
+     "path": "/v",
+     "code": "no_match"
+    }
+   ]
+  },
+  {
+   "id": "syn-anyof-ok",
+   "comment": "anyOf with a match",
+   "schema": {
+    "type": "object",
+    "properties": {
+     "v": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "integer"
+       }
+      ]
+     }
+    }
+   },
+   "mode": "draft",
+   "props": {
+    "v": 3
+   },
+   "expect": []
+  },
+  {
+   "id": "syn-maxproperties",
+   "comment": "maxProperties",
+   "schema": {
+    "type": "object",
+    "properties": {
+     "o": {
+      "type": "object",
+      "maxProperties": 1
+     }
+    }
+   },
+   "mode": "draft",
+   "props": {
+    "o": {
+     "a": 1,
+     "b": 2
+    }
+   },
+   "expect": [
+    {
+     "path": "/o",
+     "code": "too_long"
+    }
+   ]
+  },
+  {
+   "id": "syn-format-is-annotation",
+   "comment": "format is ignored",
+   "schema": {
+    "type": "object",
+    "properties": {
+     "e": {
+      "type": "string",
+      "format": "email"
+     }
+    }
+   },
+   "mode": "draft",
+   "props": {
+    "e": "not an email"
+   },
+   "expect": []
+  },
+  {
+   "id": "syn-ref-defs",
+   "comment": "$ref to $defs with sibling keywords",
+   "schema": {
+    "type": "object",
+    "properties": {
+     "a": {
+      "$ref": "#/$defs/s",
+      "maxLength": 0
+     }
+    },
+    "$defs": {
+     "s": {
+      "type": "string"
+     }
+    }
+   },
+   "mode": "draft",
+   "props": {
+    "a": "x"
+   },
+   "expect": [
+    {
+     "path": "/a",
+     "code": "too_long"
+    }
+   ]
+  },
+  {
+   "id": "syn-localized-nested-required-publish",
+   "comment": "a required localized leaf inside an array item",
+   "schema": {
+    "type": "object",
+    "properties": {
+     "items": {
+      "type": "array",
+      "items": {
+       "type": "object",
+       "required": [
+        "t"
+       ],
+       "properties": {
+        "t": {
+         "x-localized": true,
+         "type": "object",
+         "additionalProperties": {
+          "type": "string"
+         }
+        }
+       }
+      }
+     }
+    }
+   },
+   "mode": "publish",
+   "default_locale": "la",
+   "props": {
+    "items": [
+     {
+      "t": {
+       "en": "x"
+      }
+     }
+    ]
+   },
+   "expect": [
+    {
+     "path": "/items/0/t/la",
+     "code": "required"
+    }
+   ]
+  },
+  {
+   "id": "syn-localized-from-then-publish",
+   "comment": "a leaf required by an applied then is checked too",
+   "schema": {
+    "type": "object",
+    "properties": {
+     "k": {
+      "type": "boolean"
+     },
+     "t": {
+      "x-localized": true,
+      "type": "object",
+      "additionalProperties": {
+       "type": "string"
+      }
+     }
+    },
+    "if": {
+     "required": [
+      "k"
+     ]
+    },
+    "then": {
+     "required": [
+      "t"
+     ]
+    }
+   },
+   "mode": "publish",
+   "default_locale": "la",
+   "props": {
+    "k": true,
+    "t": {
+     "en": "x"
+    }
+   },
+   "expect": [
+    {
+     "path": "/t/la",
+     "code": "required"
+    }
+   ]
+  }
+ ]
+}
