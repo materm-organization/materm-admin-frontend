@@ -7,6 +7,13 @@ import Cookies from "js-cookie";
 import { ACCESS_TOKEN_COOKIE, REFRESH_TOKEN_COOKIE } from "@/lib/constants/cookies";
 
 export const SIGN_IN_PATH = "/auth/sign-in";
+export const FORGOT_PASSWORD_PATH = "/auth/forgot-password";
+
+// Values of the one-shot sign-in notice (`setSignInNotice`).
+export const SIGN_IN_NOTICE = {
+  SESSION_ENDED: "session_ended",
+  PASSWORD_RESET: "password_reset",
+} as const;
 
 // `Secure` only when the page itself is https so the cookie still works on a
 // plain-http dev server / LAN IP.

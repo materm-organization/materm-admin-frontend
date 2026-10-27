@@ -32,6 +32,17 @@ if (typeof window !== "undefined") {
   }
   window.ResizeObserver ??= ResizeObserverStub as unknown as typeof ResizeObserver;
 
+  // framer-motion's `whileInView` (AnimationContainer on the auth pages) observes intersections.
+  class IntersectionObserverStub {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+    takeRecords() {
+      return [];
+    }
+  }
+  window.IntersectionObserver ??= IntersectionObserverStub as unknown as typeof IntersectionObserver;
+
   Element.prototype.scrollIntoView ??= () => {};
   Element.prototype.hasPointerCapture ??= () => false;
   Element.prototype.setPointerCapture ??= () => {};

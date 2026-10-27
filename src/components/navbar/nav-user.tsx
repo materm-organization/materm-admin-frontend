@@ -1,6 +1,7 @@
 "use client";
 
-import { CheckIcon, ChevronsUpDownIcon, KeyRoundIcon, LogOutIcon, MoonIcon, SunIcon } from "lucide-react";
+import { CheckIcon, ChevronsUpDownIcon, KeyRoundIcon, LogOutIcon, MoonIcon, SunIcon, UserIcon } from "lucide-react";
+import Link from "next/link";
 import Cookies from "js-cookie";
 import { useLocale, useTranslations } from "next-intl";
 import { useTheme } from "next-themes";
@@ -129,6 +130,12 @@ export function NavUser() {
                   <SunIcon className="h-[1.2rem] w-[1.2rem] scale-100 rotate-0 transition-all dark:scale-0 dark:-rotate-90" />
                   <MoonIcon className="absolute h-[1.2rem] w-[1.2rem] scale-0 rotate-90 transition-all dark:scale-100 dark:rotate-0" />
                   <span>{theme === "dark" ? t("lightMode") : t("darkMode")}</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/admin/profile">
+                    <UserIcon />
+                    <span>{t("profile")}</span>
+                  </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem onSelect={() => setChangePasswordOpen(true)}>
                   <KeyRoundIcon />

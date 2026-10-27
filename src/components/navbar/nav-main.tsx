@@ -4,6 +4,7 @@ import { ChevronRightIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useState } from "react";
 
 import {
   Collapsible,
@@ -36,14 +37,20 @@ import type { NavMainGroupConfig } from "@/lib/nav-main-items";
 // Pure rendering of the already-filtered `items` array — all permission
 // filtering happens upstream in AppSidebar via `buildNavMainItemsForUser`.
 // Uses `bg-primary/5`/`bg-primary/10` active styling rather than shadcn's
-// default `isActive`/`bg-sidebar-accent`. The active check is an exact
-// pathname match: every route is currently a flat, single-segment page
-// under `/admin`, so a prefix match would make `/admin` (nav.dashboard) a
-// substring of every other admin URL and highlight it everywhere. Revisit
-// if nested routes are added (nav-main-items.ts's `getPermissionsForPath`
-// already applies a `pathname === e.url || pathname.startsWith(`${e.url}/`)`
-// boundary check). The group label is the literal, untranslated string
-// "Menu".
+// default `isActive`/`bg-sidebar-accent`. An entry is active for its own URL
+// and for every page below it (`/admin/users/5` marks "Users"), judged on a
+// whole-segment boundary (`/admin/users-x` does not match `/admin/users`);
+// the dashboard `/admin` is the exception and matches EXACTLY, otherwise it
+// would be a prefix of every admin URL and highlighted everywhere. A group
+// opens by itself when one of its pages becomes active — also on a soft
+// navigation — and the user can still collapse/expand it by hand until the
+// next navigation. The group label is the literal, untranslated string "Menu".
+export function isNavActive(pathname: string, url: string): boolean {
+  if (url === "#") return false;
+  if (url === "/admin") return pathname === url;
+  return pathname === url || pathname.startsWith(`${url}/`);
+}
+
 export function NavMain({ items }: { items: NavMainGroupConfig[] }) {
   const t = useTranslations();
   const pathname = usePathname();
@@ -53,7 +60,21 @@ export function NavMain({ items }: { items: NavMainGroupConfig[] }) {
   // `group-data-[collapsible=icon]`, so a parent item's children would be
   // unreachable; those parents render as a flyout DropdownMenu instead.
   const isRail = state === "collapsed" && !isMobile;
-  const isActivePath = (url: string) => pathname === url;
+  const isActivePath = (url: string) => isNavActive(pathname, url);
+  // Hand-made open/closed state per group, dropped for the groups that hold the active page whenever the
+  // pathname changes (so navigating INTO a group always opens it).
+  const [manual, setManual] = useState<{ path: string; open: Record<string, boolean> }>({
+    path: pathname,
+    open: {},
+  });
+  if (manual.path !== pathname) {
+    const keep: Record<string, boolean> = {};
+    for (const item of items) {
+      const holdsActive = (item.items ?? []).some((sub) => isActivePath(sub.url));
+      if (!holdsActive && item.title in manual.open) keep[item.title] = manual.open[item.title];
+    }
+    setManual({ path: pathname, open: keep });
+  }
 
   return (
     <SidebarGroup>
@@ -61,7 +82,7 @@ export function NavMain({ items }: { items: NavMainGroupConfig[] }) {
       <SidebarMenu>
         {items.map((item) => {
           const hasActiveSub = (item.items ?? []).some((sub) => isActivePath(sub.url));
-          const defaultOpen = hasActiveSub || isActivePath(item.url);
+          const isOpen = manual.open[item.title] ?? hasActiveSub;
 
           if (isRail && item.items?.length) {
             return (
@@ -88,7 +109,7 @@ export function NavMain({ items }: { items: NavMainGroupConfig[] }) {
                         asChild
                         className={cn(isActivePath(sub.url) && "bg-primary/10 font-medium text-foreground")}
                       >
-                        <Link href={sub.url}>
+                        <Link href={sub.url} aria-current={isActivePath(sub.url) ? "page" : undefined}>
                           <span>{t(sub.title)}</span>
                           {sub.comingSoon && (
                             <Badge variant="secondary" className="px-1.5 py-0 text-[10px] font-medium">
@@ -105,7 +126,15 @@ export function NavMain({ items }: { items: NavMainGroupConfig[] }) {
           }
 
           return (
-            <Collapsible key={item.title} asChild defaultOpen={defaultOpen} className="group/collapsible">
+            <Collapsible
+              key={item.title}
+              asChild
+              open={isOpen}
+              onOpenChange={(next) =>
+                setManual((m) => ({ path: m.path, open: { ...m.open, [item.title]: next } }))
+              }
+              className="group/collapsible"
+            >
               <SidebarMenuItem>
                 {item.items?.length ? (
                   <>
@@ -138,7 +167,7 @@ export function NavMain({ items }: { items: NavMainGroupConfig[] }) {
                                 "hover:text-mute"
                               )}
                             >
-                              <Link href={sub.url}>
+                              <Link href={sub.url} aria-current={isActivePath(sub.url) ? "page" : undefined}>
                                 <span>{t(sub.title)}</span>
                                 {sub.comingSoon && (
                                   <Badge variant="secondary" className="px-1.5 py-0 text-[10px] font-medium">
@@ -161,7 +190,7 @@ export function NavMain({ items }: { items: NavMainGroupConfig[] }) {
                       "hover:text-mute"
                     )}
                   >
-                    <Link href={item.url}>
+                    <Link href={item.url} aria-current={isActivePath(item.url) ? "page" : undefined}>
                       <item.icon size={17} />
                       <span>{t(item.title)}</span>
                       {item.comingSoon && (

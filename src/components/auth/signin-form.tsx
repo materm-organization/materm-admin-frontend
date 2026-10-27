@@ -5,6 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Eye, EyeClosed, LogIn } from "lucide-react";
 import Cookies from "js-cookie";
 import { useTranslations } from "next-intl";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -25,7 +26,7 @@ import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { BorderBeam } from "@/components/ui/border-beam";
 import { useMutationLogin } from "@/hooks/use-auth";
-import { takeSignInNotice } from "@/lib/auth-session";
+import { FORGOT_PASSWORD_PATH, SIGN_IN_NOTICE, takeSignInNotice } from "@/lib/auth-session";
 import AnimationContainer from "@/components/global/animation-container";
 import { cn } from "@/lib/utils";
 
@@ -70,10 +71,15 @@ export function SignInForm({ className, ...props }: React.ComponentProps<"div">)
     }
   }, [form]);
 
-  // After a forced sign-out (session ended / revoked / refresh failed),
-  // lib/axios.ts leaves a one-shot notice for this page.
+  // A one-shot notice left for this page: after a forced sign-out (session ended / revoked / refresh failed,
+  // lib/axios.ts) or after a successful password reset (SCR-03).
   useEffect(() => {
-    if (takeSignInNotice()) toast.info(t("notices.sessionEnded"), { id: "session-ended" });
+    const notice = takeSignInNotice();
+    if (notice === SIGN_IN_NOTICE.PASSWORD_RESET) {
+      toast.success(t("notices.passwordReset"), { id: "password-reset" });
+    } else if (notice) {
+      toast.info(t("notices.sessionEnded"), { id: "session-ended" });
+    }
   }, [t]);
 
   const onSubmit = (values: LoginFormValues) => {
@@ -141,7 +147,15 @@ export function SignInForm({ className, ...props }: React.ComponentProps<"div">)
                   name="password"
                   render={({ field }) => (
                     <FormItem className="flex flex-col space-y-2">
-                      <FormLabel>{t("passwordLabel")}</FormLabel>
+                      <div className="flex items-center justify-between gap-2">
+                        <FormLabel>{t("passwordLabel")}</FormLabel>
+                        <Link
+                          href={FORGOT_PASSWORD_PATH}
+                          className="text-xs text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+                        >
+                          {t("forgotLink")}
+                        </Link>
+                      </div>
                       <FormControl>
                         <div className="relative">
                           <Input

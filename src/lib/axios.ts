@@ -17,6 +17,7 @@ import Cookies from "js-cookie";
 
 import { API_ERROR_CODES, SESSION_ENDING_CODES, parseApiError } from "@/lib/api-error";
 import {
+  SIGN_IN_NOTICE,
   SIGN_IN_PATH,
   clearSession,
   getAccessToken,
@@ -113,7 +114,7 @@ function endSession() {
   if (DEV_BYPASS_AUTH || typeof window === "undefined" || sessionEnding) return;
   if (window.location.pathname === SIGN_IN_PATH) return;
   sessionEnding = true;
-  setSignInNotice("session_ended");
+  setSignInNotice(SIGN_IN_NOTICE.SESSION_ENDED);
   window.location.href = SIGN_IN_PATH;
 }
 

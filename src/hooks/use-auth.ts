@@ -7,14 +7,21 @@ import { toast } from "sonner";
 
 import { useApiErrorHandler } from "@/hooks/use-api-error";
 import { parseApiError } from "@/lib/api-error";
-import { SIGN_IN_PATH, clearSession, setTokens } from "@/lib/auth-session";
+import { SIGN_IN_PATH, clearSession, getAccessToken, setTokens } from "@/lib/auth-session";
 import { API_ENDPOINTS } from "@/lib/constants/api-endpoints";
 import { ACCESS_TOKEN_COOKIE } from "@/lib/constants/cookies";
 import { PERMISSION_CATALOG } from "@/lib/constants/permissions";
 import { userHasAction } from "@/lib/permissions";
 import { AuthAPI } from "@/services/auth.api";
 import { ApiResponse } from "@/types/api";
-import { ChangePasswordPayload, CurrentUser, LoginPayload } from "@/types/user";
+import {
+  AcceptInvitationPayload,
+  ChangePasswordPayload,
+  CurrentUser,
+  ForgotPasswordPayload,
+  LoginPayload,
+  ResetPasswordPayload,
+} from "@/types/user";
 
 // Dev-only escape hatch: lets `/admin` render without a running backend or
 // a real login, so the app can be previewed with zero setup — skips
@@ -153,5 +160,49 @@ export const useMutationChangePassword = () => {
   return useMutation({
     mutationFn: (payload: ChangePasswordPayload) => AuthAPI.ChangePassword(payload),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.AUTH.ME] }),
+  });
+};
+
+// --- Public self-service flows (SCR-02 / 03 / 04). None of them needs a session; errors are handled by the page
+// (neutral answers, invalid-token states, field errors), 429 / 5xx / network are toasted by QueryProvider.
+
+// Always answers 200 (neutral), so the result carries nothing worth keeping.
+export const useMutationForgotPassword = () =>
+  useMutation({ mutationFn: (payload: ForgotPasswordPayload) => AuthAPI.ForgotPassword(payload) });
+
+// The reset revokes every session of the account: whatever session this browser still holds is dead, so it is
+// dropped here (the next /admin visit then goes to sign-in without a "session ended" notice).
+export const useMutationResetPassword = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: ResetPasswordPayload) => AuthAPI.ResetPassword(payload),
+    onSuccess: () => {
+      clearSession();
+      queryClient.removeQueries();
+    },
+  });
+};
+
+// `gcTime: 0`: the answer holds the invitee's e-mail / name; the token itself is only ever in the request body.
+export const useMutationVerifyInvitation = () =>
+  useMutation({ mutationFn: (token: string) => AuthAPI.VerifyInvitation(token), gcTime: 0 });
+
+// Accepting signs the invitee in (the answer is a TokenPair, stored exactly like /login). If this browser was
+// signed in as somebody else, that old session is ended best-effort first and every cached query is dropped,
+// otherwise `/admin` would briefly show the previous user (`/auth/me` is cached for 5 minutes).
+export const useMutationAcceptInvitation = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (payload: AcceptInvitationPayload) => {
+      const previousAccess = getAccessToken();
+      const res = await AuthAPI.AcceptInvitation(payload);
+      if (previousAccess) await AuthAPI.RevokeSessionQuietly(previousAccess);
+      return res;
+    },
+    gcTime: 0,
+    onSuccess: (res) => {
+      setTokens({ access: res.data.access, refresh: res.data.refresh });
+      queryClient.removeQueries();
+    },
   });
 };

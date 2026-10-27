@@ -38,7 +38,8 @@
       "cancel": "Cancel",
       "done": "Done"
     },
-    "retry": "Retry"
+    "retry": "Retry",
+    "profile": "Profile"
   },
   "changePassword": {
     "title": "Change password",
@@ -95,7 +96,104 @@
     },
     "notices": {
       "sessionEnded": "Your session has ended. Please sign in again.",
-      "logoutServerFailed": "You were signed out on this device, but the server could not confirm it. Your session may stay active until it expires."
+      "logoutServerFailed": "You were signed out on this device, but the server could not confirm it. Your session may stay active until it expires.",
+      "passwordReset": "Your password was reset. Sign in with the new password."
+    },
+    "forgotLink": "Forgot password?",
+    "forgot": {
+      "title": "Forgot your password?",
+      "description": "Enter your username or e-mail. If an account matches, we will send a link to set a new password.",
+      "identifierLabel": "Username or e-mail",
+      "identifierPlaceholder": "Username or e-mail",
+      "submit": "Send reset link",
+      "submitting": "Sending...",
+      "backToSignIn": "Back to sign in",
+      "validation": {
+        "identifierTooShort": "Enter at least 3 characters",
+        "identifierTooLong": "Too long (max 254 characters)"
+      },
+      "sent": {
+        "title": "Check your inbox",
+        "description": "If an account matches, we have sent a link to set a new password. The link works for 30 minutes."
+      },
+      "throttled": "Too many attempts. You can try again in {seconds, plural, one {# second} other {# seconds}}.",
+      "error": "Could not send the request",
+      "throttledMinutes": "Too many attempts. You can try again in about {minutes, plural, one {# minute} other {# minutes}}."
+    },
+    "reset": {
+      "title": "Set a new password",
+      "description": "Choose a new password for your account. You will sign in with it afterwards.",
+      "loading": "Checking the link...",
+      "passwordLabel": "New password",
+      "confirmLabel": "Confirm new password",
+      "showPassword": "Show password",
+      "hidePassword": "Hide password",
+      "submit": "Set new password",
+      "submitting": "Saving...",
+      "backToSignIn": "Back to sign in",
+      "invalid": {
+        "title": "This link is invalid or has expired",
+        "description": "Reset links work once and for 30 minutes. Request a new link to continue.",
+        "requestNew": "Request a new link"
+      },
+      "validation": {
+        "passwordTooShort": "At least 12 characters",
+        "passwordTooLong": "Too long (max 128 characters)",
+        "confirmRequired": "Confirm the new password",
+        "mismatch": "Passwords do not match"
+      },
+      "error": "Could not set the new password"
+    },
+    "accept": {
+      "title": "Accept your invitation",
+      "description": "Choose your username and a password to finish creating your account.",
+      "loading": "Checking the invitation...",
+      "summary": {
+        "email": "E-mail",
+        "role": "Role",
+        "expires": "Invitation valid until"
+      },
+      "usernameLabel": "Username",
+      "usernameHint": "3-64 characters: letters, digits and . _ @ -. It cannot be changed later.",
+      "nameLabel": "Full name",
+      "passwordLabel": "Password",
+      "confirmLabel": "Confirm password",
+      "showPassword": "Show password",
+      "hidePassword": "Hide password",
+      "submit": "Create account and sign in",
+      "submitting": "Creating...",
+      "backToSignIn": "Back to sign in",
+      "signedInNote": "This browser is signed in to another account. Accepting this invitation signs that account out and signs you in as the invited user.",
+      "invalid": {
+        "title": "This invitation is invalid or has expired",
+        "description": "Invitation links work once and for a limited time. Ask an administrator to send you a new invitation.",
+        "backToSignIn": "Go to sign in"
+      },
+      "loadError": {
+        "title": "Could not check the invitation",
+        "description": "The invitation could not be loaded. Check your connection and try again.",
+        "retry": "Try again"
+      },
+      "validation": {
+        "usernameInvalid": "3-64 characters: letters, digits and . _ @ -",
+        "nameRequired": "Name is required",
+        "nameTooLong": "Name is too long (max 120 characters)",
+        "passwordTooShort": "At least 12 characters",
+        "passwordTooLong": "Too long (max 128 characters)",
+        "confirmRequired": "Confirm the password",
+        "mismatch": "Passwords do not match"
+      },
+      "error": "Could not accept the invitation"
+    },
+    "passwordPolicy": {
+      "title": "Password requirements",
+      "minLength": "At least 12 characters",
+      "notIdentity": "Not the same as your username, name or e-mail",
+      "notCommon": "Not a commonly used password (checked when you save)",
+      "notReused": "Not one of your recent passwords (checked when you save)",
+      "met": "met",
+      "notMet": "not met",
+      "checkedByServer": "checked when you save"
     }
   },
   "nav": {
@@ -181,7 +279,8 @@
         "min_length": "The password must be at least {min} characters.",
         "contains_identity": "The password must not contain your username or email.",
         "common": "This password is too common.",
-        "reused": "This password was used recently."
+        "reused": "This password was used recently.",
+        "max_length": "The password must be at most {max} characters."
       },
       "invalid": "The value is not valid.",
       "email_required": "This account has no e-mail address.",
@@ -221,7 +320,8 @@
         "usernamePlaceholder": "3-64 letters, digits . _ @ -",
         "email": "Email (optional)",
         "role": "Role",
-        "rolePlaceholder": "Select a role"
+        "rolePlaceholder": "Select a role",
+        "emailRequired": "E-mail"
       },
       "validation": {
         "nameRequired": "Name is required",
@@ -229,17 +329,29 @@
         "usernameInvalid": "3-64 characters: letters, digits and . _ @ -",
         "emailInvalid": "Enter a valid email address",
         "emailTooLong": "Email is too long",
-        "roleRequired": "Select a role"
+        "roleRequired": "Select a role",
+        "emailRequired": "Enter the e-mail address to invite"
       },
       "passwordNote": "A temporary password is generated and shown once after the account is created.",
       "buttons": {
         "cancel": "Cancel",
-        "create": "Create user"
+        "create": "Create user",
+        "invite": "Send invitation"
       },
       "toast": {
         "success": "User created",
-        "error": "Failed to create user"
-      }
+        "error": "Failed to create user",
+        "invited": "Invitation created"
+      },
+      "openInvite": "Invite user",
+      "titleInvite": "Invite user",
+      "descriptionInvite": "Sends an e-mail with a link (valid for 72 hours). The invitee chooses their own username and password; no password is created here.",
+      "modes": {
+        "label": "How to add the user",
+        "invite": "Invite by e-mail",
+        "temporary": "Temporary password"
+      },
+      "inviteNote": "The user shows as \"Invited\" until they accept the invitation."
     },
     "temporaryPassword": {
       "title": "Temporary password",
@@ -397,6 +509,16 @@
           "error": "Failed to resend the invitation"
         }
       }
+    },
+    "invitationSent": {
+      "title": "Invitation created",
+      "description": "{name} ({email}) was invited. The link works until {expires}.",
+      "delivery": {
+        "queued": "The e-mail is being sent now.",
+        "logged_only": "This server has no mail service configured (development), so no e-mail was sent. The invitation link is printed in the server log.",
+        "unknown": "The invitation was created."
+      },
+      "done": "Done"
     }
   },
   "states": {
@@ -841,7 +963,11 @@
         "authz_denied": "Permission denials",
         "redis_degraded_events": "Redis degraded events",
         "audit_default_partition_rows": "Audit rows in default partition",
-        "audit_write_failures": "Audit write failures"
+        "audit_write_failures": "Audit write failures",
+        "idempotency_replays": "Idempotent replays",
+        "idempotency_conflicts": "Idempotency key conflicts",
+        "mail_dropped": "E-mails dropped (queue full)",
+        "mail_failed": "E-mails that failed to send"
       }
     },
     "outbox": {
@@ -850,6 +976,48 @@
       "pending": "Waiting",
       "failed": "Failed",
       "lastSuccess": "Last delivered"
+    }
+  },
+  "profile": {
+    "title": "My profile",
+    "description": "Your own account details and preferences.",
+    "sections": {
+      "account": {
+        "title": "Account",
+        "description": "Your name and the language of the admin panel."
+      },
+      "password": {
+        "title": "Password",
+        "description": "Change the password you use to sign in. Your other devices are signed out.",
+        "button": "Change password"
+      }
+    },
+    "facts": {
+      "username": "Username",
+      "email": "E-mail",
+      "role": "Role",
+      "allowedLocales": "Content languages",
+      "allLocales": "All languages",
+      "lastLogin": "Last sign-in",
+      "passwordChanged": "Password changed"
+    },
+    "form": {
+      "fields": {
+        "name": "Full name",
+        "preferredLocale": "Preferred language",
+        "noPreference": "No preference",
+        "preferredLocaleHint": "The language of the admin panel. Saving switches it right away."
+      },
+      "validation": {
+        "nameRequired": "Name is required",
+        "nameTooLong": "Name is too long (max 120 characters)"
+      },
+      "save": "Save changes",
+      "discard": "Discard",
+      "toast": {
+        "success": "Profile updated",
+        "error": "Failed to update your profile"
+      }
     }
   }
 }

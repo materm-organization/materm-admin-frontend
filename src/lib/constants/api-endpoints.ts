@@ -11,6 +11,12 @@ export const API_ENDPOINTS = {
     LOGOUT: "/auth/logout",
     ME: "/auth/me",
     CHANGE_PASSWORD: "/auth/users/change-password",
+    // P1 (doc/05 sections 2.6 - 2.10). The first four are public (no session); the tokens travel in the BODY.
+    FORGOT_PASSWORD: "/auth/forgot-password",
+    RESET_PASSWORD: "/auth/reset-password",
+    INVITATION_VERIFY: "/auth/invitations/verify",
+    INVITATION_ACCEPT: "/auth/invitations/accept",
+    PROFILE: "/auth/profile",
   },
   USERS: {
     LIST: "/users",

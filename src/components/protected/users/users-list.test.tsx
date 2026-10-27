@@ -128,3 +128,44 @@ describe("UsersList (SCR-07): role / state filters and sort live in the URL", ()
     expect(screen.getAllByRole("button", { name: "Clear filters" }).length).toBeGreaterThan(0);
   });
 });
+
+describe("UsersList (SCR-07): invite / add buttons", () => {
+  it("'Invite user' opens the dialog in invite mode and shows the e-mail delivery result; 'Add user' keeps the temporary-password mode", async () => {
+    const u = userEvent.setup();
+    server.use(
+      http.post(`${API}/users`, () =>
+        HttpResponse.json(
+          {
+            success: true,
+            data: {
+              user: user(9, "Noy"),
+              temporary_password: null,
+              invitation_expires_at: "2026-10-30T09:00:00Z",
+              email_delivery: "logged_only",
+            },
+          },
+          { status: 201 }
+        )
+      )
+    );
+    renderApp(<UsersList />);
+    await screen.findByRole("link", { name: "Ann" });
+
+    await u.click(screen.getByRole("button", { name: "Invite user" }));
+    let dialog = await screen.findByRole("dialog", { name: "Invite user" });
+    expect(within(dialog).queryByLabelText(/^Username/)).not.toBeInTheDocument();
+    await u.type(within(dialog).getByLabelText(/^Full name/), "Noy");
+    await u.type(within(dialog).getByLabelText(/^E-mail/), "noy@example.com");
+    await u.click(within(dialog).getByRole("combobox"));
+    await u.click(await screen.findByRole("option", { name: "Editor" }));
+    await u.click(within(dialog).getByRole("button", { name: "Send invitation" }));
+
+    const result = await screen.findByRole("dialog", { name: "Invitation created" });
+    expect(within(result).getByRole("status")).toHaveTextContent(/printed in the server log/);
+    await u.click(within(result).getByRole("button", { name: "Done" }));
+
+    await u.click(screen.getByRole("button", { name: "Add user" }));
+    dialog = await screen.findByRole("dialog", { name: "Add user" });
+    expect(within(dialog).getByLabelText(/^Username/)).toBeInTheDocument();
+  });
+});

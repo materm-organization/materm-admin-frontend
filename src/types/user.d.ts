@@ -54,3 +54,43 @@ export type ChangePasswordPayload = {
   old_password: string;
   new_password: string;
 };
+
+// --- P1 self-service auth (doc/05 sections 2.6 - 2.10) ---
+
+export type ForgotPasswordPayload = { identifier: string };
+
+export type ResetPasswordPayload = { token: string; new_password: string };
+
+export type InvitationVerifyResult = {
+  email: string;
+  name: string;
+  role_name: string;
+  expires_at: string;
+  // Null when the e-mail's local part is too short or already taken.
+  suggested_username: string | null;
+};
+
+export type AcceptInvitationPayload = {
+  token: string;
+  username: string;
+  password: string;
+  // Omitted = the name the inviter typed.
+  name?: string;
+};
+
+// GET /auth/profile (+ ETag). `email` and the role are read-only here.
+export type UserProfile = {
+  id: number;
+  public_id: string;
+  username: string;
+  name: string;
+  email: string | null;
+  role_key: string;
+  role_name: string;
+  preferred_locale: string | null;
+  allowed_locales: string[];
+  last_login_at: string | null;
+  password_changed_at: string | null;
+};
+
+export type UpdateProfilePayload = { name?: string; preferred_locale?: string | null };

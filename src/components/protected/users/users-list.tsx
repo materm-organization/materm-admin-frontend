@@ -1,7 +1,7 @@
 "use client";
 
 import type { ColumnDef } from "@tanstack/react-table";
-import { UserPlusIcon } from "lucide-react";
+import { MailPlusIcon, UserPlusIcon } from "lucide-react";
 import Link from "next/link";
 import { useFormatter, useTranslations } from "next-intl";
 import { useMemo, useState, type SetStateAction } from "react";
@@ -11,7 +11,12 @@ import { ListPage } from "@/components/global/list/list-page";
 import { MultiSelectChecklist, type MultiSelectOption } from "@/components/global/multi-select-checklist";
 import { OneTimeSecretDialog } from "@/components/global/one-time-secret-dialog";
 import { PermissionGate } from "@/components/global/permission-gate";
-import { CreateUserDialog } from "@/components/protected/users/create-user-dialog";
+import {
+  CreateUserDialog,
+  type CreateDelivery,
+  type CreatedUserResult,
+} from "@/components/protected/users/create-user-dialog";
+import { InvitationSentDialog } from "@/components/protected/users/invitation-sent-dialog";
 import { UserStateBadge } from "@/components/protected/users/user-state-badge";
 import { Button } from "@/components/ui/button";
 import { useRoles } from "@/hooks/use-roles";
@@ -49,7 +54,12 @@ export function UsersList() {
   const format = useFormatter();
 
   const list = useListParams(USERS_LIST_CONFIG);
-  const [createOpen, setCreateOpen] = useState(false);
+  // Which button opened the create dialog decides its mode (invite by e-mail / temporary password).
+  const [create, setCreate] = useState<{ open: boolean; delivery: CreateDelivery }>({
+    open: false,
+    delivery: "invite",
+  });
+  const [invited, setInvited] = useState<CreatedUserResult | null>(null);
   // The one-time temporary password lives ONLY here, until the dialog is
   // confirmed with "Done" — never in the query cache or storage.
   const [issued, setIssued] = useState<{ username: string; password: string | null } | null>(null);
@@ -161,22 +171,35 @@ export function UsersList() {
         }
         primaryAction={
           <PermissionGate permission={PERMISSION_KEYS.IAM_USERS} action={PERMISSION_ACTIONS.CREATE}>
-            <Button type="button" onClick={() => setCreateOpen(true)}>
-              <UserPlusIcon />
-              {t("create.open")}
-            </Button>
+            <div className="flex flex-wrap gap-2">
+              <Button type="button" onClick={() => setCreate({ open: true, delivery: "invite" })}>
+                <MailPlusIcon />
+                {t("create.openInvite")}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setCreate({ open: true, delivery: "temporary_password" })}
+              >
+                <UserPlusIcon />
+                {t("create.open")}
+              </Button>
+            </div>
           </PermissionGate>
         }
         emptyTitle={t("empty")}
       />
 
       <CreateUserDialog
-        open={createOpen}
-        onOpenChange={setCreateOpen}
-        onCreated={({ username, temporaryPassword }) =>
-          setIssued({ username, password: temporaryPassword })
-        }
+        open={create.open}
+        initialDelivery={create.delivery}
+        onOpenChange={(open) => setCreate((c) => ({ ...c, open }))}
+        onCreated={(result) => {
+          if (result.delivery === "invite") setInvited(result);
+          else setIssued({ username: result.username, password: result.temporaryPassword });
+        }}
       />
+      {invited ? <InvitationSentDialog result={invited} onDone={() => setInvited(null)} /> : null}
       {issued ? (
         <OneTimeSecretDialog
           secret={issued.password}
