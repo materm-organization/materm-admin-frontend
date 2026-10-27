@@ -85,6 +85,16 @@ export function parseApiError(error: unknown): ParsedApiError {
 // leaving to the calling form: network failures, 403 (but not
 // PASSWORD_CHANGE_REQUIRED, which opens the change-password dialog), 429 and
 // 5xx. Form handlers must NOT toast these again — see useApiErrorHandler.
+// "No permission" in the UI: a 403 (except PASSWORD_CHANGE_REQUIRED, which opens the forced change-password
+// dialog instead) or a 401 that reached the UI without ending the session (the interceptor already refreshed
+// once). Such a read is never retried and is shown as the "no permission" state, not as an error to retry.
+export function isNoPermissionError(error: unknown): boolean {
+  const parsed = parseApiError(error);
+  if (parsed.status === 403) return parsed.code !== API_ERROR_CODES.PASSWORD_CHANGE_REQUIRED;
+  if (parsed.status === 401) return !(parsed.code && SESSION_ENDING_CODES.has(parsed.code));
+  return false;
+}
+
 export function isGloballyToasted(parsed: ParsedApiError): boolean {
   if (parsed.isNetworkError) return true;
   if (parsed.status === 403) return parsed.code !== API_ERROR_CODES.PASSWORD_CHANGE_REQUIRED;

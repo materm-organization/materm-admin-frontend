@@ -70,7 +70,10 @@ i18n namespace in both `i18n/en.json` and `i18n/la.json`.
   `SESSION_REVOKED` / `REFRESH_REUSED` / `REFRESH_REPLAY_UNAVAILABLE` or a 401 from the refresh
   call -> clear session + hard redirect to sign-in. **403 and 429 never sign out or redirect**;
   `QueryProvider` toasts them (and network/5xx) once, forms handle 400/404/409/422 themselves
-  (`useApiErrorHandler`). Decide on the error `code`, never on `message`.
+  (`useApiErrorHandler`).
+  **A read that ends in 403 (or an auth error that did not end the session) is shown as the "no permission" state
+  (`components/layout/no-permission.tsx`, `isNoPermissionError`): never retried (React Query does not retry any 4xx;
+  one retry for network/5xx) and not toasted. Every page that fetches data must render `NoPermission` for it.** Decide on the error `code`, never on `message`.
 - Error text: `errors.codes.<CODE>` / `errors.fields.<field code>` in `i18n/*.json` (field codes with a
   dot are nested JSON). Field errors (`errors[]`, JSON-Pointer `path`) are mapped onto form fields.
 - `must_change_password` (from `/auth/me`) or a 403 `PASSWORD_CHANGE_REQUIRED` -> the guard renders only

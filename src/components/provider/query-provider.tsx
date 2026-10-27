@@ -11,7 +11,7 @@ import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
-import { isGloballyToasted, parseApiError } from "@/lib/api-error";
+import { isGloballyToasted, isNoPermissionError, parseApiError } from "@/lib/api-error";
 import { translateApiError } from "@/lib/api-error-messages";
 import { setAuthEventHandler } from "@/lib/axios";
 import { API_ENDPOINTS } from "@/lib/constants/api-endpoints";
@@ -40,11 +40,24 @@ export function QueryProvider({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(
     () =>
       new QueryClient({
-        queryCache: new QueryCache({ onError: (error) => reportGlobalError(error) }),
+        // A read that ends in 403 / an auth error is shown by the page as the "no permission" state
+        // (NoPermission): no toast for it. Mutations still toast.
+        queryCache: new QueryCache({
+          onError: (error) => {
+            if (!isNoPermissionError(error)) reportGlobalError(error);
+          },
+        }),
         mutationCache: new MutationCache({ onError: (error) => reportGlobalError(error) }),
         defaultOptions: {
           queries: {
             refetchOnWindowFocus: false,
+            // Never retry a 4xx (403 and auth errors would only reload the same refusal); one retry for a
+            // network error or a 5xx.
+            retry: (failureCount, error) => {
+              const status = parseApiError(error).status;
+              if (status !== undefined && status >= 400 && status < 500) return false;
+              return failureCount < 1;
+            },
           },
         },
       })

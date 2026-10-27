@@ -5,10 +5,11 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
 
 import { ChangePasswordDialog } from "@/components/auth/change-password-dialog";
+import { NoPermission } from "@/components/layout/no-permission";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { useFetchCurrentUser, useHasAccessToken } from "@/hooks/use-auth";
-import { parseApiError } from "@/lib/api-error";
+import { isNoPermissionError, parseApiError } from "@/lib/api-error";
 import { getPermissionsForPath } from "@/lib/nav-main-items";
 import { getReadablePermissionKeys } from "@/lib/permissions";
 
@@ -46,6 +47,11 @@ export function RoutePermissionGuard({ children }: { children: React.ReactNode }
 
   if (sessionGone) {
     return null;
+  }
+
+  // 403 / auth errors on the current-user read: "no permission", no retry button, no reload.
+  if (isError && isNoPermissionError(error)) {
+    return <NoPermission />;
   }
 
   if (isError) {
@@ -90,12 +96,7 @@ export function RoutePermissionGuard({ children }: { children: React.ReactNode }
     requiredPermissions.some((p) => userPermissions.includes(p));
 
   if (!isAllowed) {
-    return (
-      <div className="flex min-h-[40vh] flex-col items-center justify-center gap-1 text-center">
-        <p className="text-sm font-medium">{t("noPermissionTitle")}</p>
-        <p className="text-sm text-muted-foreground">{t("noPermissionDescription")}</p>
-      </div>
-    );
+    return <NoPermission />;
   }
 
   return <>{children}</>;

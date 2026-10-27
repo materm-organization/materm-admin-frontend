@@ -11,9 +11,11 @@ import { CreateUserDialog } from "@/components/protected/users/create-user-dialo
 import { TemporaryPasswordDialog } from "@/components/protected/users/temporary-password-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { NoPermission } from "@/components/layout/no-permission";
 import { Input } from "@/components/ui/input";
 import { useHasAction } from "@/hooks/use-auth";
 import { useUsers } from "@/hooks/use-users";
+import { isNoPermissionError } from "@/lib/api-error";
 import { DEFAULT_PAGE, DEFAULT_PAGE_LIMIT } from "@/lib/constants/pagination";
 import { PERMISSION_ACTIONS, PERMISSION_KEYS } from "@/lib/constants/permissions";
 import type { User, UserState } from "@/types/iam";
@@ -38,7 +40,7 @@ export function UsersList() {
   // confirmed with "Done" — never in the query cache or storage.
   const [issued, setIssued] = useState<{ username: string; password: string | null } | null>(null);
 
-  const { data, isLoading, isFetching } = useUsers({
+  const { data, isLoading, isFetching, isError, error } = useUsers({
     page,
     limit: DEFAULT_PAGE_LIMIT,
     keyword,
@@ -113,14 +115,18 @@ export function UsersList() {
         ) : null}
       </div>
 
-      <DataTable
-        columns={columns}
-        data={data?.data ?? []}
-        getRowId={(row) => String(row.id)}
-        isLoading={isLoading}
-        skeletonRowCount={DEFAULT_PAGE_LIMIT}
-        emptyTitle={t("empty")}
-      />
+      {isError && isNoPermissionError(error) ? (
+        <NoPermission />
+      ) : (
+        <DataTable
+          columns={columns}
+          data={data?.data ?? []}
+          getRowId={(row) => String(row.id)}
+          isLoading={isLoading}
+          skeletonRowCount={DEFAULT_PAGE_LIMIT}
+          emptyTitle={t("empty")}
+        />
+      )}
       {data?.meta ? (
         <CustomPagination
           metaData={data.meta}
