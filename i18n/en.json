@@ -37,7 +37,8 @@
       "endTime": "End time",
       "cancel": "Cancel",
       "done": "Done"
-    }
+    },
+    "retry": "Retry"
   },
   "changePassword": {
     "title": "Change password",
@@ -46,24 +47,28 @@
       "oldPassword": "Current password",
       "oldPasswordPlaceholder": "Your current password",
       "newPassword": "New password",
-      "newPasswordPlaceholder": "At least 6 characters",
+      "newPasswordPlaceholder": "At least 12 characters",
       "confirmPassword": "Confirm password",
       "confirmPasswordPlaceholder": "Re-enter the new password"
     },
     "validation": {
       "oldPasswordRequired": "Current password is required",
-      "passwordRequired": "Password must be at least 6 characters",
+      "passwordRequired": "Password must be at least 12 characters",
       "confirmPasswordRequired": "Please confirm the new password",
-      "passwordMismatch": "Passwords do not match"
+      "passwordMismatch": "Passwords do not match",
+      "passwordTooLong": "Password is too long"
     },
     "buttons": {
       "cancel": "Cancel",
-      "change": "Change password"
+      "change": "Change password",
+      "signOut": "Sign out"
     },
     "toast": {
-      "loading": "Changing password...",
       "success": "Password changed",
       "error": "Failed to change password"
+    },
+    "forced": {
+      "description": "You must set a new password before you can use the admin panel."
     }
   },
   "auth": {
@@ -80,24 +85,156 @@
     "hidePassword": "Hide password",
     "validation": {
       "usernameRequired": "Please enter your username",
-      "usernameTooLong": "Username is too long (max 100 characters)",
+      "usernameTooLong": "Username is too long (max 64 characters)",
       "passwordRequired": "Please enter your password",
-      "passwordTooShort": "Password must be at least 6 characters",
       "passwordTooLong": "Password is too long"
     },
     "toast": {
       "success": "Sign in successful! 🎉",
       "error": "Invalid username or password"
+    },
+    "notices": {
+      "sessionEnded": "Your session has ended. Please sign in again.",
+      "logoutServerFailed": "You were signed out on this device, but the server could not confirm it. Your session may stay active until it expires."
     }
   },
   "nav": {
-    "dashboard": "Dashboard"
+    "dashboard": "Dashboard",
+    "users": "Users"
   },
   "breadcrumb": {
-    "admin": "Dashboard"
+    "admin": "Dashboard",
+    "users": "Users"
   },
   "dashboard": {
     "title": "Dashboard",
     "description": "Overview of the admin panel."
+  },
+  "errors": {
+    "withRequestId": "{message} (reference: {requestId})",
+    "codes": {
+      "BAD_REQUEST": "The request is malformed.",
+      "INVALID_OLD_PASSWORD": "The current password is incorrect.",
+      "INVALID_TOKEN": "This link is invalid or has expired.",
+      "UNAUTHENTICATED": "Authentication is required.",
+      "INVALID_CREDENTIALS": "Username or password is incorrect.",
+      "TOKEN_EXPIRED": "The session has expired. Please sign in again.",
+      "SESSION_REVOKED": "This session is no longer valid. Please sign in again.",
+      "REFRESH_REUSED": "This session is no longer valid. Please sign in again.",
+      "AUTHZ_CHANGED": "Your permissions have changed.",
+      "REFRESH_REPLAY_UNAVAILABLE": "This session is no longer valid. Please sign in again.",
+      "FORBIDDEN": "You do not have permission to perform this action.",
+      "PASSWORD_CHANGE_REQUIRED": "You must change your password before continuing.",
+      "SUPER_ADMIN_PROTECTED": "Super administrator accounts are protected.",
+      "NOT_FOUND": "The requested resource was not found.",
+      "METHOD_NOT_ALLOWED": "This method is not allowed for this resource.",
+      "CONFLICT_DUPLICATE": "A record with the same value already exists.",
+      "CONFLICT_LOCK_VERSION": "The record was changed by someone else. Reload and try again.",
+      "LAST_SUPER_ADMIN": "The last active super administrator cannot be removed, demoted or deactivated.",
+      "ROLE_IN_USE": "The role is still assigned to {user_count} user(s).",
+      "SYSTEM_ROLE_PROTECTED": "System roles are protected.",
+      "SELF_ACTION_NOT_ALLOWED": "You cannot perform this action on your own account.",
+      "INVALID_STATE": "The request conflicts with the current state of the resource.",
+      "DEFAULT_LOCALE_PROTECTED": "The default language cannot be deactivated.",
+      "ENTITY_REFERENCED": "The record is referenced by other data, or refers to data that does not exist.",
+      "IDEMPOTENCY_IN_PROGRESS": "A request with this idempotency key is still being processed.",
+      "PAYLOAD_TOO_LARGE": "The request body is too large.",
+      "UNSUPPORTED_MEDIA_TYPE": "The request body must be JSON.",
+      "VALIDATION_FAILED": "The submitted data is not valid.",
+      "IDEMPOTENCY_KEY_REUSED": "This idempotency key was already used with different data.",
+      "EXPORT_TOO_LARGE": "The export is too large. Narrow the filter.",
+      "PRECONDITION_REQUIRED": "This request must include an If-Match header.",
+      "RATE_LIMITED": "Too many requests. Please try again later.",
+      "RATE_LIMITED_RETRY": "Too many requests. Please try again in {seconds} seconds.",
+      "INTERNAL_ERROR": "An internal error occurred.",
+      "SERVICE_UNAVAILABLE": "The service is temporarily unavailable.",
+      "NETWORK_ERROR": "Cannot reach the server. Check your connection and try again.",
+      "UNKNOWN": "Something went wrong."
+    },
+    "fields": {
+      "required": "This field is required.",
+      "invalid_type": "The value has the wrong type.",
+      "invalid_format": "The value has an invalid format.",
+      "pattern_mismatch": "The value does not match the required pattern.",
+      "not_in_enum": "This value is not allowed.",
+      "too_short": "Too short (minimum {min}).",
+      "too_long": "Too long (maximum {max}).",
+      "out_of_range": "The value is out of range.",
+      "duplicate": "This value is already in use.",
+      "unknown_field": "This field is not accepted.",
+      "immutable": "This field cannot be changed.",
+      "unknown_reference": "The selected item does not exist.",
+      "action_not_available": "This action is not available.",
+      "read_required": "Read access is required when any other action is granted.",
+      "password_policy": {
+        "min_length": "The password must be at least {min} characters.",
+        "contains_identity": "The password must not contain your username or email.",
+        "common": "This password is too common.",
+        "reused": "This password was used recently."
+      },
+      "invalid": "The value is not valid."
+    },
+    "loadAccount": "Could not load your account. Check your connection and try again."
+  },
+  "users": {
+    "title": "Users",
+    "description": "Admin accounts and their roles.",
+    "searchPlaceholder": "Search name, username or email",
+    "search": "Search",
+    "empty": "No users found",
+    "columns": {
+      "name": "Name",
+      "username": "Username",
+      "email": "Email",
+      "role": "Role",
+      "state": "Status",
+      "lastLogin": "Last sign-in"
+    },
+    "state": {
+      "active": "Active",
+      "invited": "Invited",
+      "disabled": "Disabled",
+      "locked": "Locked"
+    },
+    "create": {
+      "open": "Add user",
+      "title": "Add user",
+      "description": "Creates an active account with a temporary password. The user must change it at first sign-in.",
+      "fields": {
+        "name": "Full name",
+        "username": "Username",
+        "usernamePlaceholder": "3-64 letters, digits . _ @ -",
+        "email": "Email (optional)",
+        "role": "Role",
+        "rolePlaceholder": "Select a role"
+      },
+      "validation": {
+        "nameRequired": "Name is required",
+        "nameTooLong": "Name is too long (max 120 characters)",
+        "usernameInvalid": "3-64 characters: letters, digits and . _ @ -",
+        "emailInvalid": "Enter a valid email address",
+        "emailTooLong": "Email is too long",
+        "roleRequired": "Select a role"
+      },
+      "passwordNote": "A temporary password is generated and shown once after the account is created.",
+      "buttons": {
+        "cancel": "Cancel",
+        "create": "Create user"
+      },
+      "toast": {
+        "success": "User created",
+        "error": "Failed to create user"
+      }
+    },
+    "temporaryPassword": {
+      "title": "Temporary password",
+      "description": "Account \"{username}\" was created. Give this password to the user.",
+      "label": "Temporary password",
+      "copy": "Copy",
+      "copied": "Copied",
+      "onceWarning": "This password is shown only once and cannot be retrieved later. The user must change it at first sign-in.",
+      "unavailable": "The temporary password is not available. Reset the user's password to issue a new one.",
+      "done": "Done"
+    }
   }
 }

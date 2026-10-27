@@ -38,8 +38,13 @@ secrets in this layer.
 This project is at its initial skeleton stage. What exists:
 
 - **Auth** — `src/app/auth/sign-in/`, `src/components/auth/` (sign-in form, change-password
-  dialog), `src/hooks/use-auth.ts`, `src/services/auth.api.ts`, `src/types/user.d.ts`
-  (login / current-user / change-password shapes only).
+  dialog incl. the non-dismissable `forced` mode), `src/hooks/use-auth.ts` (current user,
+  `useHasAction`, login, logout, change password), `src/services/auth.api.ts`,
+  `src/lib/auth-session.ts` (cookies), `src/lib/api-error*.ts` + `src/hooks/use-api-error.ts`
+  (error `code` -> i18n), `src/types/user.d.ts`. Contract: `../doc/05-api-spec.md` (§1–2).
+- **Users (P0d)** — `/admin/users` (`src/components/protected/users/`, `src/hooks/use-users.ts`,
+  `src/services/users.api.ts`): list + create with `delivery=temporary_password`; the one-time
+  password is shown in a dialog and never stored.
 - **Protected shell** — `src/app/(protected)/(routes)/layout.tsx` (sidebar + header +
   `RoutePermissionGuard`), `src/components/navbar/`, `src/components/layout/`,
   `src/lib/nav-main-items.ts` (permission-driven nav config), `src/lib/constants/breadcrumb.ts`.
@@ -58,6 +63,20 @@ add its endpoints to `src/lib/constants/api-endpoints.ts`, a nav entry in
 `src/lib/nav-main-items.ts`, a breadcrumb entry in `src/lib/constants/breadcrumb.ts`, and its
 i18n namespace in both `i18n/en.json` and `i18n/la.json`.
 
-Auth endpoint paths (`/login`, `/auth/me`, `/jwt/refresh`, `/auth/users/change-password`) and
-payload shapes are placeholders — adjust them to the real Materm backend.
-`NEXT_PUBLIC_DISABLE_AUTH_GUARD=true` in `.env.development` bypasses login and the guard (dev only).
+## Auth / permission rules (P0d, matches doc/05)
+
+- `lib/axios.ts`: ONE shared `GET /jwt/refresh` for concurrent 401s (`UNAUTHENTICATED`,
+  `TOKEN_EXPIRED`, `AUTHZ_CHANGED`), rotated pair stored, each request retried once. 401
+  `SESSION_REVOKED` / `REFRESH_REUSED` / `REFRESH_REPLAY_UNAVAILABLE` or a 401 from the refresh
+  call -> clear session + hard redirect to sign-in. **403 and 429 never sign out or redirect**;
+  `QueryProvider` toasts them (and network/5xx) once, forms handle 400/404/409/422 themselves
+  (`useApiErrorHandler`). Decide on the error `code`, never on `message`.
+- Error text: `errors.codes.<CODE>` / `errors.fields.<field code>` in `i18n/*.json` (field codes with a
+  dot are nested JSON). Field errors (`errors[]`, JSON-Pointer `path`) are mapped onto form fields.
+- `must_change_password` (from `/auth/me`) or a 403 `PASSWORD_CHANGE_REQUIRED` -> the guard renders only
+  the forced change-password dialog until it is cleared.
+- `actions: []` / missing key = NO access (`userHasAction`, `useHasAction`). Routes/nav need `read`
+  (`getReadablePermissionKeys`). `NEXT_PUBLIC_DISABLE_AUTH_GUARD=true` (dev) gives a bypass user with all
+  22 keys / 15 actions (`lib/constants/permissions.ts`, mirror of the backend catalog seed).
+- Not built yet: `If-Match`/ETag handling for `PATCH /users/{id}` and `PUT /roles/{id}/permissions`
+  (mandatory for the latter) — add it with the roles/users edit UI.

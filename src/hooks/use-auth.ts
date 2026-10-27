@@ -1,14 +1,19 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import axios from "axios";
 import Cookies from "js-cookie";
+import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useSyncExternalStore } from "react";
 import { toast } from "sonner";
 
+import { useApiErrorHandler } from "@/hooks/use-api-error";
+import { parseApiError } from "@/lib/api-error";
+import { SIGN_IN_PATH, clearSession, setTokens } from "@/lib/auth-session";
 import { API_ENDPOINTS } from "@/lib/constants/api-endpoints";
-import { ACCESS_TOKEN_COOKIE, REFRESH_TOKEN_COOKIE } from "@/lib/constants/cookies";
+import { ACCESS_TOKEN_COOKIE } from "@/lib/constants/cookies";
+import { PERMISSION_CATALOG } from "@/lib/constants/permissions";
+import { userHasAction } from "@/lib/permissions";
 import { AuthAPI } from "@/services/auth.api";
-import { ApiErrorResponse, ApiResponse } from "@/types/api";
+import { ApiResponse } from "@/types/api";
 import { ChangePasswordPayload, CurrentUser, LoginPayload } from "@/types/user";
 
 // Dev-only escape hatch: lets `/admin` render without a running backend or
@@ -17,15 +22,13 @@ import { ChangePasswordPayload, CurrentUser, LoginPayload } from "@/types/user";
 // entirely. Gated by `NEXT_PUBLIC_DISABLE_AUTH_GUARD`, which is only set in
 // `.env.development` (never `.env.production`) — a build-time constant, so
 // it's identical on the server and the client's first render and can't
-// cause a hydration mismatch. Remove this block once real login is
-// wired up end-to-end against the backend.
+// cause a hydration mismatch.
 const DEV_BYPASS_AUTH = process.env.NEXT_PUBLIC_DISABLE_AUTH_GUARD === "true";
 
-// Permission-less dev user returned in bypass mode. Add `permissions` entries
-// here (keep them in sync with nav-main-items.ts's `anyPermission` keys) so
-// permission-gated nav entries and pages are visible while developing without
-// a backend — a key missing here just means that nav entry silently never
-// shows up in dev-bypass mode.
+// Dev-bypass user: holds EVERY permission key with EVERY action that key
+// supports (same as a super_admin, the 22 keys / 15 actions of the catalog) so
+// permission-gated nav entries, pages and buttons are all visible while
+// developing without a backend. `actions: []` would mean NO access.
 const DEV_BYPASS_USER: ApiResponse<CurrentUser> = {
   success: true,
   data: {
@@ -36,17 +39,17 @@ const DEV_BYPASS_USER: ApiResponse<CurrentUser> = {
     roleID: 0,
     role_name: "Dev",
     status: true,
-    permissions: [],
+    must_change_password: false,
+    permissions: PERMISSION_CATALOG.map((p, index) => ({
+      id: index + 1,
+      permission_key: p.permission_key,
+      name: p.name,
+      description: p.description,
+      category: p.category,
+      actions: [...p.available_actions],
+    })),
   },
 };
-
-function toastApiError(error: unknown, fallback: string) {
-  if (axios.isAxiosError<ApiErrorResponse>(error)) {
-    toast.error(error.response?.data?.message || fallback);
-  } else {
-    toast.error(error instanceof Error ? error.message : fallback);
-  }
-}
 
 const noopSubscribe = () => () => {};
 
@@ -65,12 +68,12 @@ export function useHasAccessToken(): boolean | null {
   return DEV_BYPASS_AUTH ? true : hasCookie;
 }
 
-// Drives the `(protected)` layout's route guard and the sidebar's
-// permission filtering (via `role`). `retry: false` + `enabled` only once
-// we know there's a token keep an unauthenticated visitor from sitting on a
-// spinner for the default 3-retry backoff — with no cookie, there's
-// nothing to fetch, so the guard redirects immediately instead of waiting
-// on a network error.
+// Drives the `(protected)` layout's route guard, the sidebar's permission
+// filtering and the forced change-password gate (`must_change_password`).
+// `retry: false` + `enabled` only once we know there's a token keep an
+// unauthenticated visitor from sitting on a spinner. lib/axios.ts's auth
+// events (AUTHZ_CHANGED, PASSWORD_CHANGE_REQUIRED) invalidate this query via
+// QueryProvider, which is how new permissions / the forced dialog show up.
 export const useFetchCurrentUser = () => {
   const hasToken = useHasAccessToken();
 
@@ -83,49 +86,72 @@ export const useFetchCurrentUser = () => {
   });
 };
 
-// In-page action gating (not page/sidebar visibility — that's
-// RoutePermissionGuard/nav-main-items.ts, keyed on permission_key alone).
-// Use this to show/hide or enable/disable a single control (e.g. a delete
-// button) based on the current user's actual granted actions for one
-// permission. Built on `useFetchCurrentUser` above (not a second /auth/me
-// query) so it stays dev-bypass aware — the dev-bypass user's
-// permissions have an empty `actions` array, which means "not yet
-// action-scoped", i.e. full legacy access, so every action check returns
-// true in dev-bypass mode.
-//
-// If the permission isn't in the user's granted list at all, false. If
-// found but `actions` is empty/undefined, true (full legacy access, never
-// "no access" — see PermissionGrant's doc comment). If `actions` is
-// non-empty, true only when it includes the requested action.
+// In-page action gating (page/sidebar visibility is RoutePermissionGuard /
+// nav-main-items.ts, keyed on read access). Use this to show/hide or
+// enable/disable one control (e.g. a "create" button). Built on
+// `useFetchCurrentUser` (not a second /auth/me query) so it stays
+// dev-bypass aware. `actions: []`, a missing key, or user data not loaded yet
+// all mean NO access (false) — the opposite of the old legacy meaning.
 export const useHasAction = (permissionKey: string, action: string): boolean => {
   const { data } = useFetchCurrentUser();
-  const permission = data?.data.permissions.find(
-    (p) => p.permission_key === permissionKey
-  );
-  if (!permission) return false;
-  if (!permission.actions || permission.actions.length === 0) return true;
-  return permission.actions.includes(action);
+  return userHasAction(data?.data.permissions, permissionKey, action);
 };
 
 export const useMutationLogin = () => {
-  const t = useTranslations("auth");
+  const { toastError } = useApiErrorHandler();
   return useMutation({
     mutationFn: (payload: LoginPayload) => AuthAPI.Login(payload),
     onSuccess: (res) => {
-      Cookies.set(ACCESS_TOKEN_COOKIE, res.data.access);
-      Cookies.set(REFRESH_TOKEN_COOKIE, res.data.refresh);
+      setTokens({ access: res.data.access, refresh: res.data.refresh });
     },
-    onError: () => toast.error(t("toast.error")),
+    // 401 INVALID_CREDENTIALS / 422 -> translated toast; 429/5xx/network are
+    // toasted globally by QueryProvider.
+    onError: (error) => toastError(error),
   });
 };
 
+// Sign-out: POST /auth/logout (revokes the session family server-side), but
+// whatever the server says, the local session is always cleared and the user
+// is sent to sign-in. A 401 means "already signed out" (not an error);
+// any other failure shows a warning that the server session may linger.
+export const useLogout = () => {
+  const router = useRouter();
+  const queryClient = useQueryClient();
+  const t = useTranslations("auth");
+
+  const mutation = useMutation({
+    mutationFn: async () => {
+      if (DEV_BYPASS_AUTH) return { serverRevoked: true };
+      try {
+        await AuthAPI.Logout();
+      } catch (error) {
+        if (parseApiError(error).status === 401) return { serverRevoked: true };
+        return { serverRevoked: false };
+      }
+      return { serverRevoked: true };
+    },
+    onSettled: (result) => {
+      clearSession();
+      // Drop every cached query so a different user signing in right after
+      // doesn't briefly see this user's cached data.
+      queryClient.clear();
+      router.replace(SIGN_IN_PATH);
+      if (result && !result.serverRevoked) toast.warning(t("notices.logoutServerFailed"));
+    },
+  });
+
+  return { logout: () => mutation.mutate(), isPending: mutation.isPending };
+};
+
+// Change password (also the way out of `must_change_password`). Errors are
+// handled by the dialog (field errors); on success `/auth/me` is re-read —
+// awaited, so the forced dialog stays up until `must_change_password` is
+// really false. The current session keeps its tokens (the backend revokes
+// only the OTHER sessions).
 export const useMutationChangePassword = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (payload: ChangePasswordPayload) => AuthAPI.ChangePassword(payload),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.AUTH.ME] });
-    },
-    onError: (error) => toastApiError(error, "Something went wrong"),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.AUTH.ME] }),
   });
 };

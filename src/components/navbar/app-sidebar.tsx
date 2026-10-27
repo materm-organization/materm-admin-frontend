@@ -20,6 +20,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { useFetchCurrentUser, useHasAccessToken } from "@/hooks/use-auth";
 import { buildNavMainItemsForUser } from "@/lib/nav-main-items";
+import { getReadablePermissionKeys } from "@/lib/permissions";
 
 // Skeleton shown while the current-user fetch is loading — 3 rows + the
 // literal "Menu" label.
@@ -51,9 +52,8 @@ export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
   const { data, isLoading } = useFetchCurrentUser();
 
   const currentUser = data?.data;
-  const permissionKeys = currentUser
-    ? currentUser.permissions.map((p) => p.permission_key)
-    : [];
+  // Keys the user can `read` (`actions: []` = no access).
+  const permissionKeys = getReadablePermissionKeys(currentUser?.permissions);
   const navItems = buildNavMainItemsForUser(permissionKeys);
   // `hasToken === null` = not known yet (pre-hydration) — keep this branch
   // in sync with server render the same way RoutePermissionGuard does.

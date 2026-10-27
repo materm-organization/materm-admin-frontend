@@ -2,6 +2,7 @@
 // Keep this in sync with `lib/nav-main-items.ts` when adding a route.
 export const BREADCRUMB_CONFIG: Record<string, string> = {
   "/admin": "breadcrumb.admin",
+  "/admin/users": "breadcrumb.users",
 };
 
 export function getBreadcrumbKeyForPath(pathname: string): string | undefined {

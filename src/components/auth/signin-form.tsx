@@ -25,6 +25,7 @@ import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { BorderBeam } from "@/components/ui/border-beam";
 import { useMutationLogin } from "@/hooks/use-auth";
+import { takeSignInNotice } from "@/lib/auth-session";
 import AnimationContainer from "@/components/global/animation-container";
 import { cn } from "@/lib/utils";
 
@@ -36,12 +37,13 @@ const createLoginSchema = (t: (key: string) => string) =>
     username: z
       .string()
       .min(1, { message: t("validation.usernameRequired") })
-      .max(100, { message: t("validation.usernameTooLong") }),
+      .max(64, { message: t("validation.usernameTooLong") }),
+    // The backend does not check the password policy at login (so it doesn't
+    // leak it): only required + the 256-char cap.
     password: z
       .string()
       .min(1, { message: t("validation.passwordRequired") })
-      .min(6, { message: t("validation.passwordTooShort") })
-      .max(128, { message: t("validation.passwordTooLong") }),
+      .max(256, { message: t("validation.passwordTooLong") }),
     rememberMe: z.boolean(),
   });
 
@@ -67,6 +69,12 @@ export function SignInForm({ className, ...props }: React.ComponentProps<"div">)
       form.setValue("rememberMe", true);
     }
   }, [form]);
+
+  // After a forced sign-out (session ended / revoked / refresh failed),
+  // lib/axios.ts leaves a one-shot notice for this page.
+  useEffect(() => {
+    if (takeSignInNotice()) toast.info(t("notices.sessionEnded"), { id: "session-ended" });
+  }, [t]);
 
   const onSubmit = (values: LoginFormValues) => {
     mutation.mutate(

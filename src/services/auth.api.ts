@@ -17,14 +17,26 @@ export const AuthAPI = {
     );
     return data;
   },
+  // POST /auth/logout revokes the session family. A 401 means the session is
+  // already gone — callers treat that as signed out. `skipSessionRedirect`:
+  // the caller clears the session itself, so the 401 interceptor must not
+  // redirect or leave a "session ended" notice.
+  Logout: async () => {
+    const { data } = await axiosInstance.post<ApiResponse<null>>(
+      API_ENDPOINTS.AUTH.LOGOUT,
+      undefined,
+      { skipSessionRedirect: true, timeout: 8000 }
+    );
+    return data;
+  },
   Me: async () => {
     const { data } = await axiosInstance.get<ApiResponse<CurrentUser>>(
       API_ENDPOINTS.AUTH.ME
     );
     return data;
   },
-  // POST, not PUT — the backend route is
-  // `users.Post("/change-password", ...)` (user_routes.go), not a PUT.
+  // POST /auth/users/change-password — allowed even while
+  // `must_change_password` is true (it is the way out of that state).
   ChangePassword: async (payload: ChangePasswordPayload) => {
     const { data } = await axiosInstance.post<ApiResponse<string>>(
       API_ENDPOINTS.AUTH.CHANGE_PASSWORD,

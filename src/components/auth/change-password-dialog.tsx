@@ -1,7 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { KeyRoundIcon } from "lucide-react";
+import { KeyRoundIcon, LogOutIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -20,14 +20,21 @@ import {
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { PasswordInput } from "@/components/ui/password-input";
 import { Spinner } from "@/components/ui/spinner";
-import { useMutationChangePassword } from "@/hooks/use-auth";
+import { useApiErrorHandler } from "@/hooks/use-api-error";
+import { useLogout, useMutationChangePassword } from "@/hooks/use-auth";
+import { API_ERROR_CODES, parseApiError } from "@/lib/api-error";
 
 function createChangePasswordSchema(t: (key: string) => string) {
   return z
     .object({
       oldPassword: z.string().min(1, t("validation.oldPasswordRequired")),
-      password: z.string().min(6, t("validation.passwordRequired")),
-      confirmPassword: z.string().min(6, t("validation.confirmPasswordRequired")),
+      // Policy (doc/05 section 2.5): >= 12 characters; the server also checks
+      // the rest (identity, common passwords) and answers field errors.
+      password: z
+        .string()
+        .min(12, t("validation.passwordRequired"))
+        .max(256, t("validation.passwordTooLong")),
+      confirmPassword: z.string().min(1, t("validation.confirmPasswordRequired")),
     })
     .refine((data) => data.password === data.confirmPassword, {
       message: t("validation.passwordMismatch"),
@@ -37,18 +44,28 @@ function createChangePasswordSchema(t: (key: string) => string) {
 
 type ChangePasswordFormValues = z.infer<ReturnType<typeof createChangePasswordSchema>>;
 
-// Account self-service change-password dialog (eye-toggle on all three
-// fields).
+// Maps API field names (JSON-Pointer first segment) to this form's names.
+const FIELD_MAP = { old_password: "oldPassword", new_password: "password" } as const;
+
+// Account change-password dialog (eye-toggle on all three fields).
+// `forced` = the user must change the password before using the app
+// (`must_change_password`): the dialog can't be dismissed (no Cancel, Esc or
+// outside click), offers "Sign out" instead, and closes only once the parent
+// stops rendering it after /auth/me reports the flag cleared.
 export function ChangePasswordDialog({
   open,
   onOpenChange,
+  forced = false,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  forced?: boolean;
 }) {
   const t = useTranslations("changePassword");
   const schema = createChangePasswordSchema(t);
   const mutation = useMutationChangePassword();
+  const { translate, handleFormError } = useApiErrorHandler();
+  const { logout, isPending: isLoggingOut } = useLogout();
 
   const form = useForm<ChangePasswordFormValues>({
     resolver: zodResolver(schema),
@@ -57,22 +74,34 @@ export function ChangePasswordDialog({
   });
 
   const handleClose = () => {
+    if (forced) return;
     form.reset();
     onOpenChange(false);
   };
 
   const onSubmit = (values: ChangePasswordFormValues) => {
-    const loadingId = toast.loading(t("toast.loading"));
     mutation.mutate(
       { old_password: values.oldPassword, new_password: values.password },
       {
         onSuccess: () => {
-          toast.success(t("toast.success"), { id: loadingId });
-          handleClose();
+          toast.success(t("toast.success"));
+          form.reset();
+          if (!forced) onOpenChange(false);
         },
-        onError: () => {
-          toast.dismiss(loadingId);
-          toast.error(t("toast.error"));
+        onError: (error) => {
+          // 400 INVALID_OLD_PASSWORD -> error under the current-password field
+          // (never 401: that would sign the user out).
+          if (parseApiError(error).code === API_ERROR_CODES.INVALID_OLD_PASSWORD) {
+            form.setError(
+              "oldPassword",
+              { type: "server", message: translate(error) },
+              { shouldFocus: true }
+            );
+            return;
+          }
+          // 422 `errors[]` (`/new_password` password_policy.*) -> on the
+          // matching field; otherwise a toast (429/5xx/403 are toasted globally).
+          handleFormError(form, error, { fieldMap: FIELD_MAP, fallback: t("toast.error") });
         },
       }
     );
@@ -83,15 +112,13 @@ export function ChangePasswordDialog({
       <DialogContent
         className="max-h-screen md:max-w-md [&>button]:hidden"
         onCloseAutoFocus={(e) => e.preventDefault()}
-        onEscapeKeyDown={() => {
-          if (!mutation.isPending) handleClose();
+        onEscapeKeyDown={(e) => {
+          if (forced || mutation.isPending) e.preventDefault();
+          else handleClose();
         }}
         onInteractOutside={(e) => {
-          if (!mutation.isPending) {
-            handleClose();
-          } else {
-            e.preventDefault();
-          }
+          if (forced || mutation.isPending) e.preventDefault();
+          else handleClose();
         }}
       >
         <DialogHeader>
@@ -99,7 +126,7 @@ export function ChangePasswordDialog({
             <KeyRoundIcon className="size-5" />
             {t("title")}
           </DialogTitle>
-          <DialogDescription>{t("description")}</DialogDescription>
+          <DialogDescription>{forced ? t("forced.description") : t("description")}</DialogDescription>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -114,6 +141,7 @@ export function ChangePasswordDialog({
                   <FormControl>
                     <PasswordInput
                       placeholder={t("fields.oldPasswordPlaceholder")}
+                      autoComplete="current-password"
                       disabled={mutation.isPending}
                       {...field}
                     />
@@ -133,6 +161,7 @@ export function ChangePasswordDialog({
                   <FormControl>
                     <PasswordInput
                       placeholder={t("fields.newPasswordPlaceholder")}
+                      autoComplete="new-password"
                       disabled={mutation.isPending}
                       {...field}
                     />
@@ -152,6 +181,7 @@ export function ChangePasswordDialog({
                   <FormControl>
                     <PasswordInput
                       placeholder={t("fields.confirmPasswordPlaceholder")}
+                      autoComplete="new-password"
                       disabled={mutation.isPending}
                       {...field}
                     />
@@ -161,16 +191,29 @@ export function ChangePasswordDialog({
               )}
             />
             <DialogFooter className="flex justify-end gap-2">
-              <DialogClose asChild>
+              {forced ? (
                 <Button
-                  disabled={mutation.isPending}
+                  disabled={mutation.isPending || isLoggingOut}
                   type="button"
                   variant="outline"
                   className="w-full md:w-auto"
+                  onClick={logout}
                 >
-                  {t("buttons.cancel")}
+                  <LogOutIcon />
+                  {t("buttons.signOut")}
                 </Button>
-              </DialogClose>
+              ) : (
+                <DialogClose asChild>
+                  <Button
+                    disabled={mutation.isPending}
+                    type="button"
+                    variant="outline"
+                    className="w-full md:w-auto"
+                  >
+                    {t("buttons.cancel")}
+                  </Button>
+                </DialogClose>
+              )}
               <Button disabled={mutation.isPending} type="submit" className="w-full md:w-auto">
                 {mutation.isPending ? <Spinner /> : null}
                 {t("buttons.change")}

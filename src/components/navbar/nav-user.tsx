@@ -2,10 +2,8 @@
 
 import { CheckIcon, ChevronsUpDownIcon, KeyRoundIcon, LogOutIcon, MoonIcon, SunIcon } from "lucide-react";
 import Cookies from "js-cookie";
-import { useQueryClient } from "@tanstack/react-query";
 import { useLocale, useTranslations } from "next-intl";
 import { useTheme } from "next-themes";
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import {
@@ -32,33 +30,23 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from "@/components/ui/sidebar";
 import { ChangePasswordDialog } from "@/components/auth/change-password-dialog";
-import { useFetchCurrentUser } from "@/hooks/use-auth";
-import { ACCESS_TOKEN_COOKIE, REFRESH_TOKEN_COOKIE } from "@/lib/constants/cookies";
+import { useFetchCurrentUser, useLogout } from "@/hooks/use-auth";
 import { LOCALE_COOKIE_NAME, LOCALES, type LocaleCode } from "@/lib/constants/locales";
 
 // Self-fetches the current user (not a prop, matching the reference
 // project's components/navbar/nav-user.tsx) so it can show its own loading
 // skeleton rather than depending on AppSidebar to withhold rendering it.
 export function NavUser() {
-  const router = useRouter();
   const { theme, setTheme } = useTheme();
   const { isMobile } = useSidebar();
   const locale = useLocale();
   const t = useTranslations("common");
-  const queryClient = useQueryClient();
   const [changePasswordOpen, setChangePasswordOpen] = useState(false);
   const { data, isLoading } = useFetchCurrentUser();
   const currentUser = data?.data;
 
-  const handleLogout = () => {
-    Cookies.remove(ACCESS_TOKEN_COOKIE);
-    Cookies.remove(REFRESH_TOKEN_COOKIE);
-    // Drop every cached query so a different user signing in right after
-    // doesn't briefly see this user's cached data before their own
-    // current-user fetch resolves.
-    queryClient.clear();
-    router.replace("/auth/sign-in");
-  };
+  // POST /auth/logout, then always clear the local session + go to sign-in.
+  const { logout, isPending: isLoggingOut } = useLogout();
 
   const toggleTheme = () => setTheme(theme === "dark" ? "light" : "dark");
 
@@ -177,7 +165,9 @@ export function NavUser() {
                   </AlertDialogHeader>
                   <AlertDialogFooter>
                     <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
-                    <AlertDialogAction onClick={handleLogout}>{t("signOut")}</AlertDialogAction>
+                    <AlertDialogAction onClick={logout} disabled={isLoggingOut}>
+                      {t("signOut")}
+                    </AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>
               </AlertDialog>

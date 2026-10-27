@@ -1,10 +1,16 @@
-import { LayoutDashboard, type LucideIcon } from "lucide-react";
+import { LayoutDashboard, Users, type LucideIcon } from "lucide-react";
+
+import { PERMISSION_KEYS } from "@/lib/constants/permissions";
 
 // Sidebar structure = permission-driven config, single source of truth.
 // `title` is a translation key (namespaced under `nav.*`), never display
 // text — see components/navbar/nav-main.tsx. `anyPermission` lists the
-// `permission_key`s (from GET /auth/me) that unlock an entry; omit it to make
-// the entry open to every authenticated user. A group with `items` is a
+// `permission_key`s that unlock an entry; the user needs `read` on at least
+// one of them (`getReadablePermissionKeys` in lib/permissions.ts builds the
+// list passed to the functions below — `actions: []` or no grant = no
+// access); omit `anyPermission` to make the entry open to every
+// authenticated user. Controls inside a page (create/delete buttons) are
+// gated separately with `useHasAction(key, action)`. A group with `items` is a
 // collapsible parent (use `url: "#"`).
 export type NavMainSubConfig = {
   title: string;
@@ -24,11 +30,17 @@ export type NavMainGroupConfig = {
 };
 
 export const NAV_MAIN_CONFIG: NavMainGroupConfig[] = [
-  // Placeholder dashboard — the `/admin` landing page, open to every
-  // authenticated user. Add your project's real modules below.
+  // Dashboard — the `/admin` landing page, open to every authenticated user.
   { title: "nav.dashboard", url: "/admin", icon: LayoutDashboard },
+  {
+    title: "nav.users",
+    url: "/admin/users",
+    icon: Users,
+    anyPermission: [PERMISSION_KEYS.IAM_USERS],
+  },
 ];
 
+// `userPermissions` = keys the user can read (see the header comment).
 function hasAnyPermission(userPermissions: string[], required?: string[]): boolean {
   if (!required || required.length === 0) return true;
   return required.some((p) => userPermissions.includes(p));
