@@ -41,8 +41,10 @@ test). Verify UI work in a CLONED copy of the repo (`next build` + a click-throu
 system Chrome installed OUTSIDE the project; the sign-in `Globe` needs `--use-angle=swiftshader`), not in the
 working folder.
 
-Env vars: `.env.development` / `.env.production`, both `NEXT_PUBLIC_API_BASE_URL` only — no
-secrets in this layer.
+Env vars: `NEXT_PUBLIC_API_BASE_URL` in `.env.development` / `.env.production` (no secrets in this layer);
+`.env.development` also sets `NEXT_PUBLIC_DISABLE_AUTH_GUARD=true` (bypass user, dev only, never in `.env.production`).
+The backend allows only the origins in its `server.corsOrigins` (dev default `http://localhost:3000`): on another
+dev port add that origin there and set the backend's `server.adminBaseUrl`.
 
 ## Current scope
 
