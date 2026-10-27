@@ -29,7 +29,8 @@ import {
 import { Spinner } from "@/components/ui/spinner";
 import { useApiErrorHandler } from "@/hooks/use-api-error";
 import { useIdempotencyKey } from "@/hooks/use-idempotency-key";
-import { useMutationCreateUser, useRoles } from "@/hooks/use-users";
+import { useAssignableRoles } from "@/components/protected/users/use-assignable-roles";
+import { useMutationCreateUser } from "@/hooks/use-users";
 
 const USERNAME_PATTERN = /^[A-Za-z0-9._@-]{3,64}$/;
 
@@ -62,7 +63,7 @@ export function CreateUserDialog({
 }) {
   const t = useTranslations("users.create");
   const mutation = useMutationCreateUser();
-  const roles = useRoles(open);
+  const roles = useAssignableRoles(open);
   const { handleFormError } = useApiErrorHandler();
   // One key per open of the dialog: a double click / retry after a lost response replays the same request.
   const idempotencyKey = useIdempotencyKey(open);
@@ -194,7 +195,7 @@ export function CreateUserDialog({
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {(roles.data?.data ?? []).map((role) => (
+                      {roles.assignable.map((role) => (
                         <SelectItem key={role.id} value={String(role.id)}>
                           {role.name}
                         </SelectItem>

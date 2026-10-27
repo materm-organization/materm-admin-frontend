@@ -20,6 +20,8 @@ function Editor({ onSave }: { onSave?: () => Promise<boolean | void> | boolean |
   return (
     <div>
       <button onClick={() => setDirty((d) => !d)}>toggle dirty</button>
+      {/* a plain <a> on purpose: the guard must catch real anchor clicks */}
+      {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
       <a href="/admin/users">Users</a>
       <a href="/admin/things/1#section">hash</a>
       <a href="https://example.com/x">external</a>

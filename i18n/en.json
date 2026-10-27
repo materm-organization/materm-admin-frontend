@@ -100,12 +100,22 @@
   },
   "nav": {
     "dashboard": "Dashboard",
-    "users": "Users"
+    "users": "Users",
+    "locales": "Languages",
+    "iam": "Access control",
+    "roles": "Roles",
+    "ops": "Operations",
+    "audit": "Audit log",
+    "system": "System"
   },
   "breadcrumb": {
     "admin": "Dashboard",
     "users": "Users",
-    "profile": "Profile"
+    "profile": "Profile",
+    "roles": "Roles",
+    "audit": "Audit log",
+    "locales": "Languages",
+    "system": "System"
   },
   "dashboard": {
     "title": "Dashboard",
@@ -173,7 +183,11 @@
         "common": "This password is too common.",
         "reused": "This password was used recently."
       },
-      "invalid": "The value is not valid."
+      "invalid": "The value is not valid.",
+      "email_required": "This account has no e-mail address.",
+      "fallback_cycle": "The fallback chain would loop.",
+      "fallback_not_default": "The fallback chain must end at the default language.",
+      "date_range_too_large": "The date range is too large for this search. Narrow the range or add a filter."
     },
     "loadAccount": "Could not load your account. Check your connection and try again."
   },
@@ -236,6 +250,153 @@
       "onceWarning": "This password is shown only once and cannot be retrieved later. The user must change it at first sign-in.",
       "unavailable": "The temporary password is not available. Reset the user's password to issue a new one.",
       "done": "Done"
+    },
+    "filters": {
+      "role": "Role",
+      "state": "Status"
+    },
+    "edit": {
+      "validation": {
+        "nameRequired": "Name is required",
+        "nameTooLong": "Name is too long (max 120 characters)",
+        "emailInvalid": "Enter a valid email address",
+        "emailTooLong": "Email is too long",
+        "roleRequired": "Select a role",
+        "emailRequiredInvited": "An invited user needs an e-mail address."
+      },
+      "toast": {
+        "success": "User updated",
+        "error": "Failed to update the user"
+      }
+    },
+    "history": {
+      "empty": "No recorded events for this user yet.",
+      "viewAll": "Open in the audit log"
+    },
+    "detail": {
+      "notFoundTitle": "User not found",
+      "notFoundDescription": "This user does not exist or has been deleted.",
+      "backToList": "Back to users",
+      "tabs": {
+        "profile": "Profile",
+        "security": "Security",
+        "history": "History"
+      },
+      "security": {
+        "lastLogin": "Last sign-in",
+        "passwordChanged": "Password changed",
+        "mustChange": "Must change password at next sign-in",
+        "yes": "Yes",
+        "no": "No",
+        "lockedUntil": "Locked until",
+        "invitedAt": "Invited on",
+        "acceptedAt": "Invitation accepted on",
+        "createdAt": "Created on"
+      },
+      "fields": {
+        "username": "Username",
+        "usernameHint": "The username cannot be changed.",
+        "name": "Full name",
+        "email": "Email",
+        "emailInvitedHint": "An invited user keeps an email address (the invitation link goes there).",
+        "role": "Role",
+        "roleSelfHint": "You cannot change your own role.",
+        "allowedLocales": "Languages this user may edit",
+        "allowedLocalesHint": "Leave all unticked to allow every language.",
+        "allLocales": "All languages"
+      },
+      "superProtected": "This is a super administrator account. Only a super administrator can change it.",
+      "save": "Save changes",
+      "discard": "Discard changes"
+    },
+    "commands": {
+      "menu": "Actions",
+      "cancel": "Cancel",
+      "activate": {
+        "item": "Activate",
+        "title": "Activate {name}?",
+        "description": "The user will be able to sign in again.",
+        "confirm": "Activate",
+        "toast": {
+          "success": "User activated",
+          "error": "Failed to activate the user"
+        }
+      },
+      "deactivate": {
+        "item": "Deactivate",
+        "title": "Deactivate {name}?",
+        "description": "The user is signed out of every device now and cannot sign in until you activate the account again.",
+        "confirm": "Deactivate",
+        "toast": {
+          "success": "User deactivated",
+          "error": "Failed to deactivate the user"
+        }
+      },
+      "unlock": {
+        "item": "Unlock",
+        "title": "Unlock {name}?",
+        "description": "Clears the lock caused by failed sign-in attempts. The user can try again immediately.",
+        "confirm": "Unlock",
+        "toast": {
+          "success": "User unlocked",
+          "error": "Failed to unlock the user"
+        }
+      },
+      "delete": {
+        "item": "Delete",
+        "title": "Delete {name}?",
+        "description": "The account is removed and the user is signed out everywhere. Content they created stays.",
+        "confirm": "Delete user",
+        "toast": {
+          "success": "User deleted",
+          "error": "Failed to delete the user"
+        }
+      },
+      "revoke": {
+        "item": "Sign out of all devices",
+        "title": "Sign {name} out of all devices?",
+        "description": "Every session of this user ends now. They have to sign in again.",
+        "confirm": "Sign out everywhere",
+        "toast": {
+          "success": "{count, plural, one {# session ended} other {# sessions ended}}",
+          "error": "Failed to end the sessions"
+        }
+      },
+      "force": {
+        "item": "Force password change",
+        "title": "Force a password change for {name}?",
+        "description": "At the next request the user must choose a new password before doing anything else.",
+        "revokeSessions": "Also sign the user out of all devices",
+        "confirm": "Require change",
+        "toast": {
+          "success": "The user must change their password",
+          "error": "Failed to require a password change"
+        }
+      },
+      "reset": {
+        "item": "Reset password",
+        "title": "Reset the password of {name}",
+        "description": "Signs the user out of every device and lets them set a new password.",
+        "delivery": "How should the user get the new password?",
+        "byEmail": "Send a link by email",
+        "byTemporary": "Show a temporary password once",
+        "noEmail": "This account has no email address, so a link cannot be sent.",
+        "signsOut": "All sessions of the user end immediately.",
+        "confirm": "Reset password",
+        "secretDescription": "The password of \"{username}\" was reset. Give this temporary password to the user; they must change it at the next sign-in.",
+        "toast": {
+          "error": "Failed to reset the password",
+          "linkSent": "Reset link sent. It expires {expires}. {sessions, plural, one {# session ended} other {# sessions ended}}.",
+          "linkSentNoExpiry": "Reset link sent. {sessions, plural, one {# session ended} other {# sessions ended}}."
+        }
+      },
+      "resend": {
+        "item": "Resend invitation",
+        "toast": {
+          "success": "Invitation sent again. It expires {expires}.",
+          "error": "Failed to resend the invitation"
+        }
+      }
     }
   },
   "states": {
@@ -307,5 +468,388 @@
     "done": "Done",
     "timezoneNote": "Times are in {timezone}.",
     "utcValue": "Sent as UTC: {value}"
+  },
+  "roles": {
+    "title": "Roles",
+    "description": "Roles and what each of them may do.",
+    "searchPlaceholder": "Search role name or key",
+    "empty": "No roles found",
+    "columns": {
+      "name": "Name",
+      "roleKey": "Key",
+      "type": "Type",
+      "users": "Users",
+      "usersLink": "{name}: {count} users",
+      "order": "Order"
+    },
+    "badges": {
+      "super": "Super",
+      "system": "System",
+      "custom": "Custom"
+    },
+    "create": {
+      "open": "Create role",
+      "title": "Create role",
+      "description": "A new role starts with no permissions, or with a copy of another role's. Tick what it may do on the next page.",
+      "fields": {
+        "name": "Name",
+        "roleKey": "Role key",
+        "roleKeyPlaceholder": "e.g. content_editor",
+        "roleKeyHint": "The key cannot be changed after the role is created. Use 3-32 lowercase letters, digits and underscores, starting with a letter.",
+        "description": "Description",
+        "copyFrom": "Copy permissions from",
+        "copyFromNone": "Start empty (no permissions)",
+        "copyFromHint": "You can still change every permission afterwards.",
+        "sortOrder": "Order in lists (0-1000)"
+      },
+      "validation": {
+        "roleKeyInvalid": "3-32 characters: lowercase letters, digits and _, starting with a letter",
+        "nameRequired": "Name is required",
+        "nameTooLong": "Name is too long (max 80 characters)",
+        "descriptionTooLong": "Description is too long (max 500 characters)",
+        "sortOrderInvalid": "Enter a whole number from 0 to 1000"
+      },
+      "buttons": {
+        "cancel": "Cancel",
+        "create": "Create role"
+      },
+      "toast": {
+        "success": "Role created",
+        "error": "Failed to create the role"
+      }
+    },
+    "detail": {
+      "usersCount": "{count, plural, one {# user} other {# users}}",
+      "editDetails": "Edit details",
+      "delete": "Delete role",
+      "notFoundTitle": "Role not found",
+      "notFoundDescription": "This role does not exist or has been deleted.",
+      "backToList": "Back to roles"
+    },
+    "locks": {
+      "superTitle": "Super administrator: always full access",
+      "superBody": "This role holds every permission and cannot be edited or deleted, so nobody can lock themselves out.",
+      "systemTitle": "System role",
+      "systemBody": "A built-in role, locked: its key, name and permissions cannot be changed here and it cannot be deleted. To give a group of users different permissions, create a custom role (you can copy this one).",
+      "readOnlyBody": "You can see this role's permissions but not change them (you need the update permission on Roles)."
+    },
+    "edit": {
+      "title": "Edit role",
+      "description": "Role key: {roleKey} (cannot be changed).",
+      "buttons": {
+        "cancel": "Cancel",
+        "save": "Save"
+      },
+      "toast": {
+        "success": "Role updated",
+        "error": "Failed to update the role"
+      }
+    },
+    "delete": {
+      "title": "Delete role \"{name}\"?",
+      "description": "{count, plural, =0 {No user has this role.} one {# user has this role.} other {# users have this role.}} A role that still has users cannot be deleted. Its permissions are not recoverable from the screen.",
+      "confirm": "Delete role",
+      "inUseTitle": "This role is still in use",
+      "inUseBody": "{count, plural, one {# user still has} other {# users still have}} this role. Move them to another role first, then delete it.",
+      "close": "Close",
+      "viewUsers": "View these users",
+      "toast": {
+        "success": "Role deleted",
+        "error": "Failed to delete the role"
+      }
+    },
+    "categories": {
+      "content": "Content",
+      "media": "Media",
+      "forms": "Forms",
+      "localization": "Languages",
+      "seo": "SEO",
+      "settings": "Settings",
+      "iam": "Access",
+      "ops": "Operations"
+    },
+    "actionLabels": {
+      "read": "Read",
+      "create": "Create",
+      "update": "Edit",
+      "update_own": "Edit own",
+      "delete": "Delete",
+      "delete_own": "Delete own",
+      "publish": "Publish",
+      "unpublish": "Unpublish",
+      "schedule": "Schedule",
+      "review": "Review",
+      "translate": "Translate",
+      "export": "Export",
+      "import": "Import",
+      "manage_schema": "Schema",
+      "execute": "Run"
+    },
+    "matrix": {
+      "feature": "Feature",
+      "fullAccess": "Full access",
+      "hint": "Use the switch of a row for full access or none, the box of a group or a column for many rows at once, and single boxes only to fine-tune. Tick Read first: the other boxes of a row stay locked until Read is ticked, and unticking Read clears the row.",
+      "hintReadOnly": "You are viewing the permissions of this role.",
+      "lockedNote": "This matrix is locked.",
+      "needsRead": "Tick Read first",
+      "notAvailable": "{action} does not apply to this feature",
+      "columnAll": "{action}: all features",
+      "categoryAll": "Full access to every feature in {category}",
+      "rowFull": "Full access to {name}",
+      "presets": "Quick set",
+      "presetNone": "No access",
+      "presetReadOnly": "Read only",
+      "presetFull": "Full access",
+      "copyFrom": "Copy from another role...",
+      "saveBar": "Save permissions",
+      "summary": "{added} added, {removed} removed, in {keys, plural, one {# feature} other {# features}}",
+      "noChanges": "No unsaved changes",
+      "discard": "Discard",
+      "review": "Review and save",
+      "reviewTitle": "Save these permission changes?",
+      "reviewDescription": "{added} added and {removed} removed, in {keys, plural, one {# feature} other {# features}}.",
+      "reviewList": "Changed permissions",
+      "reviewNote": "Users with this role pick up the change on their next request.",
+      "back": "Back",
+      "confirmSave": "Confirm and save",
+      "noAccess": "No access",
+      "toast": {
+        "saved": "Permissions saved. {count, plural, =0 {No user is affected.} one {# user is affected.} other {# users are affected.}}",
+        "error": "Failed to save the permissions",
+        "copied": "Permissions of \"{name}\" loaded into the editor. Not saved yet."
+      }
+    }
+  },
+  "audit": {
+    "title": "Audit log",
+    "description": "Who did what, and when. Entries cannot be changed or deleted.",
+    "empty": "No events match",
+    "hasChanges": "Has before/after values",
+    "columns": {
+      "time": "Time",
+      "actor": "Actor",
+      "action": "Action",
+      "result": "Result",
+      "entity": "Item",
+      "summary": "Summary",
+      "ip": "IP address",
+      "changes": "Changes"
+    },
+    "actorTypes": {
+      "user": "user",
+      "api_key": "API key",
+      "system": "system",
+      "public": "public"
+    },
+    "results": {
+      "success": "Success",
+      "denied": "Denied",
+      "error": "Error"
+    },
+    "filters": {
+      "form": "Audit log filters",
+      "range": "Date range",
+      "rangeDefault": "Not set: the last 30 days",
+      "actor": "Actor",
+      "actorIdPlaceholder": "User id",
+      "actorType": "Actor type",
+      "actorTypes": {
+        "user": "User",
+        "api_key": "API key",
+        "system": "System",
+        "public": "Public"
+      },
+      "result": "Result",
+      "results": {
+        "success": "Success",
+        "denied": "Denied",
+        "error": "Error"
+      },
+      "any": "Any",
+      "action": "Action",
+      "actionPlaceholder": "iam.user.* or a.b,c.d",
+      "entityType": "Item type",
+      "entityId": "Item id",
+      "requestId": "Request id",
+      "apply": "Apply filters",
+      "errors": {
+        "actorId": "The actor id must be a whole number.",
+        "entityId": "The item id must be a whole number.",
+        "entityPair": "An item id needs an item type.",
+        "entityType": "The item type looks like iam.user (lowercase letters, dots, underscores).",
+        "requestId": "A request id has 8-64 letters, digits, dots, dashes or underscores.",
+        "actionCount": "Enter at most 10 actions, separated by commas.",
+        "rangeBroad": "Without an actor, action, item or request filter the range can be at most {days} days. Narrow the dates or add one of those filters.",
+        "rangeNarrow": "The range can be at most {months} months, even with a filter."
+      }
+    },
+    "detail": {
+      "userAgent": "Browser / client",
+      "requestId": "Request id",
+      "copyRequestId": "Copy the request id",
+      "copy": "Copy",
+      "copied": "Copied",
+      "sameRequest": "All events of this request",
+      "changes": "Changes",
+      "notFound": "This entry could not be found.",
+      "noDiff": "Nothing differs between the before and after values.",
+      "field": "Field",
+      "before": "Before",
+      "after": "After",
+      "jsonPatch": "JSON Patch from the server",
+      "noChanges": "This event has no recorded before/after values.",
+      "kinds": {
+        "added": "Added",
+        "removed": "Removed",
+        "changed": "Changed"
+      }
+    }
+  },
+  "locales": {
+    "title": "Languages",
+    "description": "The languages of the website: which are live, their names, fallback and date formats.",
+    "empty": "No languages found",
+    "note": "The default language cannot be switched off or given a fallback. Changes reach the public website within moments.",
+    "defaultBadge": "Default",
+    "defaultCannotOff": "The default language cannot be switched off",
+    "activeSwitch": "{name} is active",
+    "on": "Active",
+    "off": "Inactive",
+    "editButton": "Edit",
+    "viewButton": "View",
+    "editLabel": "Edit {name}",
+    "columns": {
+      "code": "Code",
+      "name": "Name",
+      "nativeName": "Native name",
+      "shortLabel": "Short label",
+      "order": "Order",
+      "fallback": "Fallback",
+      "dateExample": "Date example",
+      "active": "Active",
+      "actions": "Actions"
+    },
+    "toast": {
+      "activated": "{name} is now active",
+      "deactivated": "{name} is now inactive",
+      "error": "Failed to change the language"
+    },
+    "deactivate": {
+      "title": "Switch off {name}?",
+      "description": "These languages fall back to it: {dependents}. While it is off they skip it and use the next language in their chain.",
+      "confirm": "Switch off"
+    },
+    "edit": {
+      "description": "Names, order, fallback and date formats. The code, text direction and search configuration are fixed.",
+      "readOnly": "You can view this language but not change it.",
+      "defaultBadge": "Default",
+      "direction": "Text direction",
+      "searchConfig": "Search configuration",
+      "immutable": "Fixed values",
+      "fields": {
+        "name": "Name",
+        "nativeName": "Native name",
+        "shortLabel": "Short label",
+        "flag": "Flag (emoji or code)",
+        "sortOrder": "Order (0-1000)",
+        "fallback": "Fallback language",
+        "fallbackNone": "No fallback",
+        "fallbackDefault": "The default language has no fallback.",
+        "fallbackHint": "Shown when a text is missing in this language. The chain must end at the default language."
+      },
+      "dates": {
+        "title": "Date formats",
+        "short": "Short date template",
+        "long": "Long date template (optional)",
+        "months": "Month names",
+        "month": "Month {n}",
+        "example": "Example, 5 September 2026:",
+        "placeholders": "Use '{day}', '{month}' and '{year}'."
+      },
+      "validation": {
+        "nameRequired": "This is required",
+        "nameTooLong": "At most 80 characters",
+        "shortLabelRequired": "Short label is required",
+        "shortLabelTooLong": "At most 12 characters",
+        "flagTooLong": "At most 16 characters",
+        "sortOrderInvalid": "Enter a whole number from 0 to 1000",
+        "templateRequired": "A template is required",
+        "templateTooLong": "The template is too long",
+        "templateInvalid": "Use at least one of '{day}', '{month}', '{year}' and nothing else in braces",
+        "monthRequired": "Name this month",
+        "monthTooLong": "At most 20 characters"
+      },
+      "buttons": {
+        "close": "Close",
+        "save": "Save"
+      },
+      "toast": {
+        "success": "{name} saved",
+        "error": "Failed to save the language"
+      }
+    }
+  },
+  "system": {
+    "title": "System status",
+    "description": "Health of the back-office service and what it depends on.",
+    "overall": "Overall",
+    "updated": "Updated {time} (refreshes every {seconds} s)",
+    "refresh": "Refresh",
+    "status": {
+      "ok": "OK",
+      "degraded": "Degraded",
+      "down": "Down",
+      "not_configured": "Not configured"
+    },
+    "service": {
+      "title": "Service",
+      "version": "Version",
+      "commit": "Build",
+      "environment": "Environment",
+      "startedAt": "Started",
+      "uptime": "Uptime",
+      "uptimeValue": "{days}d {hours}h {minutes}m",
+      "serverTime": "Server time"
+    },
+    "dependencies": {
+      "title": "Dependencies",
+      "description": "Not configured is shown in grey and is not a failure.",
+      "latency": "{ms} ms",
+      "names": {
+        "database": "Database",
+        "redis": "Redis",
+        "file_store": "File store",
+        "mailer": "Mailer"
+      }
+    },
+    "errorCodes": {
+      "timeout": "timeout",
+      "connection_refused": "connection refused",
+      "auth_failed": "authentication failed",
+      "tls_error": "TLS error",
+      "unknown": "unknown"
+    },
+    "counters": {
+      "title": "Counters",
+      "description": "Since the service started (this process only).",
+      "empty": "No counters reported.",
+      "names": {
+        "login_failed": "Failed sign-ins",
+        "login_locked": "Accounts locked",
+        "refresh_reuse": "Refresh token reuse",
+        "refresh_replay": "Refresh token replays",
+        "authz_denied": "Permission denials",
+        "redis_degraded_events": "Redis degraded events",
+        "audit_default_partition_rows": "Audit rows in default partition",
+        "audit_write_failures": "Audit write failures"
+      }
+    },
+    "outbox": {
+      "title": "Publishing queue",
+      "description": "Updates waiting to reach the website.",
+      "pending": "Waiting",
+      "failed": "Failed",
+      "lastSuccess": "Last delivered"
+    }
   }
 }

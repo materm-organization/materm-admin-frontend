@@ -1,4 +1,4 @@
-import { LayoutDashboard, Users, type LucideIcon } from "lucide-react";
+import { Activity, Languages, LayoutDashboard, Users, type LucideIcon } from "lucide-react";
 
 import { PERMISSION_KEYS } from "@/lib/constants/permissions";
 
@@ -32,11 +32,32 @@ export type NavMainGroupConfig = {
 export const NAV_MAIN_CONFIG: NavMainGroupConfig[] = [
   // Dashboard — the `/admin` landing page, open to every authenticated user.
   { title: "nav.dashboard", url: "/admin", icon: LayoutDashboard },
+  // Localization (doc/07 section 2.1): one entry for now (UI strings come later), so a direct link.
   {
-    title: "nav.users",
-    url: "/admin/users",
+    title: "nav.locales",
+    url: "/admin/locales",
+    icon: Languages,
+    anyPermission: [PERMISSION_KEYS.CMS_LOCALES],
+  },
+  // Access control: users + roles (collapsible parent, `#`).
+  {
+    title: "nav.iam",
+    url: "#",
     icon: Users,
-    anyPermission: [PERMISSION_KEYS.IAM_USERS],
+    items: [
+      { title: "nav.users", url: "/admin/users", anyPermission: [PERMISSION_KEYS.IAM_USERS] },
+      { title: "nav.roles", url: "/admin/roles", anyPermission: [PERMISSION_KEYS.IAM_ROLES] },
+    ],
+  },
+  // Operations: audit log + system status.
+  {
+    title: "nav.ops",
+    url: "#",
+    icon: Activity,
+    items: [
+      { title: "nav.audit", url: "/admin/audit", anyPermission: [PERMISSION_KEYS.OPS_AUDIT] },
+      { title: "nav.system", url: "/admin/system", anyPermission: [PERMISSION_KEYS.OPS_SYSTEM] },
+    ],
   },
 ];
 

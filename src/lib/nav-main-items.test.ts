@@ -78,11 +78,44 @@ describe("sidebar helpers (unchanged behaviour)", () => {
     const none = buildNavMainItemsForUser([]);
     expect(none.map((g) => g.url)).toEqual(["/admin"]);
     const withUsers = buildNavMainItemsForUser([PERMISSION_KEYS.IAM_USERS]);
-    expect(withUsers.map((g) => g.url)).toEqual(["/admin", "/admin/users"]);
+    // Users sits inside the collapsible IAM group (`#`), alone: roles needs `iam.roles`.
+    expect(withUsers.map((g) => g.url)).toEqual(["/admin", "#"]);
+    expect(withUsers[1].items?.map((i) => i.url)).toEqual(["/admin/users"]);
   });
 
   it("first allowed path is the dashboard", () => {
     expect(getFirstAllowedAdminPath([])).toBe("/admin");
     expect(NAV_MAIN_CONFIG.length).toBeGreaterThan(0);
+  });
+});
+
+describe("W1 iam/ops routes (T1.1.10)", () => {
+  it.each([
+    ["/admin/users/7", PERMISSION_KEYS.IAM_USERS],
+    ["/admin/roles", PERMISSION_KEYS.IAM_ROLES],
+    ["/admin/roles/3", PERMISSION_KEYS.IAM_ROLES],
+    ["/admin/audit", PERMISSION_KEYS.OPS_AUDIT],
+    ["/admin/locales", PERMISSION_KEYS.CMS_LOCALES],
+    ["/admin/system", PERMISSION_KEYS.OPS_SYSTEM],
+  ])("%s needs read on %s", (path, key) => {
+    expect(getPermissionsForPath(path)).toEqual({ kind: "requires", keys: [key] });
+  });
+
+  it("each entry shows in the sidebar only for its own key; groups with no entry disappear", () => {
+    const urls = (keys: string[]) =>
+      buildNavMainItemsForUser(keys).flatMap((g) => (g.items ? g.items.map((i) => i.url) : [g.url]));
+    expect(urls([PERMISSION_KEYS.IAM_ROLES, PERMISSION_KEYS.OPS_SYSTEM])).toEqual([
+      "/admin",
+      "/admin/roles",
+      "/admin/system",
+    ]);
+    expect(urls(Object.values(PERMISSION_KEYS))).toEqual([
+      "/admin",
+      "/admin/locales",
+      "/admin/users",
+      "/admin/roles",
+      "/admin/audit",
+      "/admin/system",
+    ]);
   });
 });
