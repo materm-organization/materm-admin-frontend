@@ -65,7 +65,7 @@ export type PublishBarProps = {
   onRefresh?: () => void | Promise<unknown>;
   // "Go to field" of a blocker: open the language / section / field the pointer names.
   onGoToField?: (target: PublishIssueTarget) => void;
-  // The preview-link endpoint is T1.4.4: without a handler the button is shown disabled with a tooltip.
+  // Opens the host's `PreviewLinkDialog` (T1.4.4 UI). Without a handler the button is shown disabled with a tooltip.
   onCreatePreviewLink?: () => void;
   className?: string;
 };
@@ -155,7 +155,8 @@ export function PublishBar({
   const showDiscard = canUpdate && !trashed && entity.status === "published" && pending;
   const showUnpublish = canUnpublish && !trashed && isPublished && !entity.is_home;
   const showSave = Boolean(onSaveDraft) && (canUpdate || canTranslate) && !trashed;
-  const showPreview = canRead && canPreviewAction && !trashed;
+  // Preview links exist only for the kinds the resource entry names (pages, posts: PT-18); the user needs read + update | review.
+  const showPreview = config.previewLinks && canRead && canPreviewAction && !trashed;
   const busyAny = busy !== null;
   const noEtag = etag === undefined;
 

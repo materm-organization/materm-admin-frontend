@@ -31,6 +31,7 @@ import {
 } from "@/mocks/mock-core";
 import { MENU_NEXT_ITEM_ID, restoreMenu, seedMenuRevisions, seedMenus } from "@/mocks/mock-menus";
 import { seedAlbums, seedPageRevisions, seedPages } from "@/mocks/mock-pages";
+import { seedPreviewLinks } from "@/mocks/mock-preview";
 import { SEED_SETTINGS_UPDATED, restoreSettings, seedSettings, seedSettingsRevisions } from "@/mocks/mock-settings";
 import { restoreTaxonomy, seedPosts, seedTaxonomy, seedTaxonomyRevisions } from "@/mocks/mock-taxonomy";
 import { restoreUiString, seedUiStringRevisions, seedUiStrings, uiStringKnown } from "@/mocks/mock-ui-strings";
@@ -188,6 +189,10 @@ export function createMockDb(): MockDb {
     tags: [],
     nextCategoryId: 1,
     nextTagId: 1,
+    previewLinks: [],
+    nextPreviewLinkId: 1,
+    previewIssued: [],
+    previewUnconfigured: false,
   };
   const stamp = micros(Date.UTC(2026, 9, 26, 9, 0, 0), 900);
   db.folders = FOLDER_DEFS.map((f) => ({
@@ -216,6 +221,7 @@ export function createMockDb(): MockDb {
   seedSettingsRevisions(db);
   seedUiStringRevisions(db);
   seedTaxonomyRevisions(db);
+  seedPreviewLinks(db);
   return db;
 }
 

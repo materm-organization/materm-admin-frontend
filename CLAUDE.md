@@ -116,7 +116,7 @@ Screens and building blocks built so far (phase P1 milestone M1; contract `../do
   "Save-live screens" below.
 
 - **T1.4.7 PublishBar, pages list, publishable history (M4)** - built against the mock API (no page routes in the backend
-  yet). See "Pages and publishing" below. Preview links are T1.4.4/6.
+  yet). See "Pages and publishing" below. Preview links: see "Preview links (T1.4.4 UI)".
 
 - **T1.4.8 page editor + section editor (SCR-20 / SCR-21, M4)** - built against the mock API (no section routes in the backend yet).
   See "Page editor (T1.4.8)" below.
@@ -300,7 +300,7 @@ envelope (the task's wording), so either works.
   before the dry run; `false` stops), `onSaveDraft` / `isSaving` (the host's own save; no callback = no button), `onResult({action,
   data, etag, warnings})` (EVERY answer, with the NEW ETag: the host `setQueryData`s it, no refetch - `writeThroughPage` in
   `hooks/use-pages.ts` does it for pages), `onRefresh` (ConflictDialog "load the latest"), `onGoToField(PublishIssueTarget)`,
-  `onCreatePreviewLink` (T1.4.4: without it the button is shown disabled with a tooltip). Controls the user may not use are hidden
+  `onCreatePreviewLink` (opens the host's `PreviewLinkDialog`, see "Preview links (T1.4.4 UI)"; without it the button is shown disabled with a tooltip; a resource whose entry has `previewLinks: false` hides the button). Controls the user may not use are hidden
   (`publish` / `unpublish` / `update` for discard and save / `read` + `update|review` for preview).
   **Publish = dry run first** (`?dry_run=true`, no ETag change): 422 `PUBLISH_BLOCKED` -> `PublishBlockersDialog` (blockers grouped
   by page / structure / section, "Go to field" per blocker when `onGoToField` is given, warnings listed), pass -> `PublishConfirmDialog`
@@ -404,6 +404,42 @@ command with the old ETag is a 409, the model is per tab so a second tab cannot 
 - **Tests**: `editor/page-fields.test.ts`, `section-structure.test.ts`, `page-editor.test.tsx` (whole editor over the mock API),
   `mocks/mock-sections.test.ts`; `page-host.test.tsx` was updated (the "editor is coming" text and the `field-target` notice are gone on
   purpose: Go to field now opens the field).
+
+## Preview links (T1.4.4 UI)
+
+Contract: `doc/05` section 12.9, `doc/api/openapi-admin.yaml` (CreatePreviewLinkRequest, PreviewLinkCreated, PreviewLinkItem, PreviewLinkRevoked); the
+backend is `materm-admin-backend/modules/cms/preview`. A link is **frozen at the SERVER's working copy of the moment it is issued** (a page that was never
+published gets one too); it works for anyone who has it until it expires; the raw token exists ONLY inside the `url` of the one `201` answer.
+
+- **Code**: `services/preview-links.api.ts` (`PreviewLinksAPI.Create/List/Revoke`), `hooks/use-preview-links.ts` (`usePreviewLinks`, `useMutationCreatePreviewLink`,
+  `useMutationRevokePreviewLink`), `types/preview-links.d.ts` (the row field is `use_count`, not `uses`), `API_ENDPOINTS.PREVIEW_LINKS`,
+  `components/global/publishing/preview-link-dialog.tsx` (`PreviewLinkDialog`) + `preview-link-errors.ts` (pure: `classifyPreviewCreateError`, `parseTtlMinutes`,
+  `safeHttpUrl`). `PUBLISHABLE_RESOURCES[x].previewLinks` says whether the kind has links (pages yes; posts M5; albums / FAQ / forms never, PT-18); `PublishBar` hides
+  the button without it and shows it needing `read` + `update | review`. **Wiring**: `PageEditor` passes `onCreatePreviewLink={() => setPreviewOpen(true)}` and renders
+  `<PreviewLinkDialog resource entityId open onOpenChange isDirty flush isSaving />` with the same `isDirty` / `flush` it gives `PublishBar`.
+- **Dialog**: language (active locales, default selected; without `cms.locales:read` the list is unavailable and no `locale` is sent), expiry (toggle 30 min / 1 h / 4 h /
+  24 h / Custom 1..1440 whole minutes, checked before sending), "Create link" -> the address in a read-only field with Copy (clipboard API, `execCommand` fallback) and
+  "Open in a new tab" (`rel="noopener noreferrer"`, only an http(s) address becomes an `href`), the "will not be shown again" note, then "Active links" of the page
+  (`GET ?state=active&limit=50`): state chip, "Older than the latest edit" chip (`is_stale`), language, expires, frozen at, created by, times opened, Revoke
+  (ConfirmDialog) for the link's owner (`created_by.id === me`) or a holder of `cms.pages:update`. A holder of `update` sees every user's links, a reader only their own.
+- **The token is never kept.** It lives in the dialog body's React state only: the body is mounted only while the dialog is open (closing drops it), closing is refused
+  while the request runs, the mutation has `gcTime: 0` and is `reset()` the moment its answer is copied into state, the list rows have no url, and no query key, toast,
+  storage, log or admin-app URL ever sees it. Tests assert the token is absent from the query + mutation caches, `localStorage`, `sessionStorage`, the DOM after close and
+  `location`.
+- **Unsaved edits**: the link would not include them, so with `isDirty` the dialog warns ("You have unsaved edits that the link will not include") and, when the host has a
+  `flush`, offers "Save draft first" (awaits `flush()`, `false` = toast; creating stays possible).
+- **Errors** (decided on status / `details` / field-error codes, `classifyPreviewCreateError`): 503 + `details.dependency = "preview.portalUrl"` = "not configured on the
+  server"; 422 `limit_exceeded` (body path `""`, `params.max`) = 20 live links; 422 `unknown_reference` at `/locale` (refreshes the language list); 422 `out_of_range` at
+  `/ttl_minutes`; 429 = wait `Retry-After` (shown in minutes, Create disabled for that long); 409 `INVALID_STATE` `trashed`; 404; 403. 403 / 429 / 5xx are ALSO toasted by
+  `QueryProvider` (same as the cache purge). No `Idempotency-Key` and no `If-Match` (05 12.9.2).
+- **Mock** (`mocks/mock-preview.ts`, bound in `handlers.ts`, seeded in `createMockDb`): the three endpoints as strict as the backend (check order: permission, 404, body 422,
+  503, locale 422, rate limit, trashed 409, 20-live-links 422; every attempt past the limiter counts toward the 30/h). **Times are wall-clock** (a link lives 30 real
+  minutes, `is_stale` = the page's `lock_version` moved), the token is not stored and the list never returns a url; creating pushes a hidden `preview` history row.
+  Seeds: page 9 has an active link of Somchai (stale), an expired and a revoked one; **page 8 has 19 active links of mine** (one more is fine, the next is
+  `limit_exceeded`). Mock builds only: `window.__MATERM_MOCK__.setPreviewUnconfigured(true|false)` (the 503), `exhaustPreviewRate()` (the next creation is a 429),
+  `fillPreviewLinks(pageId, n)`, `previewLinks()` (a summary without any url); `setTranslateOnly(true)` also removes the right to create links.
+- **Tests**: `mocks/mock-preview.test.ts`, `components/global/publishing/preview-link-dialog.test.tsx` (over the mock API), `preview-link-errors.test.ts`, and two cases
+  in `page-editor.test.tsx` (Preview + unsaved edits + Save draft first; a reader has no button).
 
 ## Schema form engine (W2a, T1.2.10)
 

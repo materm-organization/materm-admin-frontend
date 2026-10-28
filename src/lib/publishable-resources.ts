@@ -16,6 +16,9 @@ export type PublishableConfig = {
   entityType: string;
   // A preview link needs `read` plus one of these (05 12.9.2).
   previewActions: readonly string[];
+  // Whether preview links exist for this entity kind (05 12.9 / 13.3.8: pages and posts only; albums, FAQ groups and forms
+  // hide the button, PT-18). `PublishBar` shows the Preview button only when this is true.
+  previewLinks: boolean;
 };
 
 export const PUBLISHABLE_RESOURCES: Record<PublishableResource, PublishableConfig> = {
@@ -25,6 +28,7 @@ export const PUBLISHABLE_RESOURCES: Record<PublishableResource, PublishableConfi
     permissionKey: PERMISSION_KEYS.CMS_PAGES,
     entityType: "cms.pages",
     previewActions: [PERMISSION_ACTIONS.UPDATE, PERMISSION_ACTIONS.REVIEW],
+    previewLinks: true,
   },
 };
 

@@ -33,6 +33,7 @@ import {
   unpublishPage,
   withIdempotency,
 } from "@/mocks/mock-pages";
+import { createPreviewLink, listPreviewLinks, revokePreviewLink } from "@/mocks/mock-preview";
 import { getSettingsGroup, listSettingsGroups, putSettingsGroup } from "@/mocks/mock-settings";
 import {
   createTaxonomy,
@@ -313,6 +314,19 @@ const pageHandlers: HttpHandler[] = [
   })),
 ];
 
+// Preview links (T1.4.4, doc/05 12.9). The creation answer carries the raw token in `url` and must not be cached.
+const previewLinkHandlers: HttpHandler[] = [
+  http.post(P("/pages/:id/preview-links"), guard(async ({ request, params }) => {
+    const link = createPreviewLink(getMockDb(), param(params, "id"), await jsonBody(request));
+    return HttpResponse.json({ success: true, data: link }, { status: 201, headers: { "Cache-Control": "no-store" } });
+  })),
+  http.get(P("/pages/:id/preview-links"), guard(({ request, params }) => {
+    const { data, meta } = listPreviewLinks(getMockDb(), param(params, "id"), searchOf(request));
+    return ok(data, { meta });
+  })),
+  http.delete(P("/preview-links/:id"), guard(({ params }) => ok(revokePreviewLink(getMockDb(), param(params, "id"))))),
+];
+
 // The registry of section types and the picker lookups of a section's props (T1.4.8).
 const cmsLookupHandlers: HttpHandler[] = [
   http.get(P("/section-types"), guard(({ request }) => ok(listSectionTypes(getMockDb(), searchOf(request))))),
@@ -386,6 +400,7 @@ function taxonomyHandlers(kind: "categories" | "tags"): HttpHandler[] {
 export const saveLiveApiHandlers: HttpHandler[] = [
   ...menuHandlers,
   ...pageHandlers,
+  ...previewLinkHandlers,
   ...cmsLookupHandlers,
   ...settingsHandlers,
   ...uiStringHandlers,

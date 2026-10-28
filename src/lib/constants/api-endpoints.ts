@@ -97,6 +97,11 @@ export const API_ENDPOINTS = {
     UNPUBLISH: (base: string) => `${base}/unpublish`,
     DISCARD_DRAFT: (base: string) => `${base}/discard-draft`,
   },
+  // Preview links (doc/05 section 12.9): `base` = the entity's URL like PUBLISHING (`/pages/12`); a revoke names only the link.
+  PREVIEW_LINKS: {
+    COLLECTION: (base: string) => `${base}/preview-links`,
+    DETAIL: (id: number | string) => `/preview-links/${id}`,
+  },
   POSTS: {
     LIST: "/posts",
     DETAIL: (id: number | string) => `/posts/${id}`,

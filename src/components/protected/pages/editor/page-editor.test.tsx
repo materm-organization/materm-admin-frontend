@@ -487,6 +487,31 @@ describe("PageEditor: Details, SEO and the publishing bar", () => {
     }
   });
 
+  it("Preview opens the preview-link dialog; with unsaved edits it warns, 'Save draft first' saves them, and the link freezes the saved copy", async () => {
+    const user = userEvent.setup();
+    await open(8, `section=${heroOf(8).id}`);
+    const editor = await screen.findByTestId("section-editor");
+    await user.type(await within(editor).findByLabelText(/^Title/), "!");
+    await user.click(screen.getByRole("button", { name: "Preview" }));
+    const dialog = await screen.findByTestId("preview-link-dialog");
+    expect(within(dialog).getByTestId("preview-dirty-warning")).toHaveTextContent("You have unsaved edits that the link will not include");
+    await user.click(within(dialog).getByRole("button", { name: "Save draft first" }));
+    await waitFor(() => expect(titleOf(8).la).toBe("Summer trek!"));
+    await waitFor(() => expect(within(dialog).queryByTestId("preview-dirty-warning")).not.toBeInTheDocument());
+    await user.click(await within(dialog).findByTestId("preview-create"));
+    const url = ((await within(dialog).findByTestId("preview-url")) as HTMLInputElement).value;
+    expect(url).toContain("/api/preview?token=");
+    const frozen = getMockDb().revisions["pages/8"].filter((r) => r.is_preview).at(-1)!; // page 8 starts with 19 seeded preview rows
+    expect(JSON.stringify(frozen.snapshot)).toContain("Summer trek!");
+    expect(toast.error).not.toHaveBeenCalled();
+  });
+
+  it("a reader without update or review has no Preview button", async () => {
+    me.current = { id: 6, roleID: 2, permissions: grants({ ...ALL, "cms.pages": ["read"] }) };
+    await open(8);
+    expect(screen.queryByRole("button", { name: "Preview" })).not.toBeInTheDocument();
+  });
+
   it("a page in the trash is read only: no add, no hide, no save", async () => {
     await open(7);
     expect(screen.queryByRole("button", { name: "Add section" })).not.toBeInTheDocument();

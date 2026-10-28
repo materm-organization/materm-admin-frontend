@@ -158,6 +158,23 @@ export type MockManifest = {
   keys: Array<{ key: string; namespace: string; values: Record<string, string> }>;
 };
 
+// A preview link of the mock (doc/05 12.9). Times are WALL-CLOCK milliseconds (a link lives 30 minutes of real time), unlike
+// the rest of the model whose clock is synthetic. The raw token is NOT kept: only the creation answer ever has it.
+export type MockPreviewLink = {
+  id: number;
+  page_id: number;
+  locale: string;
+  created_by: UserRef;
+  created_at: number;
+  expires_at: number;
+  revoked_at: number | null;
+  last_used_at: number | null;
+  use_count: number;
+  revision: { id: number; version: number; frozen_at: string };
+  // The page's `lock_version` when the link was frozen: a higher one now = `is_stale`.
+  frozen_lock_version: number;
+};
+
 export type MockDb = {
   clock: number;
   assets: MediaAssetDetail[];
@@ -193,6 +210,13 @@ export type MockDb = {
   tags: Tag[];
   nextCategoryId: number;
   nextTagId: number;
+  // --- T1.4.4 preview links ---------------------------------------------------------------------------------
+  previewLinks: MockPreviewLink[];
+  nextPreviewLinkId: number;
+  // Wall-clock instants of the links issued by the signed-in user (30 per hour, all pages together).
+  previewIssued: number[];
+  // The server has no `preview.portalUrl` / `revalidate.url`: creating a link is a 503 (toggled by `__MATERM_MOCK__`).
+  previewUnconfigured: boolean;
 };
 
 export function tick(db: { clock: number }): string {

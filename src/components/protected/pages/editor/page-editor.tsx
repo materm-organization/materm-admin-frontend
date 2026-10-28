@@ -9,6 +9,7 @@ import { toast } from "sonner";
 
 import { ConfirmDialog } from "@/components/global/confirm-dialog";
 import { ConflictDialog } from "@/components/global/conflict-dialog";
+import { PreviewLinkDialog } from "@/components/global/publishing/preview-link-dialog";
 import { PublishBar, type PublishBarResult } from "@/components/global/publishing/publish-bar";
 import { RevisionsTab, type RestoredRevision } from "@/components/global/revisions/revisions-tab";
 import { EditorSkeleton } from "@/components/global/states/editor-skeleton";
@@ -156,6 +157,7 @@ export function PageEditor({ page, etag, onReseed }: PageEditorProps) {
   }, [clientProblems, serverProblems, tProblem]);
   const [savingFields, setSavingFields] = useState(false);
   const [conflictOpen, setConflictOpen] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
   const [isReloading, setIsReloading] = useState(false);
 
   const onFieldsChange = (next: PageFieldsDraft) => {
@@ -435,6 +437,16 @@ export function PageEditor({ page, etag, onReseed }: PageEditorProps) {
         onResult={onResult}
         onRefresh={() => onReseed({ refetchPage: true })}
         onGoToField={goToField}
+        onCreatePreviewLink={() => setPreviewOpen(true)}
+      />
+      <PreviewLinkDialog
+        resource="pages"
+        entityId={pageId}
+        open={previewOpen}
+        onOpenChange={setPreviewOpen}
+        isDirty={isDirty}
+        flush={canEditFields || editor ? async () => (isDirty ? saveAll() : true) : undefined}
+        isSaving={savingFields || sectionState.saving}
       />
 
       {ready ? <PageCompleteness page={page} sections={canSecRead ? sections : undefined} locales={locales} /> : null}

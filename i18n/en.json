@@ -2370,6 +2370,96 @@
       "system_page": "A system page cannot be deleted.",
       "section_required": "A section the template requires cannot be removed.",
       "other": "The page is not in the state this screen showed. It was reloaded."
+    },
+    "previewLinks": {
+      "title": "Preview link",
+      "description": "Create a link that lets anyone who has it see this page as it is now, before it is published.",
+      "language": {
+        "label": "Language",
+        "default": "default",
+        "defaultOnly": "The link opens in the default language."
+      },
+      "expiry": {
+        "label": "The link works for",
+        "preset": {
+          "30": "30 minutes",
+          "60": "1 hour",
+          "240": "4 hours",
+          "1440": "24 hours"
+        },
+        "custom": "Custom",
+        "customLabel": "Minutes ({min} to {max})",
+        "customHint": "A whole number of minutes. The longest is 24 hours (1440).",
+        "customInvalid": "Enter a whole number from {min} to {max}."
+      },
+      "frozen": "The link shows the saved working copy as it is when you create it. Edits you make later will not appear on it: create a new link to see them.",
+      "create": "Create link",
+      "creating": "Creating...",
+      "dirty": {
+        "title": "You have unsaved edits that the link will not include",
+        "body": "The link is made from the saved working copy on the server, not from what is on your screen now.",
+        "saveFirst": "Save draft first",
+        "saving": "Saving...",
+        "saveFailed": "The edits could not be saved. Fix the problems shown in the editor and try again."
+      },
+      "result": {
+        "title": "Link created",
+        "summary": "Language: {language}. It works until {expires}.",
+        "urlLabel": "Preview link",
+        "copy": "Copy",
+        "copied": "Copied",
+        "copyFailed": "Could not copy. Select the link and copy it by hand.",
+        "open": "Open in a new tab",
+        "note": "This link shows the saved working copy (frozen at this moment) and works for anyone who has it until it expires. It will not be shown again.",
+        "another": "Create another link",
+        "done": "Done"
+      },
+      "errors": {
+        "notConfigured": "Preview links are not configured on the server. Ask an administrator to set the address of the website.",
+        "unavailable": "Preview links are not available right now. Try again in a moment.",
+        "limit": "You already have {max} active links for this page: revoke one below, then try again.",
+        "locale": "This language is not active any more. Choose another language.",
+        "ttl": "The time must be from {min} to {max} minutes.",
+        "rateMinutes": "You have created too many links. Try again in {minutes, plural, one {# minute} other {# minutes}}.",
+        "rateSeconds": "You have created too many links. Try again in {seconds, plural, one {# second} other {# seconds}}.",
+        "trashed": "This page is in the trash. Restore it to create preview links.",
+        "invalidState": "The page is not in a state that allows preview links. Reload the page and try again.",
+        "notFound": "This page no longer exists.",
+        "forbidden": "You do not have permission to create preview links for this page.",
+        "network": "The server could not be reached. Check your connection and try again.",
+        "other": "The link could not be created."
+      },
+      "list": {
+        "title": "Active links",
+        "empty": "There are no active links for this page.",
+        "error": "The links could not be loaded.",
+        "forbidden": "You do not have permission to see the links.",
+        "retry": "Try again",
+        "state": {
+          "active": "Active",
+          "expired": "Expired",
+          "revoked": "Revoked"
+        },
+        "stale": "Older than the latest edit",
+        "noLanguage": "Default language",
+        "expires": "Expires",
+        "frozen": "Frozen at",
+        "createdBy": "Created by",
+        "you": "you",
+        "unknownUser": "Unknown user",
+        "uses": "Times opened",
+        "revoke": "Revoke",
+        "revokeFor": "Revoke link {id}",
+        "more": "Showing {shown} of {total} links."
+      },
+      "revoke": {
+        "title": "Revoke this link?",
+        "description": "Anyone who has it will no longer be able to open the preview. This takes effect within about 10 seconds and cannot be undone.",
+        "confirm": "Revoke link",
+        "done": "Link revoked.",
+        "gone": "The link was already gone.",
+        "failed": "The link could not be revoked."
+      }
     }
   },
   "pages": {

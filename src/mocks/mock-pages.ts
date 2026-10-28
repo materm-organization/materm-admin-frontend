@@ -486,7 +486,7 @@ function isRequiredSection(snap: MockPageSnapshot, s: MockSnapshotSection): bool
 // ---------------------------------------------------------------------------------------------------------------
 // Preconditions shared by the commands
 // ---------------------------------------------------------------------------------------------------------------
-function findRoot(db: MockDb, id: string): MockPageRoot {
+export function findRoot(db: MockDb, id: string): MockPageRoot {
   const root = db.pages.find((p) => String(p.id) === id);
   if (!root) throw notFound();
   return root;
