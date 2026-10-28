@@ -88,9 +88,33 @@ export const API_ENDPOINTS = {
     DETAIL: (id: number | string) => `/albums/${id}`,
     ITEMS: (id: number | string) => `/albums/${id}/items`,
   },
+  // Save-live (doc/05 sections 11.2 - 11.5). Revisions of these are in `REVISIONS` above.
+  MENUS: {
+    LIST: "/menus",
+    DETAIL: (key: string) => `/menus/${encodeURIComponent(key)}`,
+    ITEMS: (key: string) => `/menus/${encodeURIComponent(key)}/items`,
+    ITEM: (key: string, id: number | string) => `/menus/${encodeURIComponent(key)}/items/${id}`,
+    ITEMS_ORDER: (key: string) => `/menus/${encodeURIComponent(key)}/items/order`,
+  },
+  SETTINGS: {
+    LIST: "/settings",
+    GROUP: (group: string) => `/settings/${encodeURIComponent(group)}`,
+  },
+  UI_STRINGS: {
+    LIST: "/ui-strings",
+    // PUT / DELETE: one language of one key.
+    CELL: (key: string, locale: string) => `/ui-strings/${encodeURIComponent(key)}/${encodeURIComponent(locale)}`,
+    BUNDLE_SYNC: "/ui-strings/bundle-sync",
+  },
   CATEGORIES: {
     LIST: "/categories",
     DETAIL: (id: number | string) => `/categories/${id}`,
+    RESTORE: (id: number | string) => `/categories/${id}/restore`,
+  },
+  TAGS: {
+    LIST: "/tags",
+    DETAIL: (id: number | string) => `/tags/${id}`,
+    RESTORE: (id: number | string) => `/tags/${id}/restore`,
   },
   FAQ_GROUPS: {
     LIST: "/faq-groups",

@@ -6,6 +6,33 @@
 // without `If-Match` is 428, a stale one is 409 `CONFLICT_LOCK_VERSION`, a used asset can not be deleted
 // (`MEDIA_IN_USE`), a restore checks the snapshot. Not a copy of the backend: just the contract.
 import { PURGE_TAG_PATTERN } from "@/lib/cache-tags";
+import {
+  CLOCK_START,
+  DEFAULT_LOCALE_CODE,
+  MOCK_LOCALE_CODES,
+  MOCK_USER,
+  MockHttpError,
+  etagOf,
+  invalidState,
+  fail,
+  keyOf,
+  lockConflict,
+  micros,
+  notFound,
+  paginate,
+  pushRevision,
+  rejectUnknown,
+  requireIfMatch,
+  tick,
+  validationFailed,
+  type MockDb,
+  type Params,
+  type StoredRevision,
+} from "@/mocks/mock-core";
+import { MENU_NEXT_ITEM_ID, restoreMenu, seedMenuRevisions, seedMenus, seedPages } from "@/mocks/mock-menus";
+import { SEED_SETTINGS_UPDATED, restoreSettings, seedSettings, seedSettingsRevisions } from "@/mocks/mock-settings";
+import { restoreTaxonomy, seedPosts, seedTaxonomy, seedTaxonomyRevisions } from "@/mocks/mock-taxonomy";
+import { restoreUiString, seedUiStringRevisions, seedUiStrings, uiStringKnown } from "@/mocks/mock-ui-strings";
 import { SEED_MEDIA } from "@/mocks/media-seed";
 import type { ApiFieldError } from "@/types/api";
 import type {
@@ -16,62 +43,19 @@ import type {
   MediaUsage,
   UserRef,
 } from "@/types/media";
-import type { RevisionDetail, RevisionSummary } from "@/types/revisions";
+import type { RevisionSummary } from "@/types/revisions";
 import type { CachePurgeResult } from "@/types/system";
 
-export const MOCK_USER = { id: 6, name: "Noy Keomany" } as const;
-export const DEFAULT_LOCALE_CODE = "la";
-export const MOCK_LOCALE_CODES = ["la", "en", "th"] as const;
-
-export class MockHttpError extends Error {
-  constructor(
-    public status: number,
-    public body: Record<string, unknown>,
-    public headers: Record<string, string> = {}
-  ) {
-    super(String(body.code ?? status));
-  }
-}
-
-const fail = (status: number, code: string, message: string, extra: Record<string, unknown> = {}, headers?: Record<string, string>) =>
-  new MockHttpError(status, { success: false, code, message, request_id: "0192d3a4-7c1e-7b52-9d0a-3f5e2a1b4d11", ...extra }, headers);
-
-export const validationFailed = (errors: ApiFieldError[]) =>
-  fail(422, "VALIDATION_FAILED", "The submitted data is not valid.", { errors });
-export const notFound = () => fail(404, "NOT_FOUND", "The requested resource was not found.");
-const preconditionRequired = () => fail(428, "PRECONDITION_REQUIRED", "This request must include an If-Match header.");
-const lockConflict = () => fail(409, "CONFLICT_LOCK_VERSION", "The record was changed by someone else. Reload and try again.");
-const invalidState = (reason: string, extra: Record<string, unknown> = {}) =>
-  fail(409, "INVALID_STATE", "The request conflicts with the current state of the resource.", { details: { reason, ...extra } });
-
-// ---------------------------------------------------------------------------------------------------------------
-// Time: every write moves the clock so ETags (`"<updated_at>"`, microseconds) are unique and ordered.
-// ---------------------------------------------------------------------------------------------------------------
-const CLOCK_START = Date.UTC(2026, 9, 27, 3, 0, 0);
-
-function micros(ms: number, extra = 0): string {
-  const iso = new Date(ms).toISOString(); // 2026-10-27T03:00:00.000Z
-  return iso.replace(/\.(\d{3})Z$/, (_m, milli: string) => `.${milli}${String(extra % 1000).padStart(3, "0")}Z`);
-}
-
-// ---------------------------------------------------------------------------------------------------------------
-// Revisions (generic: one store per `<resource>/<id>`)
-// ---------------------------------------------------------------------------------------------------------------
-type StoredRevision = RevisionDetail;
-
-type MockEntity = { etag: string; body: Record<string, unknown> };
-
-export type MockDb = {
-  clock: number;
-  assets: MediaAssetDetail[];
-  folders: MediaFolder[];
-  usages: Record<number, MediaUsage[]>;
-  revisions: Record<string, StoredRevision[]>;
-  // Entities other than media (menus, settings ...) the generic revision endpoints restore into.
-  entities: Record<string, MockEntity>;
-  purges: { tags: number; all: number };
-  nextRevisionId: number;
-  nextFolderId: number;
+// The plumbing lives in `mock-core.ts`; these names stay importable from here.
+export {
+  DEFAULT_LOCALE_CODE,
+  MOCK_LOCALE_CODES,
+  MOCK_USER,
+  MockHttpError,
+  etagOf,
+  notFound,
+  validationFailed,
+  type MockDb,
 };
 
 // A flat tile with the file's name as a data: URI (the admin CSP allows `img-src data:`): no network, no portal.
@@ -183,6 +167,22 @@ export function createMockDb(): MockDb {
     purges: { tags: 0, all: 0 },
     nextRevisionId: 9000,
     nextFolderId: 100,
+    pages: seedPages(),
+    posts: seedPosts(),
+    menus: seedMenus(),
+    nextMenuItemId: MENU_NEXT_ITEM_ID,
+    translateOnly: [],
+    settings: seedSettings(),
+    settingsVersion: {},
+    settingsUpdatedAt: { ...SEED_SETTINGS_UPDATED },
+    uiRows: [],
+    nextUiRowId: 1,
+    manifests: [],
+    bundleSyncs: 0,
+    categories: [],
+    tags: [],
+    nextCategoryId: 1,
+    nextTagId: 1,
   };
   const stamp = micros(Date.UTC(2026, 9, 26, 9, 0, 0), 900);
   db.folders = FOLDER_DEFS.map((f) => ({
@@ -202,7 +202,13 @@ export function createMockDb(): MockDb {
     updated_at: stamp,
   }));
   recomputeFolders(db);
+  seedUiStrings(db);
+  seedTaxonomy(db);
   seedRevisions(db);
+  seedMenuRevisions(db);
+  seedSettingsRevisions(db);
+  seedUiStringRevisions(db);
+  seedTaxonomyRevisions(db);
   return db;
 }
 
@@ -230,38 +236,6 @@ function recomputeFolders(db: MockDb) {
   }
 }
 
-const keyOf = (resource: string, id: string | number) => `${resource}/${id}`;
-
-function pushRevision(
-  db: MockDb,
-  resource: string,
-  id: string | number,
-  entityType: string,
-  kind: "history" | "restore",
-  snapshot: Record<string, unknown>,
-  changeNote: string | null,
-  createdAt: string,
-  createdBy: UserRef,
-  schemaVersion = 1
-): StoredRevision {
-  const list = (db.revisions[keyOf(resource, id)] ??= []);
-  const version = (list.reduce((max, r) => Math.max(max, r.version), 0) || 0) + 1;
-  const rev: StoredRevision = {
-    id: db.nextRevisionId++,
-    version,
-    kind,
-    change_note: changeNote,
-    is_preview: changeNote === "preview",
-    schema_version: schemaVersion,
-    created_at: createdAt,
-    created_by: createdBy,
-    entity: { type: entityType, id: typeof id === "number" ? id : 0, key: typeof id === "string" ? id : null },
-    snapshot,
-  };
-  list.push(rev);
-  return rev;
-}
-
 // A little history for the entities the playground and the tests open.
 function seedRevisions(db: MockDb) {
   const who = (id: number, name: string): UserRef => ({ id, name });
@@ -279,37 +253,6 @@ function seedRevisions(db: MockDb) {
   pushRevision(db, "media/assets", 2, "media.assets", "restore", snap(null, [0.4, 0.3], [["la", seeded.translations[0].alt], ["en", seeded.translations[1].alt]]), "restore of v1", micros(base + 7_200_000), who(4, "Somchai Vongsa"));
   // a snapshot saved by a newer schema: restoring it is refused (`snapshot_incompatible`)
   pushRevision(db, "media/assets", 2, "media.assets", "history", { future: true }, null, micros(base + 9_000_000), null, 99);
-
-  // generic save-live entities (the editors come with T1.3.8)
-  db.entities[keyOf("menus", "main")] = { etag: `"${micros(base + 5_000_000)}"`, body: { key: "main", items: [] } };
-  const menuItem = (n: number, label: Record<string, string>, url: string) => ({
-    public_id: `0192d3a4-7c1e-7b52-9d0a-0000000000a${n}`,
-    parent_id: null,
-    sort_order: n,
-    link_type: "url",
-    page_id: null,
-    url,
-    open_in_new_tab: false,
-    icon: null,
-    active_match: "exact",
-    is_visible: true,
-    translations: Object.entries(label).map(([locale_code, l]) => ({ locale_code, label: l, aria_label: null })),
-  });
-  const menuV1 = { key: "main", items: [menuItem(1, { la: "ໜ້າຫຼັກ", en: "Home" }, "/"), menuItem(2, { la: "ເສັ້ນທາງ", en: "Our path" }, "/our-path")] };
-  const menuV2 = { key: "main", items: [menuItem(1, { la: "ໜ້າຫຼັກ", en: "Home" }, "/"), menuItem(2, { la: "ເສັ້ນທາງຂອງພວກເຮົາ", en: "Our path" }, "/our-path"), menuItem(3, { la: "ບລັອກ", en: "Blog" }, "/blog")] };
-  pushRevision(db, "menus", "main", "cms.menus", "history", menuV1, null, micros(base + 1_000_000), who(4, "Somchai Vongsa"));
-  pushRevision(db, "menus", "main", "cms.menus", "history", menuV2, "added the blog link", micros(base + 2_000_000), who(6, "Noy Keomany"));
-
-  db.entities[keyOf("settings", "brand")] = { etag: '"2"', body: { group_key: "brand", settings: [] } };
-  const setting = (value: string, tr: Record<string, string>) => ({
-    key: "brand.tagline",
-    value: null,
-    media_asset_id: null,
-    translations: Object.entries(tr).map(([locale_code, v]) => ({ locale_code, value: v })),
-    _value: value,
-  });
-  pushRevision(db, "settings", "brand", "cms.site_settings", "history", { group_key: "brand", settings: [setting("", { la: "ຄ້າຍ", en: "Camp" })] }, null, micros(base), who(4, "Somchai Vongsa"));
-  pushRevision(db, "settings", "brand", "cms.site_settings", "history", { group_key: "brand", settings: [setting("", { la: "ຄ້າຍ ແລະ ເຮືອນຕົ້ນໄມ້", en: "Camp and treehouse" })] }, "new tagline", micros(base + 600_000), who(6, "Noy Keomany"));
 }
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -318,39 +261,6 @@ function seedRevisions(db: MockDb) {
 let current: MockDb | null = null;
 export const getMockDb = (): MockDb => (current ??= createMockDb());
 export const resetMockDb = (): MockDb => (current = createMockDb());
-
-function tick(db: MockDb): string {
-  db.clock += 1000;
-  return micros(db.clock, 417);
-}
-
-// ---------------------------------------------------------------------------------------------------------------
-// Query helpers
-// ---------------------------------------------------------------------------------------------------------------
-type Params = URLSearchParams;
-
-function rejectUnknown(params: Params, allowed: readonly string[]) {
-  const errors: ApiFieldError[] = [];
-  for (const key of new Set(params.keys())) {
-    if (!allowed.includes(key)) errors.push({ in: "query", path: `/${key}`, code: "unknown_field" });
-  }
-  if (errors.length) throw validationFailed(errors);
-}
-
-function pageOf(params: Params, defaultLimit = 20) {
-  const page = Math.max(1, Number(params.get("page") ?? 1) || 1);
-  const limit = Math.min(100, Math.max(1, Number(params.get("limit") ?? defaultLimit) || defaultLimit));
-  return { page, limit };
-}
-
-function paginate<T>(rows: T[], params: Params, defaultLimit = 20) {
-  const { page, limit } = pageOf(params, defaultLimit);
-  const total = rows.length;
-  return {
-    data: rows.slice((page - 1) * limit, page * limit),
-    meta: { total, page, limit, total_page: Math.ceil(total / limit) },
-  };
-}
 
 // ---------------------------------------------------------------------------------------------------------------
 // Media assets
@@ -444,16 +354,9 @@ function findAsset(db: MockDb, id: string): MediaAssetDetail {
   return asset;
 }
 
-export const etagOf = (stamp: string) => `"${stamp}"`;
-
 export function getAsset(db: MockDb, id: string) {
   const asset = findAsset(db, id);
   return { asset, etag: etagOf(asset.updated_at) };
-}
-
-function requireIfMatch(header: string | null, current: string) {
-  if (!header) throw preconditionRequired();
-  if (header !== current) throw lockConflict();
 }
 
 const PATCH_FIELDS = ["folder_id", "is_decorative", "focal", "translations"] as const;
@@ -689,10 +592,29 @@ function revisionList(db: MockDb, resource: string, id: string) {
       findAsset(db, id);
       return [];
     }
-    if (db.entities[keyOf(resource, id)]) return [];
+    if (revisionEntityExists(db, resource, id)) return [];
     throw notFound();
   }
   return list;
+}
+
+// Does the entity a revision endpoint hangs off exist? Trashed categories / tags / assets still do (their history is
+// readable, 05 11.7 item 1). A unit-test or playground id that only has an entry in `db.entities` counts as well.
+function revisionEntityExists(db: MockDb, resource: string, id: string): boolean {
+  switch (resource) {
+    case "menus":
+      return db.menus.some((m) => m.key === id);
+    case "settings":
+      return ["brand", "contact", "footer", "site", "seo"].includes(id);
+    case "ui-strings":
+      return uiStringKnown(db, id);
+    case "categories":
+      return db.categories.some((c) => String(c.id) === id);
+    case "tags":
+      return db.tags.some((t) => String(t.id) === id);
+    default:
+      return Boolean(db.entities[keyOf(resource, id)]);
+  }
 }
 
 const toSummary = ({ entity: _e, snapshot: _s, ...summary }: StoredRevision): RevisionSummary => {
@@ -771,13 +693,20 @@ export function restoreRevision(db: MockDb, resource: string, id: string, revId:
     return { data: { ...asset, restored_from: restoredFrom }, etag: etagOf(asset.updated_at) };
   }
 
-  // menus / settings / ui-strings / categories / tags: the entity is just a stub with an ETag
+  // The five save-live entities have their own model: the snapshot is applied to the real rows (and checked).
+  const found = { id: rev.id, version: rev.version, schema_version: rev.schema_version, snapshot: rev.snapshot };
+  if (resource === "menus") return restoreMenu(db, id, found, note, ifMatch);
+  if (resource === "settings") return restoreSettings(db, id, found, note, ifMatch);
+  if (resource === "ui-strings") return restoreUiString(db, id, found, note, ifMatch);
+  if (resource === "categories" || resource === "tags") return restoreTaxonomy(db, resource, id, found, note, ifMatch);
+
+  // Anything else (an id only a test or the playground invents): a stub entity with an ETag.
   const entity = db.entities[keyOf(resource, id)] ?? (db.entities[keyOf(resource, id)] = { etag: etagOf(tick(db)), body: { key: id } });
   requireIfMatch(ifMatch, entity.etag);
   if (rev.schema_version > 1) throw invalidState("snapshot_incompatible");
   const stamp = tick(db);
   pushRevision(db, resource, id, rev.entity.type, "restore", rev.snapshot, note, stamp, MOCK_USER);
-  entity.etag = resource === "settings" ? `"${list.length + 1}"` : etagOf(stamp);
+  entity.etag = etagOf(stamp);
   entity.body = { ...rev.snapshot };
   return { data: { ...entity.body, restored_from: restoredFrom }, etag: entity.etag };
 }

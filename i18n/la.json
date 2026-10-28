@@ -205,7 +205,15 @@
     "ops": "ການດຳເນີນງານ",
     "audit": "ບັນທຶກການກວດສອບ",
     "system": "ລະບົບ",
-    "media": "ຄັງສື່"
+    "media": "ຄັງສື່",
+    "content": "ເນື້ອຫາ",
+    "menus": "ເມນູ",
+    "categories": "ໝວດໝູ່",
+    "tags": "ແທັກ",
+    "site": "ເວັບໄຊ",
+    "settings": "ການຕັ້ງຄ່າເວັບໄຊ",
+    "seo": "SEO",
+    "uiStrings": "ຂໍ້ຄວາມໜ້າເວັບ"
   },
   "breadcrumb": {
     "admin": "ແດັຊບອດ",
@@ -215,7 +223,13 @@
     "audit": "ບັນທຶກການກວດສອບ",
     "locales": "ພາສາ",
     "system": "ລະບົບ",
-    "media": "ຄັງສື່"
+    "media": "ຄັງສື່",
+    "menus": "ເມນູ",
+    "settings": "ການຕັ້ງຄ່າເວັບໄຊ",
+    "seo": "SEO",
+    "categories": "ໝວດໝູ່",
+    "tags": "ແທັກ",
+    "uiStrings": "ຂໍ້ຄວາມໜ້າເວັບ"
   },
   "dashboard": {
     "title": "ແດັຊບອດ",
@@ -294,7 +308,13 @@
       "cycle_detected": "ຍ້າຍໂຟນເດີເຂົ້າໄປໃນຕົວມັນເອງ ຫຼື ໂຟນເດີຍ່ອຍຂອງມັນບໍ່ໄດ້.",
       "min_properties": "ບໍ່ມີຂໍ້ມູນທີ່ຈະປ່ຽນ.",
       "too_many_items": "ອະນຸຍາດໃຫ້ມີສູງສຸດ {max} ລາຍການ.",
-      "duplicate_items": "ມີລາຍການຊ້ຳກັນ."
+      "duplicate_items": "ມີລາຍການຊ້ຳກັນ.",
+      "icu_syntax": "ຂໍ້ຄວາມບໍ່ຖືກຮູບແບບ ICU MessageFormat: {message}",
+      "plural_other_missing": "plural / select \"{argument}\" ຕ້ອງມີກໍລະນີ \"other\".",
+      "placeholder_mismatch": "ຕົວແທນຕ້ອງຕົງກັບຂໍ້ຄວາມຕົ້ນສະບັບ. ຂາດ: {missing}. ບໍ່ມີໃນຕົ້ນສະບັບ: {unexpected}.",
+      "limit_exceeded": "ຮອດຂີດຈຳກັດ {max} ລາຍການແລ້ວ.",
+      "not_applicable": "ຊ່ອງນີ້ບໍ່ໃຊ້ໃນກໍລະນີນີ້.",
+      "media_not_ready": "ຮູບນີ້ຍັງບໍ່ພ້ອມໃຊ້."
     },
     "loadAccount": "ບໍ່ສາມາດໂຫຼດຂໍ້ມູນບັນຊີຂອງທ່ານໄດ້. ກະລຸນາກວດສອບການເຊື່ອມຕໍ່ແລ້ວລອງອີກຄັ້ງ."
   },
@@ -1647,6 +1667,454 @@
       "tag": "ແທັກ",
       "parent_id": "ລາຍການແມ່",
       "public_id": "ລະຫັດ"
+    }
+  },
+  "settings": {
+    "title": "ການຕັ້ງຄ່າເວັບໄຊ",
+    "description": "ແບຣນ, ຂໍ້ມູນຕິດຕໍ່, ສ່ວນທ້າຍ ແລະ ທີ່ຢູ່ເວັບໄຊ. ການປ່ຽນແປງມີຜົນທັນທີ.",
+    "groupsLabel": "ກຸ່ມການຕັ້ງຄ່າ",
+    "groups": {
+      "brand": "ແບຣນ",
+      "contact": "ຕິດຕໍ່",
+      "footer": "ສ່ວນທ້າຍ",
+      "site": "ທີ່ຢູ່ເວັບໄຊ",
+      "seo": "SEO"
+    },
+    "notFoundTitle": "ບໍ່ພົບກຸ່ມການຕັ້ງຄ່າ",
+    "notFoundDescription": "ກຸ່ມນີ້ບໍ່ມີ ຫຼື ຍັງບໍ່ເປີດໃຊ້.",
+    "toast": {
+      "saved": "ບັນທຶກການຕັ້ງຄ່າແລ້ວ ແລະ ມີຜົນໃນເວັບໄຊແລ້ວ.",
+      "saveFailed": "ບັນທຶກການຕັ້ງຄ່າບໍ່ໄດ້.",
+      "restored": "ກູ້ຄືນເວີຊັນແລ້ວ ແລະ ມີຜົນໃນເວັບໄຊແລ້ວ."
+    },
+    "history": {
+      "open": "ປະຫວັດ",
+      "title": "ປະຫວັດຂອງ {group}",
+      "description": "ເວີຊັນກ່ອນໜ້າຂອງກຸ່ມນີ້. ການກູ້ຄືນຈະປ່ຽນເວັບໄຊທັນທີ."
+    },
+    "actions": {
+      "discard": "ຖິ້ມການແກ້ໄຂ",
+      "save": "ບັນທຶກ"
+    },
+    "readOnly": {
+      "title": "ອ່ານໄດ້ຢ່າງດຽວ",
+      "description": "ທ່ານເບິ່ງການຕັ້ງຄ່ານີ້ໄດ້ ແຕ່ແກ້ໄຂບໍ່ໄດ້."
+    },
+    "translateOnly": {
+      "title": "ໂໝດແປພາສາ",
+      "description": "ທ່ານແກ້ໄຂຂໍ້ຄວາມໃນແຕ່ລະພາສາໄດ້. ຊ່ອງອື່ນຖືກລັອກ."
+    },
+    "liveNote": "ການບັນທຶກປ່ຽນເວັບໄຊທັນທີ; ບໍ່ມີຂັ້ນຕອນເຜີຍແຜ່.",
+    "warnings": {
+      "title": "ບັນທຶກແລ້ວ ພ້ອມຂໍ້ສັງເກດ",
+      "base_url_changed": "ທີ່ຢູ່ເວັບໄຊປ່ຽນແລ້ວ: ລິ້ງ canonical, sitemap ແລະ ລິ້ງໃນອີເມວຈະປ່ຽນຕາມ.",
+      "serp_description_long": "ຄຳອະທິບາຍ ({locale}) ມີ {length} ຕົວອັກສອນ; ເຄື່ອງມືຄົ້ນຫາມັກສະແດງປະມານ {recommended}."
+    },
+    "localizedBadge": "ແຍກຕາມພາສາ",
+    "required": "ຈຳເປັນ",
+    "counter": "{count} ຈາກ {max} ຕົວອັກສອນ",
+    "insertYear": "ໃສ່ {year}",
+    "preview": "ຕົວຢ່າງ",
+    "titleExample": "ເສັ້ນທາງຂອງພວກເຮົາ",
+    "titleTemplateInvalid": "ແມ່ແບບຕ້ອງມີ %s ພຽງໜຶ່ງຄັ້ງ.",
+    "descriptionLong": "{count} ຕົວອັກສອນ: ຍາວກວ່າ 160 ທີ່ເຄື່ອງມືຄົ້ນຫາມັກສະແດງ.",
+    "noImage": "ຍັງບໍ່ໄດ້ເລືອກຮູບ",
+    "chooseImage": "ເລືອກຮູບ",
+    "changeImage": "ປ່ຽນຮູບ",
+    "removeImage": "ເອົາອອກ",
+    "pickerTitle": "ເລືອກຮູບສຳລັບ \"{field}\"",
+    "pickerDescription": "ເລືອກຮູບຈາກຄັງສື່.",
+    "fields": {
+      "brand": {
+        "name": {
+          "label": "ຊື່ແບຣນ",
+          "help": "ສະແດງໃນສ່ວນຫົວມືຖື ແລະ ແຖບລຸ່ມ."
+        },
+        "statement": {
+          "label": "ຄຳປະກາດແບຣນ",
+          "help": "ຂໍ້ຄວາມສັ້ນໃນສ່ວນທ້າຍ."
+        },
+        "logo_media_id": {
+          "label": "ໂລໂກ້",
+          "help": "SVG ຫຼື PNG, ສະບັບສີຂາວສຳລັບສ່ວນຫົວສີເຂັ້ມ."
+        },
+        "logo_alt": {
+          "label": "ຂໍ້ຄວາມແທນຮູບໂລໂກ້"
+        },
+        "emblem_media_id": {
+          "label": "ສັນຍາລັກ"
+        },
+        "emblem_alt": {
+          "label": "ຂໍ້ຄວາມແທນຮູບສັນຍາລັກ"
+        },
+        "favicon_media_id": {
+          "label": "Favicon",
+          "help": "ບໍ່ບັງຄັບ. ຖ້າຫວ່າງຈະໃຊ້ໄອຄອນທີ່ມີໃນເວັບໄຊ."
+        }
+      },
+      "footer": {
+        "copyright": {
+          "label": "ແຖວລິຂະສິດ",
+          "help": "{year} ຈະຖືກແທນດ້ວຍປີປັດຈຸບັນ."
+        }
+      },
+      "contact": {
+        "address": {
+          "label": "ທີ່ຢູ່"
+        },
+        "phone": {
+          "label": "ໂທລະສັບ (ຮູບແບບສາກົນ)",
+          "help": "ຕົວຢ່າງ +8562012345678"
+        },
+        "phone_display": {
+          "label": "ເບີໂທທີ່ສະແດງ"
+        },
+        "email": {
+          "label": "ອີເມວ"
+        },
+        "hours": {
+          "label": "ເວລາເປີດ"
+        },
+        "map_url": {
+          "label": "ລິ້ງແຜນທີ່",
+          "help": "ບໍ່ບັງຄັບ, ສະເພາະ https://"
+        }
+      },
+      "site": {
+        "base_url": {
+          "label": "ທີ່ຢູ່ເວັບໄຊ",
+          "help": "https:// ບໍ່ມີເສັ້ນທາງ. ໃຊ້ສຳລັບລິ້ງ canonical, sitemap ແລະ ລິ້ງໃນອີເມວ."
+        }
+      },
+      "seo": {
+        "site_name": {
+          "label": "ຊື່ເວັບໄຊ"
+        },
+        "title_template": {
+          "label": "ແມ່ແບບຫົວຂໍ້",
+          "help": "ຕ້ອງມີ %s ໜຶ່ງຄັ້ງ; ຈະຖືກແທນດ້ວຍຫົວຂໍ້ໜ້າ."
+        },
+        "default_description": {
+          "label": "ຄຳອະທິບາຍເລີ່ມຕົ້ນ",
+          "help": "ໃຊ້ເມື່ອໜ້າບໍ່ມີຄຳອະທິບາຍຂອງຕົນເອງ."
+        },
+        "default_og_media_id": {
+          "label": "ຮູບແຊຣ໌ເລີ່ມຕົ້ນ",
+          "help": "ແນະນຳ 1200 x 630."
+        },
+        "twitter_handle": {
+          "label": "ຊື່ Twitter"
+        }
+      }
+    }
+  },
+  "seo": {
+    "title": "SEO",
+    "description": "ການຕັ້ງຄ່າເຄື່ອງມືຄົ້ນຫາທັງເວັບໄຊ. SEO ຂອງແຕ່ລະໜ້າຢູ່ໃນໜ້ານັ້ນ.",
+    "serp": {
+      "title": "ຕົວຢ່າງຜົນການຄົ້ນຫາ ({locale})",
+      "pageTitle": "ເສັ້ນທາງຂອງພວກເຮົາ",
+      "noDescription": "ຍັງບໍ່ມີຄຳອະທິບາຍ."
+    },
+    "robots": {
+      "title": "Robots ແລະ sitemap",
+      "description": "ອະນຸຍາດໃຫ້ເກັບຂໍ້ມູນສະເພາະເວັບໄຊຈິງ (ກຳນົດຈາກສະພາບແວດລ້ອມ, ບໍ່ໄດ້ເກັບບ່ອນນີ້).",
+      "sitemap": "Sitemap"
+    }
+  },
+  "menus": {
+    "title": "ເມນູ",
+    "description": "ເມນູນຳທາງສາມອັນຂອງເວັບໄຊ.",
+    "names": {
+      "main": "ການນຳທາງຫຼັກ",
+      "footer": "ການນຳທາງສ່ວນທ້າຍ",
+      "social": "ລິ້ງໂຊຊຽວ"
+    },
+    "descriptions": {
+      "main": "ການນຳທາງສ່ວນຫົວ",
+      "footer": "ລິ້ງສ່ວນທ້າຍ",
+      "social": "ໄອຄອນໂຊຊຽວສ່ວນທ້າຍ"
+    },
+    "itemCount": "{count} ລາຍການ",
+    "hiddenCount": "ເຊື່ອງ {count}",
+    "updated": "ອັບເດດ {when}",
+    "notFoundTitle": "ບໍ່ພົບເມນູ",
+    "notFoundDescription": "ບໍ່ມີເມນູນີ້.",
+    "backToMenus": "ທຸກເມນູ",
+    "editorDescription": "ເພີ່ມ, ແກ້ໄຂ ແລະ ຈັດລຽງລາຍການ. ການປ່ຽນແປງມີຜົນທັນທີ.",
+    "tabs": {
+      "items": "ລາຍການ",
+      "history": "ປະຫວັດ"
+    },
+    "translateOnly": {
+      "title": "ໂໝດແປພາສາ",
+      "description": "ທ່ານແກ້ໄຂປ້າຍໃນແຕ່ລະພາສາໄດ້. ລຳດັບ, ລິ້ງ ແລະ ການສະແດງຖືກລັອກ."
+    },
+    "readOnly": {
+      "title": "ອ່ານໄດ້ຢ່າງດຽວ",
+      "description": "ທ່ານເບິ່ງເມນູນີ້ໄດ້ ແຕ່ແກ້ໄຂບໍ່ໄດ້."
+    },
+    "tooMany": {
+      "title": "ລາຍການຫຼາຍ",
+      "description": "ເມນູນີ້ມີ {count} ລາຍການ; {recommended} ລາຍການຫຼືໜ້ອຍກວ່າຈະອ່ານງ່າຍກວ່າ."
+    },
+    "liveNote": "ການບັນທຶກປ່ຽນເວັບໄຊທັນທີ; ບໍ່ມີຂັ້ນຕອນເຜີຍແຜ່.",
+    "items": {
+      "title": "ລາຍການ ({count} ຈາກ {max})",
+      "add": "ເພີ່ມລາຍການ",
+      "discardOrder": "ຖິ້ມລຳດັບ",
+      "saveOrder": "ບັນທຶກລຳດັບ",
+      "atLimit": "ຮອດຂີດຈຳກັດ {max} ລາຍການແລ້ວ.",
+      "empty": "ເມນູນີ້ຍັງບໍ່ມີລາຍການ.",
+      "item": "ລາຍການ {n}",
+      "missingLabel": "ບໍ່ມີປ້າຍໃນ {locale}",
+      "hidden": "ເຊື່ອງ",
+      "pageTrashed": "ໜ້າຢູ່ໃນຖັງຂີ້ເຫຍື້ອ",
+      "pageUnpublished": "ໜ້າຍັງບໍ່ເຜີຍແຜ່",
+      "deleteItem": "ລຶບ {name}"
+    },
+    "toast": {
+      "orderSaved": "ບັນທຶກລຳດັບແລ້ວ.",
+      "orderFailed": "ບັນທຶກລຳດັບບໍ່ໄດ້.",
+      "restored": "ກູ້ຄືນເວີຊັນແລ້ວ ແລະ ມີຜົນໃນເວັບໄຊແລ້ວ.",
+      "deleted": "ລຶບລາຍການແລ້ວ.",
+      "deleteFailed": "ລຶບລາຍການບໍ່ໄດ້."
+    },
+    "delete": {
+      "title": "ລຶບ \"{name}\"?",
+      "description": "ລາຍການຈະຫາຍຈາກເວັບໄຊທັນທີ. ທ່ານກູ້ຄືນໄດ້ຈາກປະຫວັດ.",
+      "confirm": "ລຶບ"
+    },
+    "discard": {
+      "title": "ຖິ້ມການແກ້ໄຂທີ່ຍັງບໍ່ໄດ້ບັນທຶກ?",
+      "description": "ລາຍການທີ່ກຳລັງແກ້ໄຂມີການແກ້ໄຂທີ່ຍັງບໍ່ໄດ້ບັນທຶກ.",
+      "confirm": "ຖິ້ມ"
+    },
+    "form": {
+      "select": "ເລືອກລາຍການເພື່ອແກ້ໄຂ.",
+      "editTitle": "ແກ້ໄຂລາຍການ",
+      "newTitle": "ລາຍການໃໝ່",
+      "label": "ປ້າຍ ({locale})",
+      "ariaLabel": "ປ້າຍສຳລັບຜູ້ອ່ານໜ້າຈໍ ({locale})",
+      "ariaHelp": "ບໍ່ບັງຄັບ. ອ່ານອອກສຽງແທນປ້າຍ.",
+      "linkType": "ລິ້ງໄປຫາ",
+      "linkTypePage": "ໜ້າໜຶ່ງ",
+      "linkTypeUrl": "ທີ່ຢູ່",
+      "page": "ໜ້າ",
+      "pagePlaceholder": "ເລືອກໜ້າ",
+      "pageNotPublished": "ໜ້ານີ້ຍັງບໍ່ເຜີຍແຜ່: ລາຍການຈະຖືກເຊື່ອງໃນເວັບໄຊຈົນກວ່າຈະເຜີຍແຜ່.",
+      "url": "ທີ່ຢູ່",
+      "urlHelp": "https://, ເສັ້ນທາງທີ່ເລີ່ມດ້ວຍ /, mailto:, tel: ຫຼື #. ບໍ່ແມ່ນ http:// ຫຼື javascript:",
+      "urlHelpSocial": "ຕ້ອງເລີ່ມດ້ວຍ https://",
+      "openInNewTab": "ເປີດໃນແທັບໃໝ່",
+      "icon": "ໄອຄອນ",
+      "iconPlaceholder": "ເລືອກໄອຄອນ",
+      "activeMatch": "ໄຮໄລທ໌ເມື່ອ",
+      "matchPrefix": "ທີ່ຢູ່ເລີ່ມດ້ວຍເສັ້ນທາງນີ້",
+      "matchExact": "ທີ່ຢູ່ຕົງກັບເສັ້ນທາງນີ້ພໍດີ",
+      "visible": "ສະແດງໃນເວັບໄຊ",
+      "save": "ບັນທຶກລາຍການ",
+      "create": "ເພີ່ມລາຍການ",
+      "discard": "ຖິ້ມການແກ້ໄຂ",
+      "cancel": "ຍົກເລີກ",
+      "saved": "ບັນທຶກລາຍການແລ້ວ ແລະ ມີຜົນໃນເວັບໄຊແລ້ວ.",
+      "created": "ເພີ່ມລາຍການແລ້ວ.",
+      "saveFailed": "ບັນທຶກລາຍການບໍ່ໄດ້."
+    }
+  },
+  "taxonomy": {
+    "title": "ໝວດໝູ່ ແລະ ແທັກ",
+    "description": "ໃຊ້ຈັດກຸ່ມບົດຄວາມບລັອກ. ການປ່ຽນແປງມີຜົນທັນທີ.",
+    "kindsLabel": "ປະເພດການຈັດກຸ່ມ",
+    "kinds": {
+      "categories": "ໝວດໝູ່",
+      "tags": "ແທັກ"
+    },
+    "searchPlaceholder": "ຄົ້ນຫາດ້ວຍລະຫັດ ຫຼື ຊື່",
+    "columns": {
+      "name": "ຊື່",
+      "key": "ລະຫັດ",
+      "posts": "ບົດຄວາມ",
+      "postsTitle": "ເຜີຍແຜ່ແລ້ວ {published}",
+      "order": "ລຳດັບ",
+      "status": "ສະຖານະ",
+      "deleted": "ລຶບເມື່ອ",
+      "updated": "ອັບເດດ",
+      "actions": "ຄຳສັ່ງ"
+    },
+    "active": "ໃຊ້ງານ",
+    "inactive": "ປິດໃຊ້ງານ",
+    "trash": "ສະແດງຖັງຂີ້ເຫຍື້ອ",
+    "unusedOnly": "ສະເພາະທີ່ບໍ່ໄດ້ໃຊ້",
+    "inactiveOnly": "ສະເພາະທີ່ປິດ",
+    "create": {
+      "categories": "ໝວດໝູ່ໃໝ່",
+      "tags": "ແທັກໃໝ່"
+    },
+    "empty": {
+      "categories": "ຍັງບໍ່ມີໝວດໝູ່.",
+      "tags": "ຍັງບໍ່ມີແທັກ."
+    },
+    "emptyTrash": "ຖັງຂີ້ເຫຍື້ອຫວ່າງ.",
+    "actions": {
+      "moveUp": "ຍ້າຍ {name} ຂຶ້ນ",
+      "moveDown": "ຍ້າຍ {name} ລົງ",
+      "edit": "ແກ້ໄຂ {name}",
+      "delete": "ລຶບ {name}",
+      "restore": "ກູ້ຄືນ {name}",
+      "restoreShort": "ກູ້ຄືນ"
+    },
+    "toast": {
+      "reorderFailed": "ປ່ຽນລຳດັບບໍ່ໄດ້.",
+      "deleted": "ຍ້າຍໄປຖັງຂີ້ເຫຍື້ອ 30 ມື້.",
+      "deleteFailed": "ລຶບບໍ່ໄດ້.",
+      "restored": "ກູ້ຄືນແລ້ວ.",
+      "restoreDuplicate": "ກູ້ຄືນບໍ່ໄດ້: {fields} ຖືກໃຊ້ໂດຍລາຍການອື່ນແລ້ວ.",
+      "restoreFailed": "ກູ້ຄືນບໍ່ໄດ້.",
+      "deactivated": "ປິດໃຊ້ງານແລ້ວ.",
+      "saveFailed": "ບັນທຶກບໍ່ໄດ້."
+    },
+    "restoreConflict": {
+      "key": "ລະຫັດ",
+      "slug": "slug ຂອງ {locale}"
+    },
+    "delete": {
+      "title": "ລຶບ \"{name}\"?",
+      "description": "ຈະຢູ່ໃນຖັງຂີ້ເຫຍື້ອ 30 ມື້ ແລະ ກູ້ຄືນໄດ້.",
+      "confirm": "ລຶບ"
+    },
+    "inUse": {
+      "title": "\"{name}\" ກຳລັງຖືກໃຊ້",
+      "description": "{count} ບົດຄວາມທີ່ເຜີຍແຜ່ໃຊ້ຢູ່. ປິດໃຊ້ງານແທນການລຶບ.",
+      "close": "ປິດ",
+      "deactivate": "ປິດໃຊ້ງານແທນ"
+    },
+    "dialog": {
+      "categories": {
+        "createTitle": "ໝວດໝູ່ໃໝ່",
+        "editTitle": "ແກ້ໄຂໝວດໝູ່",
+        "keyHelp": "ຕົວພິມນ້ອຍ, ຕົວເລກ, - ແລະ _. ໃຊ້ໃນລິ້ງ ເຊັ່ນ ?category=. ປ່ຽນພາຍຫຼັງບໍ່ໄດ້."
+      },
+      "tags": {
+        "createTitle": "ແທັກໃໝ່",
+        "editTitle": "ແກ້ໄຂແທັກ",
+        "keyHelp": "ຕົວພິມນ້ອຍ, ຕົວເລກ, - ແລະ _. ປ່ຽນພາຍຫຼັງບໍ່ໄດ້."
+      },
+      "createDescription": "ໃສ່ຊື່ໃນແຕ່ລະພາສາ.",
+      "editDescription": "ການປ່ຽນແປງມີຜົນທັນທີ.",
+      "key": "ລະຫັດ",
+      "keyImmutable": "ລະຫັດປ່ຽນບໍ່ໄດ້ຫຼັງສ້າງແລ້ວ.",
+      "name": "ຊື່",
+      "slug": "Slug",
+      "slugHelp": "ສ່ວນໜຶ່ງຂອງທີ່ຢູ່. ຖ້າຫວ່າງຈະໃຊ້ລະຫັດ.",
+      "descriptionLabel": "ຄຳອະທິບາຍ",
+      "sortOrder": "ລຳດັບ",
+      "active": "ໃຊ້ງານ",
+      "default": "ຫຼັກ",
+      "close": "ປິດ",
+      "create": "ສ້າງ",
+      "save": "ບັນທຶກ",
+      "created": "ສ້າງແລ້ວ.",
+      "saved": "ບັນທຶກແລ້ວ ແລະ ມີຜົນໃນເວັບໄຊແລ້ວ.",
+      "saveFailed": "ບັນທຶກບໍ່ໄດ້.",
+      "restored": "ກູ້ຄືນເວີຊັນແລ້ວ.",
+      "translateOnly": "ໂໝດແປພາສາ: ແກ້ໄຂຊື່, ຄຳອະທິບາຍ ແລະ slug ຂອງພາສາທີ່ບໍ່ແມ່ນພາສາຫຼັກໄດ້.",
+      "categoryInUse": "ຍັງມີບົດຄວາມທີ່ເຜີຍແຜ່ໃຊ້ໝວດໝູ່ນີ້.",
+      "tabs": {
+        "details": "ລາຍລະອຽດ",
+        "history": "ປະຫວັດ"
+      }
+    }
+  },
+  "uiStrings": {
+    "title": "ຂໍ້ຄວາມໜ້າເວັບ",
+    "description": "ຂໍ້ຄວາມຄົງທີ່ຂອງເວັບໄຊ (ປຸ່ມ, ປ້າຍ, ຂໍ້ຄວາມແຈ້ງ) ໃນແຕ່ລະພາສາ.",
+    "searchPlaceholder": "ຄົ້ນຫາດ້ວຍລະຫັດ ຫຼື ຂໍ້ຄວາມ",
+    "columns": {
+      "key": "ລະຫັດ"
+    },
+    "orphan": "ບໍ່ຢູ່ໃນ bundle",
+    "override": "ແກ້ໄຂແລ້ວ",
+    "missing": "ຍັງບໍ່ໄດ້ແປ",
+    "sameAsEnglish": "ຄືພາສາອັງກິດ",
+    "editCell": "ແກ້ໄຂ {key} ໃນ {locale}",
+    "empty": "ບໍ່ພົບຂໍ້ຄວາມ.",
+    "summary": {
+      "manifest": "{keys} ລະຫັດ, ແກ້ໄຂ {overridden}. Bundle {commit}, ຊິງຄ໌ {when}.",
+      "noManifest": "{keys} ລະຫັດ. ຍັງບໍ່ໄດ້ຊິງຄ໌ bundle ຂອງເວັບໄຊ."
+    },
+    "notSynced": {
+      "title": "ຕ້ອງຊິງຄ໌ bundle ກ່ອນ",
+      "description": "ຕົວກອງນີ້ປຽບທຽບກັບ bundle ຂອງເວັບໄຊ ທີ່ຍັງບໍ່ໄດ້ຊິງຄ໌."
+    },
+    "filters": {
+      "namespace": "ກຸ່ມ",
+      "allNamespaces": "ທຸກກຸ່ມ",
+      "missingIn": "ຍັງບໍ່ໄດ້ແປໃນ",
+      "anyLanguage": "ທຸກພາສາ",
+      "copyOfEnglish": "ຍັງເປັນພາສາອັງກິດໃນ",
+      "overridden": "ສະເພາະທີ່ແກ້ໄຂ",
+      "orphans": "ບໍ່ຢູ່ໃນ bundle"
+    },
+    "sync": {
+      "open": "ຊິງຄ໌ຈາກ bundle",
+      "title": "ຊິງຄ໌ຈາກ bundle ຂອງເວັບໄຊ",
+      "description": "ເລືອກ ui-strings.json ທີ່ສົ່ງອອກຈາກເວັບໄຊ. ລະບົບກວດກ່ອນ ແລະ ບໍ່ບັນທຶກຫຍັງຈົນກວ່າທ່ານຢືນຢັນ.",
+      "file": "ໄຟລ໌ bundle (JSON)",
+      "tooLarge": "ໄຟລ໌ໃຫຍ່ກວ່າ 1 MB.",
+      "badShape": "ນີ້ບໍ່ແມ່ນໄຟລ໌ ui-strings.json.",
+      "notJson": "ໄຟລ໌ບໍ່ແມ່ນ JSON ທີ່ຖືກຕ້ອງ.",
+      "checking": "ກຳລັງກວດ...",
+      "rejected": "ໄຟລ໌ຖືກປະຕິເສດ",
+      "report": "ລາຍງານການຊິງຄ໌",
+      "dryRun": "ກວດເທົ່ານັ້ນ - ຍັງບໍ່ໄດ້ບັນທຶກ.",
+      "done": "ຊິງຄ໌ແລ້ວ.",
+      "counts": {
+        "keys": "ລະຫັດ",
+        "inserted": "ເພີ່ມ",
+        "source_updated": "ອັບເດດ",
+        "kept_override": "ຮັກສາທີ່ແກ້ໄຂ",
+        "unchanged": "ບໍ່ປ່ຽນ"
+      },
+      "manifestUnchanged": "bundle ຄືກັບອັນທີ່ຊິງຄ໌ຫຼ້າສຸດ.",
+      "newKeys": "ລະຫັດໃໝ່ {count}",
+      "conflicts": "ຂໍ້ຄວາມທີ່ແກ້ໄຂ {count} ອັນບໍ່ຕົງກັບຕົວແທນຕົ້ນສະບັບ",
+      "orphans": "{count} ລະຫັດບໍ່ຢູ່ໃນ bundle ແລ້ວ",
+      "orphansNote": "ຍັງເກັບໄວ້, ບໍ່ໄດ້ລຶບ.",
+      "applied": "ຊິງຄ໌ bundle ແລ້ວ.",
+      "failed": "ຊິງຄ໌ບໍ່ສຳເລັດ.",
+      "cancel": "ຍົກເລີກ",
+      "apply": "ຢືນຢັນການຊິງຄ໌"
+    },
+    "sheet": {
+      "tabs": {
+        "edit": "ຂໍ້ຄວາມ",
+        "history": "ປະຫວັດ"
+      },
+      "orphan": "ລະຫັດນີ້ບໍ່ຢູ່ໃນ bundle ແລ້ວ.",
+      "description": "ການປ່ຽນແປງມີຜົນທັນທີ.",
+      "source": "ຂໍ້ຄວາມໃນ bundle",
+      "noSource": "ບໍ່ມີ",
+      "override": "ແກ້ໄຂແລ້ວ",
+      "value": "ຂໍ້ຄວາມໃນເວັບໄຊ",
+      "emptyHint": "ເພື່ອກັບໄປຂໍ້ຄວາມໃນ bundle ໃຫ້ໃຊ້ \"ກູ້ຄືນຕົ້ນສະບັບ\".",
+      "placeholders": "ຕົວແທນ:",
+      "insertPlaceholder": "ໃສ່ {name}",
+      "noSourceWarning": "ບໍ່ມີຂໍ້ຄວາມຕົ້ນສະບັບເພື່ອປຽບທຽບຕົວແທນ.",
+      "note": "ໝາຍເຫດ",
+      "restoreOriginal": "ກູ້ຄືນຕົ້ນສະບັບ",
+      "close": "ປິດ",
+      "save": "ບັນທຶກ",
+      "saved": "ບັນທຶກແລ້ວ ແລະ ມີຜົນໃນເວັບໄຊແລ້ວ.",
+      "noChange": "ຄືກັບຕົ້ນສະບັບ: ບໍ່ມີການປ່ຽນແປງ.",
+      "saveFailed": "ບັນທຶກຂໍ້ຄວາມບໍ່ໄດ້.",
+      "historyNote": "ປະຫວັດຂອງທຸກພາສາຂອງລະຫັດນີ້.",
+      "restored": "ກູ້ຄືນເວີຊັນແລ້ວ.",
+      "restoreTitle": "ກູ້ຄືນຂໍ້ຄວາມຕົ້ນສະບັບ?",
+      "restoreDescription": "ຂໍ້ຄວາມທີ່ແກ້ໄຂ ({locale}) ຈະຖືກເອົາອອກ ແລະ ເວັບໄຊຈະໃຊ້ຂໍ້ຄວາມໃນ bundle ອີກ.",
+      "restoreConfirm": "ກູ້ຄືນຕົ້ນສະບັບ",
+      "restoredOriginal": "ກູ້ຄືນຂໍ້ຄວາມຕົ້ນສະບັບແລ້ວ.",
+      "restoreFailed": "ກູ້ຄືນຕົ້ນສະບັບບໍ່ໄດ້."
     }
   }
 }

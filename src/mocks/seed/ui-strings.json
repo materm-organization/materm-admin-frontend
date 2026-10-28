@@ -1,0 +1,318 @@
+{
+  "generated_at": "2026-10-27T00:00:00Z",
+  "source_commit": "33a97a4",
+  "keys": [
+    {
+      "key": "blog.article.galleryEyebrow",
+      "namespace": "blog",
+      "values": {
+        "la": "Gallery",
+        "en": "Gallery"
+      }
+    },
+    {
+      "key": "blog.categories.all",
+      "namespace": "blog",
+      "values": {
+        "la": "All",
+        "en": "All"
+      }
+    },
+    {
+      "key": "blog.categoryNavLabel",
+      "namespace": "blog",
+      "values": {
+        "la": "Blog categories",
+        "en": "Blog categories"
+      }
+    },
+    {
+      "key": "blog.index.empty.action",
+      "namespace": "blog",
+      "values": {
+        "la": "View all posts",
+        "en": "View all posts"
+      }
+    },
+    {
+      "key": "blog.index.empty.description",
+      "namespace": "blog",
+      "values": {
+        "la": "We have not published anything under {category} yet. Check back soon, or browse all posts.",
+        "en": "We have not published anything under {category} yet. Check back soon, or browse all posts."
+      }
+    },
+    {
+      "key": "blog.index.empty.title",
+      "namespace": "blog",
+      "values": {
+        "la": "No posts in this category yet",
+        "en": "No posts in this category yet"
+      }
+    },
+    {
+      "key": "blog.index.listLabel",
+      "namespace": "blog",
+      "values": {
+        "la": "Blog posts",
+        "en": "Blog posts"
+      }
+    },
+    {
+      "key": "forms.errors.email",
+      "namespace": "forms",
+      "values": {
+        "la": "Enter a valid email address",
+        "en": "Enter a valid email address"
+      }
+    },
+    {
+      "key": "forms.errors.generic",
+      "namespace": "forms",
+      "values": {
+        "la": "Something went wrong. Please try again.",
+        "en": "Something went wrong. Please try again."
+      }
+    },
+    {
+      "key": "forms.errors.messageShort",
+      "namespace": "forms",
+      "values": {
+        "la": "Please write at least 10 characters",
+        "en": "Please write at least 10 characters"
+      }
+    },
+    {
+      "key": "forms.errors.phone",
+      "namespace": "forms",
+      "values": {
+        "la": "Enter a valid phone number",
+        "en": "Enter a valid phone number"
+      }
+    },
+    {
+      "key": "forms.errors.rateLimited",
+      "namespace": "forms",
+      "values": {
+        "la": "Too many messages. Please try again later.",
+        "en": "Too many messages. Please try again later."
+      }
+    },
+    {
+      "key": "forms.errors.required",
+      "namespace": "forms",
+      "values": {
+        "la": "This field is required",
+        "en": "This field is required"
+      }
+    },
+    {
+      "key": "forms.errors.summary",
+      "namespace": "forms",
+      "values": {
+        "la": "Please check the highlighted fields.",
+        "en": "Please check the highlighted fields."
+      }
+    },
+    {
+      "key": "forms.errors.unavailable",
+      "namespace": "forms",
+      "values": {
+        "la": "Messages can't be sent right now. Please try again later.",
+        "en": "Messages can't be sent right now. Please try again later."
+      }
+    },
+    {
+      "key": "forms.errors.unconfigured",
+      "namespace": "forms",
+      "values": {
+        "la": "Messages can't be sent from this site yet. Please email us directly.",
+        "en": "Messages can't be sent from this site yet. Please email us directly."
+      }
+    },
+    {
+      "key": "site.cta.exploreExpeditions",
+      "namespace": "site",
+      "values": {
+        "la": "Explore Expeditions",
+        "en": "Explore Expeditions"
+      }
+    },
+    {
+      "key": "site.cta.viewAllPosts",
+      "namespace": "site",
+      "values": {
+        "la": "View all posts >>",
+        "en": "View all posts >>"
+      }
+    },
+    {
+      "key": "site.cta.viewMore",
+      "namespace": "site",
+      "values": {
+        "la": "View more",
+        "en": "View more"
+      }
+    },
+    {
+      "key": "site.error.description",
+      "namespace": "site",
+      "values": {
+        "la": "We could not show this page. Please try again.",
+        "en": "We could not show this page. Please try again."
+      }
+    },
+    {
+      "key": "site.error.retry",
+      "namespace": "site",
+      "values": {
+        "la": "Try again",
+        "en": "Try again"
+      }
+    },
+    {
+      "key": "site.error.title",
+      "namespace": "site",
+      "values": {
+        "la": "Something went wrong",
+        "en": "Something went wrong"
+      }
+    },
+    {
+      "key": "site.footer.navLabel",
+      "namespace": "site",
+      "values": {
+        "la": "Footer navigation",
+        "en": "Footer navigation"
+      }
+    },
+    {
+      "key": "site.footer.socialLabel",
+      "namespace": "site",
+      "values": {
+        "la": "Social links",
+        "en": "Social links"
+      }
+    },
+    {
+      "key": "site.gallery.cardLabel",
+      "namespace": "site",
+      "values": {
+        "la": "Open the gallery ({index} of {total})",
+        "en": "Open the gallery ({index} of {total})"
+      }
+    },
+    {
+      "key": "site.gallery.rowLabel",
+      "namespace": "site",
+      "values": {
+        "la": "Gallery highlights",
+        "en": "Gallery highlights"
+      }
+    },
+    {
+      "key": "site.language.label",
+      "namespace": "site",
+      "values": {
+        "la": "Language",
+        "en": "Language"
+      }
+    },
+    {
+      "key": "site.nav.closeMenu",
+      "namespace": "site",
+      "values": {
+        "la": "Close menu",
+        "en": "Close menu"
+      }
+    },
+    {
+      "key": "site.nav.currentPage",
+      "namespace": "site",
+      "values": {
+        "la": "Menu: current page {page}",
+        "en": "Menu: current page {page}"
+      }
+    },
+    {
+      "key": "site.nav.label",
+      "namespace": "site",
+      "values": {
+        "la": "Main navigation",
+        "en": "Main navigation"
+      }
+    },
+    {
+      "key": "site.nav.menuTitle",
+      "namespace": "site",
+      "values": {
+        "la": "Menu",
+        "en": "Menu"
+      }
+    },
+    {
+      "key": "site.nav.openMenu",
+      "namespace": "site",
+      "values": {
+        "la": "Open menu",
+        "en": "Open menu"
+      }
+    },
+    {
+      "key": "site.notFound.action",
+      "namespace": "site",
+      "values": {
+        "la": "Back to the home page",
+        "en": "Back to the home page"
+      }
+    },
+    {
+      "key": "site.notFound.description",
+      "namespace": "site",
+      "values": {
+        "la": "The page you are looking for does not exist or has moved.",
+        "en": "The page you are looking for does not exist or has moved."
+      }
+    },
+    {
+      "key": "site.notFound.title",
+      "namespace": "site",
+      "values": {
+        "la": "Page not found",
+        "en": "Page not found"
+      }
+    },
+    {
+      "key": "site.preview.banner",
+      "namespace": "site",
+      "values": {
+        "la": "Preview mode: you are viewing unpublished content",
+        "en": "Preview mode: you are viewing unpublished content"
+      }
+    },
+    {
+      "key": "site.preview.exit",
+      "namespace": "site",
+      "values": {
+        "la": "Exit preview",
+        "en": "Exit preview"
+      }
+    },
+    {
+      "key": "site.preview.expired",
+      "namespace": "site",
+      "values": {
+        "la": "This preview link has expired. Ask the editor for a new one.",
+        "en": "This preview link has expired. Ask the editor for a new one."
+      }
+    },
+    {
+      "key": "site.skipToContent",
+      "namespace": "site",
+      "values": {
+        "la": "Skip to main content",
+        "en": "Skip to main content"
+      }
+    }
+  ]
+}

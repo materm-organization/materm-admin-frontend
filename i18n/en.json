@@ -205,7 +205,15 @@
     "ops": "Operations",
     "audit": "Audit log",
     "system": "System",
-    "media": "Media library"
+    "media": "Media library",
+    "content": "Content",
+    "menus": "Menus",
+    "categories": "Categories",
+    "tags": "Tags",
+    "site": "Website",
+    "settings": "Site settings",
+    "seo": "SEO",
+    "uiStrings": "UI strings"
   },
   "breadcrumb": {
     "admin": "Dashboard",
@@ -215,7 +223,13 @@
     "audit": "Audit log",
     "locales": "Languages",
     "system": "System",
-    "media": "Media library"
+    "media": "Media library",
+    "menus": "Menus",
+    "settings": "Site settings",
+    "seo": "SEO",
+    "categories": "Categories",
+    "tags": "Tags",
+    "uiStrings": "UI strings"
   },
   "dashboard": {
     "title": "Dashboard",
@@ -294,7 +308,13 @@
       "cycle_detected": "A folder cannot be moved into itself or one of its sub-folders.",
       "min_properties": "Nothing to change was sent.",
       "too_many_items": "At most {max} items are allowed.",
-      "duplicate_items": "The same item appears more than once."
+      "duplicate_items": "The same item appears more than once.",
+      "icu_syntax": "The text is not valid ICU MessageFormat: {message}",
+      "plural_other_missing": "The plural / select \"{argument}\" needs an \"other\" case.",
+      "placeholder_mismatch": "The placeholders must match the original text. Missing: {missing}. Not in the original: {unexpected}.",
+      "limit_exceeded": "The limit of {max} items is reached.",
+      "not_applicable": "This field does not apply here.",
+      "media_not_ready": "This image is not ready to use yet."
     },
     "loadAccount": "Could not load your account. Check your connection and try again."
   },
@@ -1647,6 +1667,454 @@
       "tag": "Tag",
       "parent_id": "Parent",
       "public_id": "Id"
+    }
+  },
+  "settings": {
+    "title": "Site settings",
+    "description": "Brand, contact details, footer and the public address of the website. Changes go live at once.",
+    "groupsLabel": "Settings groups",
+    "groups": {
+      "brand": "Brand",
+      "contact": "Contact",
+      "footer": "Footer",
+      "site": "Website address",
+      "seo": "SEO"
+    },
+    "notFoundTitle": "Settings group not found",
+    "notFoundDescription": "This group does not exist or is not available yet.",
+    "toast": {
+      "saved": "Settings saved. They are live on the website.",
+      "saveFailed": "The settings could not be saved.",
+      "restored": "Version restored. It is live on the website."
+    },
+    "history": {
+      "open": "History",
+      "title": "History of {group}",
+      "description": "Earlier versions of this group. Restoring one changes the website at once."
+    },
+    "actions": {
+      "discard": "Discard changes",
+      "save": "Save"
+    },
+    "readOnly": {
+      "title": "Read only",
+      "description": "You can view these settings but not change them."
+    },
+    "translateOnly": {
+      "title": "Translation mode",
+      "description": "You can edit the texts in each language. Other fields are locked."
+    },
+    "liveNote": "Saving changes the website at once; there is no publish step.",
+    "warnings": {
+      "title": "Saved with notes",
+      "base_url_changed": "The website address changed: canonical links, the sitemap and links in e-mails change with it.",
+      "serp_description_long": "The description ({locale}) has {length} characters; search engines usually show about {recommended}."
+    },
+    "localizedBadge": "Per language",
+    "required": "required",
+    "counter": "{count} of {max} characters",
+    "insertYear": "Insert {year}",
+    "preview": "Preview",
+    "titleExample": "Our Path",
+    "titleTemplateInvalid": "The template must contain %s exactly once.",
+    "descriptionLong": "{count} characters: longer than the 160 search engines usually show.",
+    "noImage": "No image chosen",
+    "chooseImage": "Choose image",
+    "changeImage": "Change image",
+    "removeImage": "Remove",
+    "pickerTitle": "Choose an image for \"{field}\"",
+    "pickerDescription": "Pick an image from the media library.",
+    "fields": {
+      "brand": {
+        "name": {
+          "label": "Brand name",
+          "help": "Shown in the mobile header and the bottom bar."
+        },
+        "statement": {
+          "label": "Brand statement",
+          "help": "The short text in the footer."
+        },
+        "logo_media_id": {
+          "label": "Logo",
+          "help": "SVG or PNG, white version for the dark header."
+        },
+        "logo_alt": {
+          "label": "Logo alt text"
+        },
+        "emblem_media_id": {
+          "label": "Emblem"
+        },
+        "emblem_alt": {
+          "label": "Emblem alt text"
+        },
+        "favicon_media_id": {
+          "label": "Favicon",
+          "help": "Optional. Empty uses the icon built into the website."
+        }
+      },
+      "footer": {
+        "copyright": {
+          "label": "Copyright line",
+          "help": "{year} is replaced by the current year."
+        }
+      },
+      "contact": {
+        "address": {
+          "label": "Address"
+        },
+        "phone": {
+          "label": "Phone (international format)",
+          "help": "Like +8562012345678"
+        },
+        "phone_display": {
+          "label": "Phone as shown"
+        },
+        "email": {
+          "label": "E-mail"
+        },
+        "hours": {
+          "label": "Opening hours"
+        },
+        "map_url": {
+          "label": "Map link",
+          "help": "Optional, https:// only."
+        }
+      },
+      "site": {
+        "base_url": {
+          "label": "Website address",
+          "help": "https:// without a path. Used for canonical links, the sitemap and e-mail links."
+        }
+      },
+      "seo": {
+        "site_name": {
+          "label": "Site name"
+        },
+        "title_template": {
+          "label": "Title template",
+          "help": "Must contain %s once; it is replaced by the page title."
+        },
+        "default_description": {
+          "label": "Default description",
+          "help": "Used when a page has no description of its own."
+        },
+        "default_og_media_id": {
+          "label": "Default share image",
+          "help": "Recommended 1200 x 630."
+        },
+        "twitter_handle": {
+          "label": "Twitter handle"
+        }
+      }
+    }
+  },
+  "seo": {
+    "title": "SEO",
+    "description": "Site-wide search engine settings. Page-level SEO is on each page.",
+    "serp": {
+      "title": "Search result preview ({locale})",
+      "pageTitle": "Our Path",
+      "noDescription": "No description yet."
+    },
+    "robots": {
+      "title": "Robots and sitemap",
+      "description": "Crawling is allowed only on the production site (decided by the environment, not stored here).",
+      "sitemap": "Sitemap"
+    }
+  },
+  "menus": {
+    "title": "Menus",
+    "description": "The three navigation menus of the website.",
+    "names": {
+      "main": "Main navigation",
+      "footer": "Footer navigation",
+      "social": "Social links"
+    },
+    "descriptions": {
+      "main": "Header navigation",
+      "footer": "Footer links",
+      "social": "Footer social icons"
+    },
+    "itemCount": "{count, plural, one {# item} other {# items}}",
+    "hiddenCount": "{count} hidden",
+    "updated": "Updated {when}",
+    "notFoundTitle": "Menu not found",
+    "notFoundDescription": "This menu does not exist.",
+    "backToMenus": "All menus",
+    "editorDescription": "Add, edit and order the items. Changes go live at once.",
+    "tabs": {
+      "items": "Items",
+      "history": "History"
+    },
+    "translateOnly": {
+      "title": "Translation mode",
+      "description": "You can edit the labels in each language. Order, links and visibility are locked."
+    },
+    "readOnly": {
+      "title": "Read only",
+      "description": "You can view this menu but not change it."
+    },
+    "tooMany": {
+      "title": "Many items",
+      "description": "This menu has {count} items; {recommended} or fewer reads better."
+    },
+    "liveNote": "Saving changes the website at once; there is no publish step.",
+    "items": {
+      "title": "Items ({count} of {max})",
+      "add": "Add item",
+      "discardOrder": "Discard order",
+      "saveOrder": "Save order",
+      "atLimit": "The limit of {max} items is reached.",
+      "empty": "This menu has no items yet.",
+      "item": "Item {n}",
+      "missingLabel": "No label in {locale}",
+      "hidden": "Hidden",
+      "pageTrashed": "Page in trash",
+      "pageUnpublished": "Page not published",
+      "deleteItem": "Delete {name}"
+    },
+    "toast": {
+      "orderSaved": "Order saved.",
+      "orderFailed": "The order could not be saved.",
+      "restored": "Version restored. It is live on the website.",
+      "deleted": "Item deleted.",
+      "deleteFailed": "The item could not be deleted."
+    },
+    "delete": {
+      "title": "Delete \"{name}\"?",
+      "description": "The item disappears from the website at once. You can bring it back from the history.",
+      "confirm": "Delete"
+    },
+    "discard": {
+      "title": "Discard unsaved changes?",
+      "description": "The item you were editing has changes that were not saved.",
+      "confirm": "Discard"
+    },
+    "form": {
+      "select": "Choose an item to edit it.",
+      "editTitle": "Edit item",
+      "newTitle": "New item",
+      "label": "Label ({locale})",
+      "ariaLabel": "Accessible label ({locale})",
+      "ariaHelp": "Optional. Read aloud instead of the label.",
+      "linkType": "Link to",
+      "linkTypePage": "A page",
+      "linkTypeUrl": "An address",
+      "page": "Page",
+      "pagePlaceholder": "Choose a page",
+      "pageNotPublished": "This page is not published: the item is hidden on the website until it is.",
+      "url": "Address",
+      "urlHelp": "https://, a path starting with /, mailto:, tel: or #. Not http:// or javascript:.",
+      "urlHelpSocial": "Must start with https://",
+      "openInNewTab": "Open in a new tab",
+      "icon": "Icon",
+      "iconPlaceholder": "Choose an icon",
+      "activeMatch": "Highlight when",
+      "matchPrefix": "The address starts with this path",
+      "matchExact": "The address is exactly this path",
+      "visible": "Visible on the website",
+      "save": "Save item",
+      "create": "Add item",
+      "discard": "Discard changes",
+      "cancel": "Cancel",
+      "saved": "Item saved. It is live on the website.",
+      "created": "Item added.",
+      "saveFailed": "The item could not be saved."
+    }
+  },
+  "taxonomy": {
+    "title": "Categories and tags",
+    "description": "Used to organise blog posts. Changes go live at once.",
+    "kindsLabel": "Taxonomy",
+    "kinds": {
+      "categories": "Categories",
+      "tags": "Tags"
+    },
+    "searchPlaceholder": "Search by key or name",
+    "columns": {
+      "name": "Name",
+      "key": "Key",
+      "posts": "Posts",
+      "postsTitle": "{published} published",
+      "order": "Order",
+      "status": "Status",
+      "deleted": "Deleted",
+      "updated": "Updated",
+      "actions": "Actions"
+    },
+    "active": "Active",
+    "inactive": "Inactive",
+    "trash": "Show trash",
+    "unusedOnly": "Unused only",
+    "inactiveOnly": "Inactive only",
+    "create": {
+      "categories": "New category",
+      "tags": "New tag"
+    },
+    "empty": {
+      "categories": "No categories yet.",
+      "tags": "No tags yet."
+    },
+    "emptyTrash": "The trash is empty.",
+    "actions": {
+      "moveUp": "Move {name} up",
+      "moveDown": "Move {name} down",
+      "edit": "Edit {name}",
+      "delete": "Delete {name}",
+      "restore": "Restore {name}",
+      "restoreShort": "Restore"
+    },
+    "toast": {
+      "reorderFailed": "The order could not be changed.",
+      "deleted": "Moved to the trash for 30 days.",
+      "deleteFailed": "It could not be deleted.",
+      "restored": "Restored.",
+      "restoreDuplicate": "It can not be restored: {fields} is already used by another item.",
+      "restoreFailed": "It could not be restored.",
+      "deactivated": "Deactivated.",
+      "saveFailed": "It could not be saved."
+    },
+    "restoreConflict": {
+      "key": "the key",
+      "slug": "the {locale} slug"
+    },
+    "delete": {
+      "title": "Delete \"{name}\"?",
+      "description": "It goes to the trash for 30 days and can be restored from there.",
+      "confirm": "Delete"
+    },
+    "inUse": {
+      "title": "\"{name}\" is in use",
+      "description": "{count, plural, one {# published post uses it.} other {# published posts use it.}} Deactivate it instead of deleting.",
+      "close": "Close",
+      "deactivate": "Deactivate instead"
+    },
+    "dialog": {
+      "categories": {
+        "createTitle": "New category",
+        "editTitle": "Edit category",
+        "keyHelp": "Lower case letters, digits, - and _. Used in links such as ?category=. It can not be changed later."
+      },
+      "tags": {
+        "createTitle": "New tag",
+        "editTitle": "Edit tag",
+        "keyHelp": "Lower case letters, digits, - and _. It can not be changed later."
+      },
+      "createDescription": "Add the name in each language.",
+      "editDescription": "Changes go live at once.",
+      "key": "Key",
+      "keyImmutable": "The key can not be changed after creation.",
+      "name": "Name",
+      "slug": "Slug",
+      "slugHelp": "Part of the address. Empty uses the key.",
+      "descriptionLabel": "Description",
+      "sortOrder": "Order",
+      "active": "Active",
+      "default": "default",
+      "close": "Close",
+      "create": "Create",
+      "save": "Save",
+      "created": "Created.",
+      "saved": "Saved. It is live on the website.",
+      "saveFailed": "It could not be saved.",
+      "restored": "Version restored.",
+      "translateOnly": "Translation mode: you can edit names, descriptions and the slugs of non-default languages.",
+      "categoryInUse": "Published posts still use this category.",
+      "tabs": {
+        "details": "Details",
+        "history": "History"
+      }
+    }
+  },
+  "uiStrings": {
+    "title": "UI strings",
+    "description": "The fixed texts of the website (buttons, labels, messages) in each language.",
+    "searchPlaceholder": "Search by key or text",
+    "columns": {
+      "key": "Key"
+    },
+    "orphan": "Not in bundle",
+    "override": "Changed",
+    "missing": "Not translated",
+    "sameAsEnglish": "Same as English",
+    "editCell": "Edit {key} in {locale}",
+    "empty": "No texts found.",
+    "summary": {
+      "manifest": "{keys} keys, {overridden} changed. Bundle {commit}, synced {when}.",
+      "noManifest": "{keys} keys. The website bundle has not been synced yet."
+    },
+    "notSynced": {
+      "title": "Sync the bundle first",
+      "description": "This filter compares with the website bundle, which has not been synced yet."
+    },
+    "filters": {
+      "namespace": "Group",
+      "allNamespaces": "All groups",
+      "missingIn": "Not translated in",
+      "anyLanguage": "Any language",
+      "copyOfEnglish": "Still English in",
+      "overridden": "Changed only",
+      "orphans": "Not in bundle"
+    },
+    "sync": {
+      "open": "Sync from bundle",
+      "title": "Sync from the website bundle",
+      "description": "Choose the ui-strings.json exported by the website. A check runs first and nothing is written until you apply.",
+      "file": "Bundle file (JSON)",
+      "tooLarge": "The file is larger than 1 MB.",
+      "badShape": "This is not a ui-strings.json file.",
+      "notJson": "The file is not valid JSON.",
+      "checking": "Checking...",
+      "rejected": "The file was rejected",
+      "report": "Sync report",
+      "dryRun": "Check only - nothing was written.",
+      "done": "Sync done.",
+      "counts": {
+        "keys": "Keys",
+        "inserted": "Added",
+        "source_updated": "Updated",
+        "kept_override": "Kept changes",
+        "unchanged": "Unchanged"
+      },
+      "manifestUnchanged": "The bundle is identical to the last synced one.",
+      "newKeys": "{count} new keys",
+      "conflicts": "{count} changed texts no longer match the original placeholders",
+      "orphans": "{count} keys are no longer in the bundle",
+      "orphansNote": "They are kept, not deleted.",
+      "applied": "Bundle synced.",
+      "failed": "The sync failed.",
+      "cancel": "Cancel",
+      "apply": "Apply sync"
+    },
+    "sheet": {
+      "tabs": {
+        "edit": "Text",
+        "history": "History"
+      },
+      "orphan": "This key is no longer in the bundle.",
+      "description": "Changes go live at once.",
+      "source": "Text in the bundle",
+      "noSource": "none",
+      "override": "Changed",
+      "value": "Text on the website",
+      "emptyHint": "To go back to the bundle text use \"Restore original\".",
+      "placeholders": "Placeholders:",
+      "insertPlaceholder": "Insert {name}",
+      "noSourceWarning": "There is no original text to compare the placeholders with.",
+      "note": "Note",
+      "restoreOriginal": "Restore original",
+      "close": "Close",
+      "save": "Save",
+      "saved": "Saved. It is live on the website.",
+      "noChange": "Same as the original: nothing changed.",
+      "saveFailed": "The text could not be saved.",
+      "historyNote": "History of all languages of this key.",
+      "restored": "Version restored.",
+      "restoreTitle": "Restore the original text?",
+      "restoreDescription": "The changed text ({locale}) is removed and the website uses the bundle text again.",
+      "restoreConfirm": "Restore original",
+      "restoredOriginal": "Original text restored.",
+      "restoreFailed": "The original could not be restored."
     }
   }
 }

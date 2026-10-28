@@ -7,8 +7,8 @@ This file provides guidance to Claude Code when working on this project.
 `materm-admin-frontend` (Materm Admin) — a Next.js 16 App Router admin/back-office panel:
 auth (sign-in, forgot/reset password, accept invitation, profile), the IAM/ops screens (users, roles +
 permission matrix, audit log, locales, system status + cache purge), the media library + MediaPicker, the generic
-revisions tab, a protected layout shell and shared infrastructure.
-It has no backend of its own; the other CMS content screens come in later milestones.
+revisions tab, the save-live screens (menus, site settings, SEO, UI strings, categories / tags), a protected layout shell and
+shared infrastructure. It has no backend of its own; the other CMS content screens come in later milestones.
 
 ## Tech stack
 
@@ -111,6 +111,9 @@ Screens and building blocks built so far (phase P1 milestone M1; contract `../do
 - **T1.3.9 media library, MediaPicker, revisions, cache purge (M3)** - built against MSW + the typed API layer; the
   backends are written in parallel (contract = `doc/api/openapi-admin.yaml`, `doc/05` sections 11.6 - 11.8). See
   "Media, revisions and cache purge" below. No upload anywhere (P2, AS-2).
+
+- **T1.3.8 save-live screens (M3)** - built against the mock API (the backend routes are written in parallel). See
+  "Save-live screens" below.
 
 To add a module, follow the feature-vertical pattern:
 `src/app/(protected)/(routes)/admin/<feature>/page.tsx` + `src/services/<feature>.api.ts` +
@@ -218,7 +221,51 @@ differ). A public page goes under `src/app/auth/`.
 - **CSP**: pictures of another origin need `NEXT_PUBLIC_MEDIA_ORIGINS` (`lib/security/csp.ts` `mediaOriginsFromEnv`); only
   `img-src` is widened, only for http(s) origins.
 
+## Save-live screens (T1.3.8)
+
+Save-live = a write changes the website at once (no draft, no publish). Contract: `doc/05` sections 11.1 - 11.5 and 11.7,
+`doc/api/openapi-admin.yaml`. Every write sends `If-Match`; the answer's new ETag goes into the cache (no refetch);
+409 `CONFLICT_LOCK_VERSION` -> `ConflictDialog`; every screen has a history (`RevisionsTab`); a user with `translate` but not
+`update` only edits texts (the rest is disabled and not sent), a user with `read` only sees no mutation control.
+
+| Route | Screen | Key | Code |
+|---|---|---|---|
+| `/admin/menus`, `/admin/menus/[key]` | SCR-17 / SCR-18 menu cards + tree editor | `cms.menus` | `protected/menus/` (`menu-editor`, `menu-item-form`, `menu-draft`) |
+| `/admin/settings` -> `/admin/settings/[group]` | SCR-15 groups `brand`, `contact`, `footer`, `site` | `cms.settings` | `protected/settings/` (`settings-editor` is generic over the group's `fields[]`) |
+| `/admin/seo` | SCR-16 group `seo` + SERP preview + robots / sitemap facts | `cms.seo` | `protected/seo/` (reuses `SettingsEditor` with an `extras` slot) |
+| `/admin/blog/categories`, `/admin/blog/tags` | SCR-26 two screens (plain links as tabs) | `cms.categories` | `protected/taxonomy/` |
+| `/admin/ui-strings` | SCR-34 table, edit sheet per key x language, bundle sync | `cms.ui_strings` | `protected/ui-strings/` |
+
+Sidebar: groups `nav.content` (menus, categories, tags) and `nav.site` (settings, seo), direct entry `nav.uiStrings`;
+`/admin/blog` itself is NOT registered (posts come later). Types `types/{menus,settings,ui-strings,taxonomy}.d.ts` follow the
+OpenAPI schemas one by one; services / hooks `services|hooks/{menus,settings,ui-strings,taxonomy}`; paths in `API_ENDPOINTS`.
+
+- **Menus**: flat in P1 (`parent_id` null, `maxDepth` 1). Order is edited locally (`SortableList`: drag, keyboard, up / down) and sent ONCE
+  with "Save order" (`PUT .../items/order`, the id set must equal the menu's). Create does not send `position` (appends). `social` menu:
+  icon from `options.icons` (required), `https://` only. Page picker = `GET /pages?limit=100` (`id`, `title` / `name`, `path`, `status`).
+  A restore answers `MenuDetail`; the editor seeds the cache with it.
+- **Settings**: the form is built from `fields[]` (value type, localized, required, limits); a `PUT` replaces the group (empty -> `null`, a
+  language with no text is left out = its row is deleted). ETag = the group's revision number (`"0"` before the first edit). Media keys use
+  `MediaPicker`. `settings-draft.ts` has the client checks (same rules and `/values/<key>[/<locale>]` pointers as the server).
+- **UI strings**: "changed" (`is_override`) = value differs from the bundle text (`source`); `lib/icu.ts` (`@formatjs/icu-messageformat-parser`,
+  pinned 3.5.21) checks syntax, plural `other` and the placeholder set before a save (server codes `icu_syntax`, `plural_other_missing`,
+  `placeholder_mismatch`). "Still English in <language>" sends `locale=<l>&same_as=en` and narrows the table to that language.
+  **Key-level restore ETag (PROVISIONAL contract)**: the quoted number of the key's latest revision, read from the `ETag` header of
+  `GET /ui-strings/{key}/revisions` (fallback: built from the first row); it lives ONLY in `lib/ui-string-etag.ts`
+  (`formatUiStringKeyEtag` = the one line to change, e.g. to a weak validator). Bundle sync: choose `ui-strings.json` -> dry run -> apply.
+- **Categories / tags**: `key` immutable (shown read-only), soft delete (30 days) with the trash switch (needs `delete`), `ENTITY_REFERENCED`
+  -> dialog with "Deactivate instead" (categories), restore clash -> 409 `CONFLICT_DUPLICATE` explained. Order = up / down buttons, each a
+  swap of two `PATCH {sort_order}` (no order endpoint, C-30); a list row has no ETag, `etagOfRow` builds it.
+
 ### Mock API (`src/mocks/`)
+
+T1.3.8 split the model: `mock-core.ts` (error envelope, clock, helpers, `MockDb` type), `mock-menus.ts`, `mock-settings.ts`,
+`mock-ui-strings.ts`, `mock-taxonomy.ts`, bound in `handlers.ts` (`saveLiveApiHandlers`); `mock-db.ts` keeps media / revisions / purge and
+routes a restore to the entity's module. Seeds come from the admin backend seeds (menus, the 19 P1 settings keys (the 2 `analytics` keys are P2 = 404), `ui-strings.json` copied to
+`mocks/seed/`, 5 categories); INVENTED: the people and older versions in the histories, the draft / trashed pages, the posts that make the
+"in use" rules visible, 3 tags (one trashed), 3 changed UI strings and one orphan row. `db.translateOnly = ["menus" | "settings" | "seo" |
+"categories" | "ui-strings"]` makes the model act as a translate-only writer (403 rules of 05 11.1.3).
+
 
 `mock-db.ts` is a strict in-memory model of the media / revisions / purge endpoints (unknown query params and body fields
 are 422, no `If-Match` is 428, a stale one 409, `MEDIA_IN_USE`, `snapshot_incompatible` ...), seeded with the 24 `static/`

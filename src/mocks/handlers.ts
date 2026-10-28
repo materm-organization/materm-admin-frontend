@@ -1,18 +1,29 @@
-// MSW handlers over the in-memory model (`mock-db.ts`): media library, revisions, cache purge, plus the two
-// reads those screens need next to them (languages, system status). Base-agnostic URL patterns (`*/api/v1/...`)
+// MSW handlers over the in-memory model (`mock-db.ts` and the save-live modules): media library, menus, settings,
+// UI strings, categories / tags, revisions, cache purge, plus the two reads those screens need next to them
+// (languages, system status). Base-agnostic URL patterns (`*/api/v1/...`)
 // so the same handlers serve the Vitest server (`http://localhost:3000/api/v1`) and the browser mock whatever
 // `NEXT_PUBLIC_API_BASE_URL` is. Tests call `resetMockDb()` in `beforeEach`; a test that needs a special answer
 // puts its own handler in front with `server.use(...)`.
 import { http, HttpResponse, type HttpHandler } from "msw";
 
 import { LOCALE_ROWS } from "@/components/schema-form/fixtures/lookup";
+import { createMenuItem, deleteMenuItem, getMenu, getPage, listMenus, listPages, patchMenuItem, reorderMenuItems } from "@/mocks/mock-menus";
+import { getSettingsGroup, listSettingsGroups, putSettingsGroup } from "@/mocks/mock-settings";
+import {
+  createTaxonomy,
+  deleteTaxonomy,
+  getTaxonomyRow,
+  listTaxonomy,
+  patchTaxonomy,
+  restoreTaxonomyRow,
+} from "@/mocks/mock-taxonomy";
+import { bundleSync, deleteUiString, listUiStrings, putUiString, uiStringKeyEtag } from "@/mocks/mock-ui-strings";
 import {
   MockHttpError,
   createFolder,
   deleteAsset,
   deleteFolder,
   getAsset,
-  getEntity,
   getMockDb,
   getRevision,
   listAssets,
@@ -97,11 +108,12 @@ const mediaHandlers: HttpHandler[] = [
 ];
 
 // The six save-live entities share the revisions endpoints (doc/05 11.7); `idParam` names the path parameter.
-function revisionHandlers(resource: string, basePattern: string, idParam: string): HttpHandler[] {
+function revisionHandlers(resource: string, basePattern: string, idParam: string, listEtag?: (id: string) => string): HttpHandler[] {
   return [
     http.get(P(`${basePattern}/revisions`), guard(({ request, params }) => {
-      const { data, meta } = listRevisions(getMockDb(), resource, param(params, idParam), searchOf(request));
-      return ok(data, { meta });
+      const id = param(params, idParam);
+      const { data, meta } = listRevisions(getMockDb(), resource, id, searchOf(request));
+      return ok(data, { meta, etag: listEtag?.(id) });
     })),
     http.get(P(`${basePattern}/revisions/:revId`), guard(({ params }) =>
       ok(getRevision(getMockDb(), resource, param(params, idParam), param(params, "revId")))
@@ -115,23 +127,14 @@ function revisionHandlers(resource: string, basePattern: string, idParam: string
   ];
 }
 
-// Single-entity reads that answer the current ETag (what `RevisionsTab` asks when its editor passes none).
-function entityHandler(resource: string, basePattern: string, idParam: string): HttpHandler {
-  return http.get(P(basePattern), guard(({ params }) => {
-    const entity = getEntity(getMockDb(), resource, param(params, idParam));
-    return ok(entity.body, { etag: entity.etag });
-  }));
-}
-
 export const revisionApiHandlers: HttpHandler[] = [
   ...revisionHandlers("media/assets", "/media/assets/:id", "id"),
   ...revisionHandlers("menus", "/menus/:key", "key"),
   ...revisionHandlers("settings", "/settings/:group", "group"),
-  ...revisionHandlers("ui-strings", "/ui-strings/:key", "key"),
+  // PROVISIONAL contract (see mock-ui-strings.ts): the list of a key carries the ETag a key-level restore needs.
+  ...revisionHandlers("ui-strings", "/ui-strings/:key", "key", (key) => uiStringKeyEtag(getMockDb(), key)),
   ...revisionHandlers("categories", "/categories/:id", "id"),
   ...revisionHandlers("tags", "/tags/:id", "id"),
-  entityHandler("menus", "/menus/:key", "key"),
-  entityHandler("settings", "/settings/:group", "group"),
 ];
 
 export const systemApiHandlers: HttpHandler[] = [
@@ -162,9 +165,111 @@ export const systemApiHandlers: HttpHandler[] = [
 
 export const localeApiHandlers: HttpHandler[] = [http.get(P("/locales"), () => ok(LOCALE_ROWS))];
 
+// --- T1.3.8 save-live -------------------------------------------------------------------------------------------
+const menuHandlers: HttpHandler[] = [
+  http.get(P("/menus"), guard(() => ok(listMenus(getMockDb())))),
+  http.get(P("/menus/:key"), guard(({ params }) => {
+    const { menu, etag } = getMenu(getMockDb(), param(params, "key"));
+    return ok(menu, { etag });
+  })),
+  http.post(P("/menus/:key/items"), guard(async ({ request, params }) => {
+    const { data, etag } = createMenuItem(getMockDb(), param(params, "key"), await jsonBody(request), request.headers.get("If-Match"));
+    return ok(data, { status: 201, etag });
+  })),
+  // `items/order` before `items/:id`: a path segment named "order" is the reorder, never an item id.
+  http.put(P("/menus/:key/items/order"), guard(async ({ request, params }) => {
+    const { data, etag } = reorderMenuItems(getMockDb(), param(params, "key"), await jsonBody(request), request.headers.get("If-Match"));
+    return ok(data, { etag });
+  })),
+  http.patch(P("/menus/:key/items/:id"), guard(async ({ request, params }) => {
+    const { data, etag } = patchMenuItem(getMockDb(), param(params, "key"), param(params, "id"), await jsonBody(request), request.headers.get("If-Match"));
+    return ok(data, { etag });
+  })),
+  http.delete(P("/menus/:key/items/:id"), guard(({ request, params }) => {
+    const { data, etag } = deleteMenuItem(getMockDb(), param(params, "key"), param(params, "id"), request.headers.get("If-Match"));
+    return ok(data, { etag });
+  })),
+];
+
+const pageHandlers: HttpHandler[] = [
+  http.get(P("/pages"), guard(({ request }) => {
+    const { data, meta } = listPages(getMockDb(), searchOf(request));
+    return ok(data, { meta });
+  })),
+  http.get(P("/pages/:id"), guard(({ params }) => ok(getPage(getMockDb(), param(params, "id"))))),
+];
+
+const settingsHandlers: HttpHandler[] = [
+  http.get(P("/settings"), guard(() => ok(listSettingsGroups(getMockDb())))),
+  http.get(P("/settings/:group"), guard(({ params }) => {
+    const { data, etag } = getSettingsGroup(getMockDb(), param(params, "group"));
+    return ok(data, { etag });
+  })),
+  http.put(P("/settings/:group"), guard(async ({ request, params }) => {
+    const { data, etag } = putSettingsGroup(getMockDb(), param(params, "group"), await jsonBody(request), request.headers.get("If-Match"));
+    return ok(data, { etag });
+  })),
+];
+
+const uiStringHandlers: HttpHandler[] = [
+  http.get(P("/ui-strings"), guard(({ request }) => {
+    const { data, meta } = listUiStrings(getMockDb(), searchOf(request));
+    return ok(data, { meta });
+  })),
+  http.post(P("/ui-strings/bundle-sync"), guard(async ({ request }) => ok(bundleSync(getMockDb(), searchOf(request), await jsonBody(request))))),
+  http.put(P("/ui-strings/:key/:locale"), guard(async ({ request, params }) => {
+    const { data, etag } = putUiString(getMockDb(), param(params, "key"), param(params, "locale"), await jsonBody(request), request.headers.get("If-Match"));
+    return ok(data, { etag });
+  })),
+  http.delete(P("/ui-strings/:key/:locale"), guard(({ request, params }) =>
+    ok(deleteUiString(getMockDb(), param(params, "key"), param(params, "locale"), request.headers.get("If-Match")))
+  )),
+];
+
+function taxonomyHandlers(kind: "categories" | "tags"): HttpHandler[] {
+  const base = `/${kind}`;
+  return [
+    http.get(P(base), guard(({ request }) => {
+      const { data, meta } = listTaxonomy(getMockDb(), kind, searchOf(request));
+      return ok(data, { meta });
+    })),
+    http.post(P(base), guard(async ({ request }) => {
+      const { data, etag } = createTaxonomy(getMockDb(), kind, await jsonBody(request));
+      return ok(data, { status: 201, etag });
+    })),
+    http.get(P(`${base}/:id`), guard(({ params }) => {
+      const { data, etag } = getTaxonomyRow(getMockDb(), kind, param(params, "id"));
+      return ok(data, { etag });
+    })),
+    http.patch(P(`${base}/:id`), guard(async ({ request, params }) => {
+      const { data, etag } = patchTaxonomy(getMockDb(), kind, param(params, "id"), await jsonBody(request), request.headers.get("If-Match"));
+      return ok(data, { etag });
+    })),
+    http.delete(P(`${base}/:id`), guard(({ request, params }) => {
+      deleteTaxonomy(getMockDb(), kind, param(params, "id"), request.headers.get("If-Match"));
+      return ok(null);
+    })),
+    http.post(P(`${base}/:id/restore`), guard(({ request, params }) => {
+      const { data, etag } = restoreTaxonomyRow(getMockDb(), kind, param(params, "id"), request.headers.get("If-Match"));
+      return ok(data, { etag });
+    })),
+  ];
+}
+
+export const saveLiveApiHandlers: HttpHandler[] = [
+  ...menuHandlers,
+  ...pageHandlers,
+  ...settingsHandlers,
+  ...uiStringHandlers,
+  ...taxonomyHandlers("categories"),
+  ...taxonomyHandlers("tags"),
+];
+
+
 // Everything above, for the browser mock and for tests that want the whole set.
 export const mockApiHandlers: HttpHandler[] = [
   ...mediaHandlers,
+  ...saveLiveApiHandlers,
   ...revisionApiHandlers,
   ...systemApiHandlers,
   ...localeApiHandlers,

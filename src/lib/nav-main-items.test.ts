@@ -112,6 +112,13 @@ describe("W1 iam/ops routes (T1.1.10)", () => {
     expect(urls(Object.values(PERMISSION_KEYS))).toEqual([
       "/admin",
       "/admin/media",
+      // T1.3.8 save-live screens
+      "/admin/menus",
+      "/admin/blog/categories",
+      "/admin/blog/tags",
+      "/admin/settings",
+      "/admin/seo",
+      "/admin/ui-strings",
       "/admin/locales",
       "/admin/users",
       "/admin/roles",
@@ -136,5 +143,30 @@ describe("media library route (SCR-35/36)", () => {
 
   it("the dev playground of the media screens is covered by the /admin/dev-tools entry", () => {
     expect(getPermissionsForPath("/admin/dev-tools/media")).toEqual({ kind: "open" });
+  });
+});
+
+describe("T1.3.8 save-live routes", () => {
+  it.each([
+    ["/admin/menus", PERMISSION_KEYS.CMS_MENUS],
+    ["/admin/menus/main", PERMISSION_KEYS.CMS_MENUS],
+    ["/admin/settings", PERMISSION_KEYS.CMS_SETTINGS],
+    ["/admin/settings/contact", PERMISSION_KEYS.CMS_SETTINGS],
+    ["/admin/seo", PERMISSION_KEYS.CMS_SEO],
+    ["/admin/blog/categories", PERMISSION_KEYS.CMS_CATEGORIES],
+    ["/admin/blog/tags", PERMISSION_KEYS.CMS_CATEGORIES],
+    ["/admin/ui-strings", PERMISSION_KEYS.CMS_UI_STRINGS],
+  ])("%s needs read on %s", (path, key) => {
+    expect(getPermissionsForPath(path)).toEqual({ kind: "requires", keys: [key] });
+  });
+
+  it("/admin/blog itself is not registered (the posts screens come later)", () => {
+    expect(getPermissionsForPath("/admin/blog")).toEqual({ kind: "unknown" });
+  });
+
+  it("the seo screen is guarded by cms.seo, not by cms.settings", () => {
+    const urls = (keys: string[]) => buildNavMainItemsForUser(keys).flatMap((g) => (g.items ? g.items.map((i) => i.url) : [g.url]));
+    expect(urls([PERMISSION_KEYS.CMS_SEO])).toEqual(["/admin", "/admin/seo"]);
+    expect(urls([PERMISSION_KEYS.CMS_SETTINGS])).toEqual(["/admin", "/admin/settings"]);
   });
 });

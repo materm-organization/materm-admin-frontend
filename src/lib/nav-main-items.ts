@@ -1,4 +1,4 @@
-import { Activity, Images, Languages, LayoutDashboard, Users, type LucideIcon } from "lucide-react";
+import { Activity, Globe, Images, Languages, LayoutDashboard, Newspaper, Type, Users, type LucideIcon } from "lucide-react";
 
 import { PERMISSION_KEYS } from "@/lib/constants/permissions";
 
@@ -38,6 +38,34 @@ export const NAV_MAIN_CONFIG: NavMainGroupConfig[] = [
     url: "/admin/media",
     icon: Images,
     anyPermission: [PERMISSION_KEYS.MEDIA_LIBRARY],
+  },
+  // Site content that is saved live (T1.3.8): menus, blog categories / tags. Each entry is guarded by its own key.
+  {
+    title: "nav.content",
+    url: "#",
+    icon: Newspaper,
+    items: [
+      { title: "nav.menus", url: "/admin/menus", anyPermission: [PERMISSION_KEYS.CMS_MENUS] },
+      { title: "nav.categories", url: "/admin/blog/categories", anyPermission: [PERMISSION_KEYS.CMS_CATEGORIES] },
+      { title: "nav.tags", url: "/admin/blog/tags", anyPermission: [PERMISSION_KEYS.CMS_CATEGORIES] },
+    ],
+  },
+  // Site-wide settings (SCR-15) and SEO (SCR-16): two keys, `cms.settings` and `cms.seo`.
+  {
+    title: "nav.site",
+    url: "#",
+    icon: Globe,
+    items: [
+      { title: "nav.settings", url: "/admin/settings", anyPermission: [PERMISSION_KEYS.CMS_SETTINGS] },
+      { title: "nav.seo", url: "/admin/seo", anyPermission: [PERMISSION_KEYS.CMS_SEO] },
+    ],
+  },
+  // UI strings (SCR-34): the texts of the website's shell, per language.
+  {
+    title: "nav.uiStrings",
+    url: "/admin/ui-strings",
+    icon: Type,
+    anyPermission: [PERMISSION_KEYS.CMS_UI_STRINGS],
   },
   // Localization (doc/07 section 2.1): one entry for now (UI strings come later), so a direct link.
   {
