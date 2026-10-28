@@ -48,8 +48,21 @@ describe("ListPage", () => {
     const user = userEvent.setup();
     renderWithIntl(<ListPage {...base} list={list} keywordPlaceholder="Search things" />);
     expect(screen.getByText("Ann")).toBeInTheDocument();
-    await user.type(screen.getByRole("textbox", { name: "Search things" }), "  zed {Enter}");
+    // the keyword is a chip like the other filters: open it, type, Enter
+    await user.click(screen.getByText("Search"));
+    await user.type(await screen.findByPlaceholderText("Search things"), "  zed {Enter}");
     expect(list.setKeyword).toHaveBeenCalledWith("zed");
+    expect(list.setKeyword).toHaveBeenCalledTimes(1);
+  });
+
+  it("the keyword chip shows the active keyword and its x clears it, once", async () => {
+    const list = fakeList({ params: { page: 1, limit: 10, keyword: "zed", sort: undefined, filters: {} } });
+    const user = userEvent.setup();
+    renderWithIntl(<ListPage {...base} list={list} keywordPlaceholder="Search things" />);
+    expect(screen.getByText("zed")).toBeInTheDocument();
+    await user.click(document.querySelector("svg.lucide-circle-x")!.closest("button")!);
+    expect(list.setKeyword).toHaveBeenCalledTimes(1);
+    expect(list.setKeyword).toHaveBeenCalledWith("");
   });
 
   it("sorts server-side: only opted-in columns get a button, the sort goes to the URL state", async () => {

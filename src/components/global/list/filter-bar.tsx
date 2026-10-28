@@ -1,16 +1,17 @@
 "use client";
 
-import { SearchIcon, XIcon } from "lucide-react";
+import { XIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { useState, type ReactNode } from "react";
+import { useRef, type ReactNode } from "react";
 
+import { KeywordFilter } from "@/components/global/keyword-filter";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { MAX_KEYWORD_LENGTH } from "@/lib/list-params";
 
-// Keyword box: sent on Enter / the search button (the behaviour `UsersList` always had). The draft text is
-// local; the URL value (`value`) re-seeds it through the `key` the caller sets to that value.
-function KeywordSearch({
+// Keyword filter: the same dashed chip as the other filters; it opens a small box with the input and a Search
+// button (Enter works too). The URL value (`value`) is the truth: the chip re-seeds through the `key` the caller
+// sets to that value. The chip's x clears it.
+function KeywordChip({
   value,
   placeholder,
   onSubmit,
@@ -20,31 +21,27 @@ function KeywordSearch({
   onSubmit: (keyword: string) => void;
 }) {
   const t = useTranslations("list");
-  const [draft, setDraft] = useState(value);
-  const label = placeholder ?? t("searchPlaceholder");
+  // KeywordFilter commits through setSearchValue AND onSearch: send each keyword to the page once.
+  const last = useRef(value);
+  const submit = (next: string) => {
+    const keyword = next.trim().slice(0, MAX_KEYWORD_LENGTH);
+    if (keyword === last.current) return;
+    last.current = keyword;
+    onSubmit(keyword);
+  };
 
   return (
-    <form
-      role="search"
-      className="flex gap-2"
-      onSubmit={(e) => {
-        e.preventDefault();
-        onSubmit(draft.trim());
+    <KeywordFilter
+      label={t("search")}
+      placeholder={placeholder ?? t("searchPlaceholder")}
+      searchValue={value}
+      // The chip's x (and an empty commit) clear the keyword; a typed value only counts when committed (onSearch).
+      setSearchValue={(action) => {
+        const next = typeof action === "function" ? action(value) : action;
+        if (next === "") submit("");
       }}
-    >
-      <Input
-        value={draft}
-        onChange={(e) => setDraft(e.target.value)}
-        placeholder={label}
-        aria-label={label}
-        maxLength={MAX_KEYWORD_LENGTH}
-        className="w-full sm:w-72"
-      />
-      <Button type="submit" variant="outline">
-        <SearchIcon />
-        {t("search")}
-      </Button>
-    </form>
+      onSearch={(next) => submit(next ?? "")}
+    />
   );
 }
 
@@ -74,7 +71,7 @@ export function FilterBar({
   return (
     <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
       {hideKeyword ? null : (
-        <KeywordSearch
+        <KeywordChip
           key={keyword}
           value={keyword}
           placeholder={keywordPlaceholder}
