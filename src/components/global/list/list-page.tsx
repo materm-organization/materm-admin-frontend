@@ -102,6 +102,29 @@ export function ListPage<TData, F extends z.ZodRawShape = z.ZodRawShape>({
     </div>
   ) : undefined;
 
+  const filterBar = (
+    <FilterBar
+      keyword={params.keyword}
+      onKeywordSubmit={list.setKeyword}
+      keywordPlaceholder={keywordPlaceholder}
+      hideKeyword={hideKeyword}
+      hasActiveFilters={list.hasActiveFilters}
+      onClear={list.clearFilters}
+      actions={
+        showHeader || !primaryAction ? (
+          toolbarActions
+        ) : (
+          <>
+            {toolbarActions}
+            {primaryAction}
+          </>
+        )
+      }
+    >
+      {filters}
+    </FilterBar>
+  );
+
   return (
     <div className="space-y-4">
       {showHeader ? (
@@ -116,27 +139,6 @@ export function ListPage<TData, F extends z.ZodRawShape = z.ZodRawShape>({
         </div>
       ) : null}
 
-      <FilterBar
-        keyword={params.keyword}
-        onKeywordSubmit={list.setKeyword}
-        keywordPlaceholder={keywordPlaceholder}
-        hideKeyword={hideKeyword}
-        hasActiveFilters={list.hasActiveFilters}
-        onClear={list.clearFilters}
-        actions={
-          showHeader || !primaryAction ? (
-            toolbarActions
-          ) : (
-            <>
-              {toolbarActions}
-              {primaryAction}
-            </>
-          )
-        }
-      >
-        {filters}
-      </FilterBar>
-
       {selection && selectedCount > 0 ? (
         <BulkBar count={selectedCount} onClear={() => selection.onRowSelectionChange({})}>
           {selection.bulkActions}
@@ -144,9 +146,15 @@ export function ListPage<TData, F extends z.ZodRawShape = z.ZodRawShape>({
       ) : null}
 
       {hasError && isNoPermissionError(error) ? (
-        <NoPermission />
+        <>
+          {filterBar}
+          <NoPermission />
+        </>
       ) : hasError && !data.length ? (
-        <ErrorState error={error} onRetry={onRetry} isRetrying={isFetching} />
+        <>
+          {filterBar}
+          <ErrorState error={error} onRetry={onRetry} isRetrying={isFetching} />
+        </>
       ) : (
         <div>
           <FetchingBar active={isFetching && !isLoading} />
@@ -163,6 +171,7 @@ export function ListPage<TData, F extends z.ZodRawShape = z.ZodRawShape>({
             onSortingChange={(state) => list.setSort(sortingStateToSort(state))}
             rowSelection={selection?.rowSelection}
             onRowSelectionChange={selection?.onRowSelectionChange}
+            toolbar={filterBar}
           />
         </div>
       )}

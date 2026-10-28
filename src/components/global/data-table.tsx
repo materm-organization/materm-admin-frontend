@@ -53,6 +53,7 @@ export function DataTable<TData>({
   onSortingChange,
   rowSelection,
   onRowSelectionChange,
+  toolbar,
 }: {
   columns: ColumnDef<TData>[];
   data: TData[];
@@ -67,6 +68,9 @@ export function DataTable<TData>({
   onSortingChange?: (sorting: SortingState) => void;
   rowSelection?: RowSelectionState;
   onRowSelectionChange?: (selection: RowSelectionState) => void;
+  // A row ABOVE the column headers inside the same card (the filter chips of a list page), separated from the
+  // table by a line.
+  toolbar?: ReactNode;
 }) {
   const t = useTranslations("list");
   const selectable = rowSelection !== undefined && onRowSelectionChange !== undefined;
@@ -130,6 +134,7 @@ export function DataTable<TData>({
   return (
     <Card className="gap-0 overflow-hidden border-border/80 py-0 shadow-sm">
       <CardContent className="space-y-0 p-0">
+        {toolbar ? <div className="border-b border-border/80 px-3 py-3">{toolbar}</div> : null}
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
