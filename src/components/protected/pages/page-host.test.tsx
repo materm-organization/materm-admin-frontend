@@ -4,6 +4,7 @@ import { http, HttpResponse } from "msw";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { PageHost } from "@/components/protected/pages/page-host";
+import { getMockDb } from "@/mocks/mock-db";
 import { useMockApi } from "@/mocks/test-setup";
 import { server } from "@/test/msw-server";
 import { grants, renderApp } from "@/test/render-app";
@@ -22,7 +23,7 @@ const toast = vi.hoisted(() => ({ success: vi.fn(), error: vi.fn(), info: vi.fn(
 vi.mock("sonner", () => ({ toast }));
 
 beforeEach(() => {
-  me.current = { id: 6, roleID: 2, permissions: grants({ "cms.pages": ["read", "create", "update", "delete", "publish", "unpublish", "review"] }) };
+  me.current = { id: 6, roleID: 2, permissions: grants({ "cms.pages": ["read", "create", "update", "delete", "publish", "unpublish", "review", "translate"], "cms.sections": ["read", "create", "update", "delete", "translate"], "cms.seo": ["read", "update"] }) };
   nav.search = "";
   nav.replace.mockReset();
   Object.values(toast).forEach((fn) => fn.mockReset());
@@ -31,13 +32,14 @@ beforeEach(() => {
 describe("PageHost (T1.4.7: the publishing parts of SCR-20)", () => {
   useMockApi();
 
-  it("shows the page, its state and the publishing bar; the editor is announced, not built", async () => {
+  it("shows the page, its state, the publishing bar and the editor tabs", async () => {
     renderApp(<PageHost id={9} />);
     expect(await screen.findByRole("heading", { name: "Events and treks" })).toBeInTheDocument();
     expect(screen.getByText("/events", { selector: "p" })).toBeInTheDocument();
     expect(screen.getByTestId("status-badge")).toHaveTextContent("Published, changes pending");
     expect(screen.getByRole("button", { name: "Publish changes" })).toBeInTheDocument();
-    expect(screen.getByText("The page editor is coming")).toBeInTheDocument();
+    for (const name of ["Content", "Details", "SEO", "History"]) expect(screen.getByRole("tab", { name })).toBeInTheDocument();
+    expect(await screen.findByTestId("section-list")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "All pages" })).toHaveAttribute("href", "/admin/pages");
   });
 
@@ -55,12 +57,19 @@ describe("PageHost (T1.4.7: the publishing parts of SCR-20)", () => {
     expect(params.get("sectionIndex")).toBe("0");
   });
 
-  it("?field= shows which field it names", async () => {
-    nav.search = "field=%2Fsections%2F0192d3a4-7c1e-7b52-9d0a-3f5e2a1b5399%2Fprops%2Ftitle%2Fla&sectionKey=hero_brand&sectionIndex=0";
+  it("?field= opens the section it names and shows the problem at the field (the former notice box is gone)", async () => {
+    const db = getMockDb();
+    const hero = db.pages.find((p) => p.id === 6)!.live.sections[0];
+    nav.search = `section=${hero.id}&field=${encodeURIComponent(`/sections/${hero.public_id}/props/title/la`)}&fieldCode=empty_default_locale&sectionKey=hero_brand&sectionIndex=0`;
     renderApp(<PageHost id={6} />);
-    const box = await screen.findByTestId("field-target");
-    expect(box).toHaveTextContent("1. Hero (brand) › Title (la)");
-    expect(within(box).getByTestId("field-target-pointer")).toHaveTextContent("/props/title/la");
+    expect(await screen.findByTestId("section-editor")).toBeInTheDocument();
+    expect(await screen.findByText("This text is required in the default language.")).toBeInTheDocument();
+    expect(screen.queryByTestId("field-target")).not.toBeInTheDocument();
+    // the address is cleaned: the pointer was consumed
+    await waitFor(() => expect(nav.replace).toHaveBeenCalled());
+    const url = nav.replace.mock.calls.at(-1)![0] as string;
+    expect(url).toContain(`section=${hero.id}`);
+    expect(url).not.toContain("field=");
   });
 
   it("a restore from the History tab updates the page and its ETag from the answer, without refetching the page", async () => {

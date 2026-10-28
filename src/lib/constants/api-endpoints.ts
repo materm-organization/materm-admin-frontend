@@ -82,6 +82,8 @@ export const API_ENDPOINTS = {
     SET_HOME: (id: number | string) => `/pages/${id}/set-home`,
     REFERENCES: (id: number | string) => `/pages/${id}/references`,
     SECTIONS: (id: number | string) => `/pages/${id}/sections`,
+    // `PUT` (05 12.5.7): the whole order in one request. Not a section id.
+    SECTIONS_ORDER: (id: number | string) => `/pages/${id}/sections/order`,
     SECTION: (id: number | string, sectionId: number | string) => `/pages/${id}/sections/${sectionId}`,
   },
   // Templates of the pages (doc/05 section 12.4): a registry in the backend's code, 4 rows, not paginated.

@@ -11,9 +11,16 @@ import type {
   PageListItem,
   PageReferences,
   PageTemplate,
+  PageSection,
   PageWriteResult,
   PagesQuery,
+  SectionOrderResult,
+  SectionSummary,
+  SectionWriteResult,
+  CreateSectionPayload,
   SetHomeResult,
+  UpdatePagePayload,
+  UpdateSectionPayload,
 } from "@/types/pages";
 
 // The ETag of a page is `"<lock_version>"` (doc/05 12.2.3); a list row has no ETag header, so build it from the row.
@@ -32,6 +39,9 @@ export const PagesAPI = {
         headers: idempotencyKeyHeaders(idempotencyKey),
       })
     ),
+  // 05 12.3.3: partial, `If-Match` mandatory; a change that alters nothing answers 200 with the same ETag.
+  Update: async (id: number | string, payload: UpdatePagePayload, etag: string | undefined) =>
+    withEtag(await axiosInstance.patch<ApiResponse<PageWriteResult>>(API_ENDPOINTS.PAGES.DETAIL(id), payload, { headers: ifMatchHeaders(etag, { required: true }) })),
   // Soft delete (30 days in the trash). 409 `ENTITY_REFERENCED` (`details.references`) until the caller repeats it with
   // `confirm_references=true` (PG-13); the first request never carries it. 409 `INVALID_STATE` `is_home` / `system_page`.
   Delete: async (id: number | string, etag: string | undefined, options: { confirmReferences?: boolean } = {}) =>
@@ -64,4 +74,34 @@ export const PagesAPI = {
     const { data } = await axiosInstance.get<ApiResponse<PageTemplate[]>>(API_ENDPOINTS.PAGE_TEMPLATES.LIST);
     return data;
   },
+};
+
+// Sections of a page (05 12.5). Every write sends the PAGE's `If-Match` and answers the page's new `ETag`; the answers
+// are the section / the order and the page's `aggregate`, never the page itself.
+export const PageSectionsAPI = {
+  // `include=props`: the editor needs every props object (the list alone would not carry them, 12.5.3).
+  List: async (pageId: number | string) =>
+    withEtag(await axiosInstance.get<ApiResponse<SectionSummary[]>>(API_ENDPOINTS.PAGES.SECTIONS(pageId), { params: { include: "props" } })),
+  Get: async (pageId: number | string, id: number | string) =>
+    withEtag(await axiosInstance.get<ApiResponse<PageSection>>(API_ENDPOINTS.PAGES.SECTION(pageId, id))),
+  Create: async (pageId: number | string, payload: CreateSectionPayload, etag: string | undefined, idempotencyKey?: string) =>
+    withEtag(
+      await axiosInstance.post<ApiResponse<SectionWriteResult>>(API_ENDPOINTS.PAGES.SECTIONS(pageId), payload, {
+        headers: { ...ifMatchHeaders(etag, { required: true }), ...idempotencyKeyHeaders(idempotencyKey) },
+      })
+    ),
+  Update: async (pageId: number | string, id: number | string, payload: UpdateSectionPayload, etag: string | undefined) =>
+    withEtag(
+      await axiosInstance.patch<ApiResponse<SectionWriteResult>>(API_ENDPOINTS.PAGES.SECTION(pageId, id), payload, { headers: ifMatchHeaders(etag, { required: true }) })
+    ),
+  Reorder: async (pageId: number | string, ids: number[], etag: string | undefined) =>
+    withEtag(
+      await axiosInstance.put<ApiResponse<SectionOrderResult>>(
+        API_ENDPOINTS.PAGES.SECTIONS_ORDER(pageId),
+        { sections: ids.map((id) => ({ id })) },
+        { headers: ifMatchHeaders(etag, { required: true }) }
+      )
+    ),
+  Delete: async (pageId: number | string, id: number | string, etag: string | undefined) =>
+    withEtag(await axiosInstance.delete<ApiResponse<SectionOrderResult>>(API_ENDPOINTS.PAGES.SECTION(pageId, id), { headers: ifMatchHeaders(etag, { required: true }) })),
 };

@@ -8,9 +8,13 @@ import { http, HttpResponse, type HttpHandler } from "msw";
 
 import { LOCALE_ROWS } from "@/components/schema-form/fixtures/lookup";
 import { createMenuItem, deleteMenuItem, getMenu, listMenus, patchMenuItem, reorderMenuItems } from "@/mocks/mock-menus";
+import { getSectionType, listAlbumItems, listLookup, listSectionTypes } from "@/mocks/mock-cms-lookups";
 import {
   createPage,
+  createSection,
   deletePage,
+  deleteSection,
+  reorderSections,
   discardDraft,
   getPage,
   getPageRevision,
@@ -215,12 +219,18 @@ const menuHandlers: HttpHandler[] = [
 // Pages, the publish engine and the page revisions (T1.4.7; 05 section 12). `Idempotency-Key` is honoured on the
 // four routes that list it (create, set-home, publish, unpublish): the same key with the same request replays the
 // stored answer (`Idempotent-Replayed: true`), the same key with another request is a 422.
-function idempotent(request: Request, params: Record<string, string | readonly string[] | undefined>, run: () => { status: number; data: unknown; etag?: string }) {
+function idempotent(request: Request, params: Record<string, string | readonly string[] | undefined>, run: () => { status: number; data: unknown; etag?: string; location?: string }) {
   const url = new URL(request.url);
   const fingerprint = `${request.method} ${url.pathname}${url.search} ${request.headers.get("If-Match") ?? ""}`;
   void params;
-  const result = withIdempotency(getMockDb(), request.headers.get("Idempotency-Key"), fingerprint, run);
+  let location: string | undefined;
+  const result = withIdempotency(getMockDb(), request.headers.get("Idempotency-Key"), fingerprint, () => {
+    const done = run();
+    location = done.location;
+    return done;
+  });
   const headers: Record<string, string> = {};
+  if (location) headers.Location = location;
   if (result.etag) headers.ETag = result.etag;
   if (result.replayed) headers["Idempotent-Replayed"] = "true";
   return HttpResponse.json({ success: true, data: result.data }, { status: result.status, headers });
@@ -269,6 +279,18 @@ const pageHandlers: HttpHandler[] = [
     const { data, etag } = patchSection(getMockDb(), param(params, "id"), param(params, "sectionId"), await jsonBody(request), request.headers.get("If-Match"));
     return ok(data, { etag });
   })),
+  http.post(P("/pages/:id/sections"), guard(async ({ request, params }) => {
+    const body = await jsonBody(request);
+    return idempotent(request, params, () => ({ status: 201, ...createSection(getMockDb(), param(params, "id"), body, request.headers.get("If-Match")) }));
+  })),
+  http.put(P("/pages/:id/sections/order"), guard(async ({ request, params }) => {
+    const { data, etag } = reorderSections(getMockDb(), param(params, "id"), await jsonBody(request), request.headers.get("If-Match"));
+    return ok(data, { etag });
+  })),
+  http.delete(P("/pages/:id/sections/:sectionId"), guard(({ request, params }) => {
+    const { data, etag } = deleteSection(getMockDb(), param(params, "id"), param(params, "sectionId"), request.headers.get("If-Match"));
+    return ok(data, { etag });
+  })),
   http.post(P("/pages/:id/publish"), guard(async ({ request, params }) => {
     const body = await jsonBody(request);
     return idempotent(request, params, () => ({ status: 200, ...publishPage(getMockDb(), param(params, "id"), searchOf(request), body, request.headers.get("If-Match")) }));
@@ -289,6 +311,19 @@ const pageHandlers: HttpHandler[] = [
     const { data, etag } = restorePageRevision(getMockDb(), param(params, "id"), param(params, "revId"), await jsonBody(request), request.headers.get("If-Match"));
     return ok(data, { etag });
   })),
+];
+
+// The registry of section types and the picker lookups of a section's props (T1.4.8).
+const cmsLookupHandlers: HttpHandler[] = [
+  http.get(P("/section-types"), guard(({ request }) => ok(listSectionTypes(getMockDb(), searchOf(request))))),
+  http.get(P("/section-types/:key"), guard(({ params }) => ok(getSectionType(param(params, "key"))))),
+  ...(["posts", "albums", "faq-groups", "forms"] as const).map((kind) =>
+    http.get(P(`/${kind}`), guard(({ request }) => {
+      const { data, meta } = listLookup(getMockDb(), kind, searchOf(request));
+      return ok(data, { meta });
+    }))
+  ),
+  http.get(P("/albums/:id/items"), guard(({ params }) => ok(listAlbumItems(getMockDb(), param(params, "id"))))),
 ];
 
 const settingsHandlers: HttpHandler[] = [
@@ -351,6 +386,7 @@ function taxonomyHandlers(kind: "categories" | "tags"): HttpHandler[] {
 export const saveLiveApiHandlers: HttpHandler[] = [
   ...menuHandlers,
   ...pageHandlers,
+  ...cmsLookupHandlers,
   ...settingsHandlers,
   ...uiStringHandlers,
   ...taxonomyHandlers("categories"),

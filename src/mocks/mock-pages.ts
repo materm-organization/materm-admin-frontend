@@ -18,6 +18,7 @@
 //
 // INVENTED (marked in the seed): pages 6 - 10, the history of page 9, the albums, and the section ids.
 import { computeCompleteness } from "@/components/schema-form/completeness";
+import { walkSchemaValue } from "@/components/schema-form/schema-walker";
 import { SECTION_TYPE_FIXTURES } from "@/components/schema-form/fixtures";
 import pageBlog from "@/components/schema-form/fixtures/examples/page.blog.json";
 import pageContact from "@/components/schema-form/fixtures/examples/page.contact.json";
@@ -32,6 +33,7 @@ import {
   boolParam,
   duplicate,
   etagOf,
+  forbidden,
   fail,
   invalidState,
   keyOf,
@@ -829,6 +831,21 @@ export function patchPage(db: MockDb, id: string, body: unknown, ifMatch: string
   }
   if (JSON.stringify(next) === JSON.stringify(snapNow)) return { data: writeResult(db, root), etag: etagOfPage(root) };
 
+  // A translator (PG-14): the title and the SEO texts only; a value that differs elsewhere is a 403.
+  if (db.translateOnly.includes("pages")) {
+    for (const f of ["name", "template", "path", "noindex", "in_sitemap", "sort_order"] as const) {
+      if (next.page[f] !== snapNow.page[f]) throw forbidden(`/${f}`);
+    }
+    for (const t of next.translations) {
+      const old = snapNow.translations.find((x) => x.locale_code === t.locale_code);
+      if (!old) throw forbidden(`/translations/${t.locale_code}`);
+      for (const f of ["seo_title_absolute", "og_image_id", "canonical_path", "is_enabled"] as const) {
+        if (t[f] !== old[f]) throw forbidden(`/translations/${t.locale_code}/${f}`);
+      }
+    }
+    if (snapNow.translations.some((old) => !next.translations.some((t) => t.locale_code === old.locale_code))) throw forbidden("/translations");
+  }
+
   const { snapshot, stamp } = beginWrite(db, root);
   const warnings: SaveLiveWarning[] = serpWarnings(next);
   if (root.first_published_at && snapNow.page.path !== next.page.path) warnings.push({ path: "/path", code: "path_changed_published", params: { old_path: snapNow.page.path } });
@@ -839,8 +856,127 @@ export function patchPage(db: MockDb, id: string, body: unknown, ifMatch: string
 }
 
 // ---------------------------------------------------------------------------------------------------------------
-// Sections (only what the publish scenarios need: read, and PATCH of props / visibility)
+// Sections (05 12.5): read, create, change, reorder, delete. Every write needs the PAGE's `If-Match`, bumps the page's
+// `lock_version` and answers the page's NEW ETag + `aggregate` (never the page). Props are checked at the draft level
+// the way the real validator would for the rules below - NOT with Ajv (the production CSP of a mock-enabled build
+// refuses its code generation): max length of text, enum, array size, a media / page / album that does not exist.
 // ---------------------------------------------------------------------------------------------------------------
+const MAX_SECTIONS = 60;
+const ANCHOR = /^[A-Za-z][A-Za-z0-9_-]{0,63}$/;
+const MAX_PROPS_BYTES = 262144;
+
+function placementOf(templateKey: string, key: string): { allowed: boolean; max: number | null; position: "first" | "after_hero" | "any"; hero: boolean } {
+  const template = TEMPLATE_DEFS.find((t) => t.key === templateKey);
+  const hero = (HERO_KEYS as readonly string[]).includes(key);
+  const requiredType = Boolean(template?.required.some((r) => r.kind === "type" && r.section_type_keys.includes(key)));
+  return {
+    allowed: Boolean(template?.allowed.includes(key)),
+    max: hero || key === "post_list" || key === "contact_section" ? 1 : null,
+    position: hero ? "first" : requiredType ? "after_hero" : "any",
+    hero,
+  };
+}
+
+// The structure rules checked at save time (PG-8): the same four codes for POST, PUT order and PATCH template.
+function templateViolations(
+  templateKey: string,
+  order: Array<{ key: string; id?: number }>,
+  pointers: { allowed: string; max: string; hero_first: (index: number) => string; after_hero: (index: number) => string }
+): ApiFieldError[] {
+  const errors: ApiFieldError[] = [];
+  const heroIndex = order.findIndex((s) => placementOf(templateKey, s.key).hero);
+  const heroCount = order.filter((s) => placementOf(templateKey, s.key).hero).length;
+  const counts = new Map<string, number>();
+  order.forEach((s, index) => {
+    const place = placementOf(templateKey, s.key);
+    const params = { template: templateKey, section_key: s.key, ...(s.id !== undefined ? { section_id: s.id } : {}) };
+    if (!place.allowed) {
+      errors.push({ in: "body", path: pointers.allowed, code: "template_violation", params: { rule: "section_not_allowed", ...params } });
+      return;
+    }
+    counts.set(s.key, (counts.get(s.key) ?? 0) + 1);
+    const over = place.hero ? heroCount > 1 : place.max !== null && (counts.get(s.key) ?? 0) > place.max;
+    if (over) errors.push({ in: "body", path: pointers.max, code: "template_violation", params: { rule: "max_per_page", max: place.max ?? 1, ...params } });
+    if (place.hero && index !== 0) errors.push({ in: "body", path: pointers.hero_first(index), code: "template_violation", params: { rule: "hero_first", ...params } });
+    if (place.position === "after_hero" && heroIndex >= 0 && index < heroIndex) errors.push({ in: "body", path: pointers.after_hero(index), code: "template_violation", params: { rule: "after_hero", ...params } });
+  });
+  return errors;
+}
+
+// Draft-level checks of a props object, as `/props/...` field errors.
+function propsErrors(db: MockDb, typeKey: string, props: Record<string, unknown>): ApiFieldError[] {
+  const type = SECTION_TYPE_FIXTURES[typeKey];
+  const errors: ApiFieldError[] = [];
+  if (JSON.stringify(props).length > MAX_PROPS_BYTES) return [{ in: "body", path: "/props", code: "too_long", params: { unit: "bytes", max: MAX_PROPS_BYTES } }];
+  walkSchemaValue(type.json_schema, type.json_schema, props, ({ pointer, schema, value }) => {
+    if (value === undefined || value === null) return;
+    const at = `/props${pointer}`;
+    if (schema["x-localized"] === true) {
+      if (isObject(value) && !schema["x-richtext"]) {
+        for (const [code, text] of Object.entries(value)) {
+          const ap = schema.additionalProperties;
+          const max = isObject(ap) && typeof ap.maxLength === "number" ? ap.maxLength : schema.maxLength;
+          if (typeof text === "string" && typeof max === "number" && [...text].length > max) errors.push({ in: "body", path: `${at}/${code}`, code: "too_long", params: { max, unit: "chars" } });
+        }
+      }
+      return;
+    }
+    if (typeof value === "string") {
+      if (typeof schema.maxLength === "number" && [...value].length > schema.maxLength) errors.push({ in: "body", path: at, code: "too_long", params: { max: schema.maxLength, unit: "chars" } });
+      if (Array.isArray(schema.enum) && !schema.enum.includes(value)) errors.push({ in: "body", path: at, code: "not_in_enum", params: { expected: schema.enum as string[] } });
+    }
+    if (Array.isArray(value)) {
+      if (typeof schema.maxItems === "number" && value.length > schema.maxItems) errors.push({ in: "body", path: at, code: "too_long", params: { max: schema.maxItems, unit: "items" } });
+      if (typeof schema.minItems === "number" && value.length < schema.minItems) errors.push({ in: "body", path: at, code: "too_short", params: { min: schema.minItems, unit: "items" } });
+    }
+  });
+  deepFind(props, "media_id", "/props", (v, pointer) => {
+    if (typeof v === "number" && !db.assets.some((a) => a.id === v && !a.deleted_at)) errors.push({ in: "body", path: pointer, code: "unknown_reference", params: { ref_type: "media_assets", ref_id: v } });
+  });
+  deepFind(props, "page_id", "/props", (v, pointer) => {
+    const target = typeof v === "number" ? db.pages.find((p) => p.id === v) : undefined;
+    if (typeof v === "number" && (!target || isTrashed(target))) errors.push({ in: "body", path: pointer, code: "unknown_reference", params: { ref_type: "pages", ref_id: v } });
+  });
+  deepFind(props, "album_id", "/props", (v, pointer) => {
+    if (typeof v === "number" && !db.albums.some((a) => a.id === v)) errors.push({ in: "body", path: pointer, code: "unknown_reference", params: { ref_type: "albums", ref_id: v } });
+  });
+  return errors.slice(0, MAX_ISSUES);
+}
+
+// Every path that differs between two props objects (a differing array length counts at the array itself).
+function changedPointers(a: unknown, b: unknown, pointer = ""): string[] {
+  if (JSON.stringify(a) === JSON.stringify(b)) return [];
+  if (Array.isArray(a) && Array.isArray(b)) {
+    if (a.length !== b.length) return [pointer];
+    return a.flatMap((v, i) => changedPointers(v, b[i], `${pointer}/${i}`));
+  }
+  if (isObject(a) && isObject(b)) {
+    const keys = new Set([...Object.keys(a), ...Object.keys(b)]);
+    return [...keys].flatMap((k) => changedPointers(a[k], b[k], `${pointer}/${k}`));
+  }
+  return [pointer];
+}
+
+// 05 12.5.6 (S-4): a translator may change only what sits under an `x-localized` node.
+function translatableViolation(typeKey: string, before: Record<string, unknown>, after: Record<string, unknown>): string | null {
+  const type = SECTION_TYPE_FIXTURES[typeKey];
+  const leaves = new Set<string>();
+  for (const props of [before, after]) {
+    walkSchemaValue(type.json_schema, type.json_schema, props, ({ pointer, schema }) => {
+      if (schema["x-localized"] === true) leaves.add(pointer);
+    });
+  }
+  for (const pointer of changedPointers(before, after)) {
+    if (![...leaves].some((leaf) => pointer === leaf || pointer.startsWith(`${leaf}/`))) return `/props${pointer}`;
+  }
+  return null;
+}
+
+function sectionOrder(snap: MockPageSnapshot) {
+  return snap.sections.slice().sort((a, b) => a.sort_order - b.sort_order).map((x) => ({ id: x.id, public_id: x.public_id, sort_order: x.sort_order }));
+}
+const renumberSections = (sections: MockSnapshotSection[]) => sections.forEach((s, i) => (s.sort_order = i));
+
 export function listSections(db: MockDb, id: string, params: Params) {
   rejectUnknown(params, ["include"]);
   const include = params.get("include");
@@ -857,11 +993,92 @@ export function getSection(db: MockDb, id: string, sectionId: string) {
   return { data: sectionSummary(db, root, s, true), etag: etagOfPage(root) };
 }
 
+function writeAnswer(db: MockDb, root: MockPageRoot, snapshot: MockPageSnapshot, section: MockSnapshotSection) {
+  return {
+    section: sectionSummary(db, root, section, true),
+    sections: sectionOrder(snapshot),
+    aggregate: stampOf(db, root),
+    warnings: [] as SaveLiveWarning[],
+  };
+}
+
+export function createSection(db: MockDb, id: string, body: unknown, ifMatch: string | null) {
+  const root = findRoot(db, id);
+  requireMatch(ifMatch, root);
+  trashedCheck(root);
+  if (db.translateOnly.includes("sections")) throw forbidden("create");
+  if (!isObject(body)) throw validationFailed([{ in: "body", path: "", code: "invalid_type" }]);
+  const now = working(db, root);
+  const errors: ApiFieldError[] = [];
+  for (const k of Object.keys(body)) {
+    if (!["section_type_key", "position", "variant", "props", "is_visible", "anchor_id", "shared_section_id"].includes(k)) errors.push({ in: "body", path: `/${k}`, code: "unknown_field" });
+  }
+  const key = body.section_type_key;
+  const type = typeof key === "string" ? SECTION_TYPE_FIXTURES[key] : undefined;
+  if (typeof key !== "string") errors.push({ in: "body", path: "/section_type_key", code: key === undefined ? "required" : "invalid_type" });
+  else if (!type) errors.push({ in: "body", path: "/section_type_key", code: "unknown_reference" });
+  if (body.shared_section_id !== undefined && body.shared_section_id !== null) errors.push({ in: "body", path: "/shared_section_id", code: "not_applicable" });
+  const count = now.sections.length;
+  let position = count;
+  if (body.position !== undefined) {
+    if (!Number.isInteger(body.position) || (body.position as number) < 0) errors.push({ in: "body", path: "/position", code: "out_of_range", params: { min: 0, max: count } });
+    else if ((body.position as number) > count) errors.push({ in: "body", path: "/position", code: "out_of_range", params: { max: count } });
+    else position = body.position as number;
+  }
+  if (type && body.variant !== undefined && body.variant !== null && !type.variants.includes(body.variant as string)) {
+    errors.push({ in: "body", path: "/variant", code: "not_in_enum", params: { expected: type.variants } });
+  }
+  if (type && body.variant !== undefined && body.variant !== null && typeof body.variant !== "string") errors.push({ in: "body", path: "/variant", code: "invalid_type" });
+  if (body.props !== undefined && !isObject(body.props)) errors.push({ in: "body", path: "/props", code: "invalid_type", params: { expected: "object" } });
+  if (body.is_visible !== undefined && typeof body.is_visible !== "boolean") errors.push({ in: "body", path: "/is_visible", code: "invalid_type" });
+  if (body.anchor_id !== undefined && body.anchor_id !== null && (typeof body.anchor_id !== "string" || !ANCHOR.test(body.anchor_id))) errors.push({ in: "body", path: "/anchor_id", code: "pattern_mismatch" });
+  if (type && isObject(body.props)) errors.push(...propsErrors(db, type.key, body.props));
+  if (count >= MAX_SECTIONS) errors.push({ in: "body", path: "", code: "limit_exceeded", params: { max: MAX_SECTIONS } });
+  if (type && errors.length === 0) {
+    const order: Array<{ key: string; id?: number }> = now.sections.slice().sort((a, b) => a.sort_order - b.sort_order).map((s) => ({ key: s.section_type, id: s.id }));
+    order.splice(position, 0, { key: type.key });
+    errors.push(
+      ...templateViolations(now.page.template, order, {
+        allowed: "/section_type_key",
+        max: "/section_type_key",
+        hero_first: () => "/position",
+        after_hero: () => "/position",
+      })
+    );
+  }
+  if (errors.length) throw validationFailed(errors);
+  if (typeof body.anchor_id === "string" && now.sections.some((s) => s.anchor_id === body.anchor_id)) {
+    throw duplicate([{ in: "body", path: "/anchor_id", code: "duplicate" }]);
+  }
+
+  const { snapshot, stamp } = beginWrite(db, root);
+  const newId = db.nextSectionId++;
+  const created: MockSnapshotSection = {
+    id: newId,
+    public_id: sectionPublicId(newId),
+    section_type: type!.key,
+    section_version: type!.version,
+    variant: (body.variant as string | null | undefined) ?? null,
+    sort_order: position,
+    is_visible: body.is_visible === undefined ? true : (body.is_visible as boolean),
+    anchor_id: (body.anchor_id as string | null | undefined) ?? null,
+    props: structuredClone((isObject(body.props) ? body.props : type!.default_props) as Record<string, unknown>),
+    shared_section_id: null,
+  };
+  const ordered = snapshot.sections.slice().sort((a, b) => a.sort_order - b.sort_order);
+  ordered.splice(position, 0, created);
+  renumberSections(ordered);
+  snapshot.sections = ordered;
+  commitWrite(root, stamp);
+  return { data: writeAnswer(db, root, snapshot, created), etag: etagOfPage(root), location: `/api/v1/pages/${root.id}/sections/${newId}` };
+}
+
 export function patchSection(db: MockDb, id: string, sectionId: string, body: unknown, ifMatch: string | null) {
   const root = findRoot(db, id);
   requireMatch(ifMatch, root);
-  const exists = working(db, root).sections.some((x) => String(x.id) === sectionId);
-  if (!exists) throw notFound();
+  trashedCheck(root);
+  const current = working(db, root).sections.find((x) => String(x.id) === sectionId);
+  if (!current) throw notFound();
   if (!isObject(body)) throw validationFailed([{ in: "body", path: "", code: "invalid_type" }]);
   const errors: ApiFieldError[] = [];
   if (Object.keys(body).length === 0) errors.push({ in: "body", path: "", code: "min_properties" });
@@ -869,9 +1086,36 @@ export function patchSection(db: MockDb, id: string, sectionId: string, body: un
     if (["section_type_key", "sort_order", "shared_section_id", "section_version"].includes(k)) errors.push({ in: "body", path: `/${k}`, code: "immutable" });
     else if (!["props", "variant", "is_visible", "anchor_id"].includes(k)) errors.push({ in: "body", path: `/${k}`, code: "unknown_field" });
   }
-  if (body.props !== undefined && !isObject(body.props)) errors.push({ in: "body", path: "/props", code: "invalid_type" });
+  const type = SECTION_TYPE_FIXTURES[current.section_type];
+  if (body.props !== undefined && !isObject(body.props)) errors.push({ in: "body", path: "/props", code: "invalid_type", params: { expected: "object" } });
   if (body.is_visible !== undefined && typeof body.is_visible !== "boolean") errors.push({ in: "body", path: "/is_visible", code: "invalid_type" });
+  if (body.anchor_id !== undefined && body.anchor_id !== null && (typeof body.anchor_id !== "string" || !ANCHOR.test(body.anchor_id))) errors.push({ in: "body", path: "/anchor_id", code: "pattern_mismatch" });
+  if (type && body.variant !== undefined && body.variant !== null && !type.variants.includes(body.variant as string)) errors.push({ in: "body", path: "/variant", code: "not_in_enum", params: { expected: type.variants } });
+  if (!type && (body.props !== undefined || body.variant !== undefined)) errors.push({ in: "body", path: body.props !== undefined ? "/props" : "/variant", code: "section_type_unknown" });
+  if (type && isObject(body.props)) errors.push(...propsErrors(db, type.key, body.props));
   if (errors.length) throw validationFailed(errors);
+
+  // A translator (S-4): only text under `x-localized`; variant / visibility / anchor are structure.
+  if (db.translateOnly.includes("sections")) {
+    for (const f of ["variant", "is_visible", "anchor_id"] as const) {
+      if (body[f] !== undefined && body[f] !== current[f]) throw forbidden(`/${f}`);
+    }
+    if (isObject(body.props)) {
+      const bad = translatableViolation(current.section_type, current.props, body.props);
+      if (bad) throw forbidden(bad);
+    }
+  }
+  if (typeof body.anchor_id === "string" && working(db, root).sections.some((s) => s.id !== current.id && s.anchor_id === body.anchor_id)) {
+    throw duplicate([{ in: "body", path: "/anchor_id", code: "duplicate" }]);
+  }
+
+  // Nothing changes: 200, the same ETag, no side effect (05 12.5.6).
+  const same =
+    (body.props === undefined || JSON.stringify(body.props) === JSON.stringify(current.props)) &&
+    (body.variant === undefined || body.variant === current.variant) &&
+    (body.is_visible === undefined || body.is_visible === current.is_visible) &&
+    (body.anchor_id === undefined || body.anchor_id === current.anchor_id);
+  if (same) return { data: writeAnswer(db, root, working(db, root), current), etag: etagOfPage(root) };
 
   const { snapshot, stamp } = beginWrite(db, root);
   const s = snapshot.sections.find((x) => String(x.id) === sectionId)!;
@@ -880,15 +1124,76 @@ export function patchSection(db: MockDb, id: string, sectionId: string, body: un
   if (body.variant !== undefined) s.variant = body.variant as string | null;
   if (body.anchor_id !== undefined) s.anchor_id = body.anchor_id as string | null;
   commitWrite(root, stamp);
-  return {
-    data: {
-      section: sectionSummary(db, root, s, true),
-      sections: snapshot.sections.map((x) => ({ id: x.id, public_id: x.public_id, sort_order: x.sort_order })),
-      aggregate: stampOf(db, root),
-      warnings: [] as SaveLiveWarning[],
-    },
-    etag: etagOfPage(root),
-  };
+  return { data: writeAnswer(db, root, snapshot, s), etag: etagOfPage(root) };
+}
+
+export function reorderSections(db: MockDb, id: string, body: unknown, ifMatch: string | null) {
+  const root = findRoot(db, id);
+  requireMatch(ifMatch, root);
+  trashedCheck(root);
+  if (db.translateOnly.includes("sections")) throw forbidden("/sections");
+  if (!isObject(body) || !Array.isArray(body.sections) || body.sections.length === 0) {
+    throw validationFailed([{ in: "body", path: "/sections", code: isObject(body) && body.sections === undefined ? "required" : "invalid_type" }]);
+  }
+  const now = working(db, root);
+  const errors: ApiFieldError[] = [];
+  const ids: number[] = [];
+  const seen = new Set<number>();
+  body.sections.forEach((entry: unknown, i: number) => {
+    const sid = isObject(entry) ? entry.id : undefined;
+    if (typeof sid !== "number") errors.push({ in: "body", path: `/sections/${i}/id`, code: "invalid_type" });
+    else if (seen.has(sid)) errors.push({ in: "body", path: `/sections/${i}/id`, code: "duplicate" });
+    else if (!now.sections.some((s) => s.id === sid)) errors.push({ in: "body", path: `/sections/${i}/id`, code: "unknown_reference" });
+    else {
+      seen.add(sid);
+      ids.push(sid);
+    }
+  });
+  if (errors.length === 0) {
+    const missing = now.sections.filter((s) => !seen.has(s.id)).map((s) => s.id);
+    if (missing.length) errors.push({ in: "body", path: "", code: "required", params: { missing: missing.map(String) } });
+  }
+  if (errors.length === 0) {
+    const order = ids.map((sid) => ({ key: now.sections.find((s) => s.id === sid)!.section_type, id: sid }));
+    errors.push(
+      ...templateViolations(now.page.template, order, {
+        allowed: "/sections",
+        max: "/sections",
+        hero_first: (i) => `/sections/${i}/id`,
+        after_hero: (i) => `/sections/${i}/id`,
+      })
+    );
+  }
+  if (errors.length) throw validationFailed(errors);
+  const before = sectionOrder(now).map((o) => o.id);
+  if (before.join() === ids.join()) return { data: { sections: sectionOrder(now), aggregate: stampOf(db, root) }, etag: etagOfPage(root) };
+
+  const { snapshot, stamp } = beginWrite(db, root);
+  const reordered = ids.map((sid) => snapshot.sections.find((s) => s.id === sid)!);
+  renumberSections(reordered);
+  snapshot.sections = reordered;
+  commitWrite(root, stamp);
+  return { data: { sections: sectionOrder(snapshot), aggregate: stampOf(db, root) }, etag: etagOfPage(root) };
+}
+
+export function deleteSection(db: MockDb, id: string, sectionId: string, ifMatch: string | null) {
+  const root = findRoot(db, id);
+  requireMatch(ifMatch, root);
+  trashedCheck(root);
+  const now = working(db, root);
+  const target = now.sections.find((x) => String(x.id) === sectionId);
+  if (!target) throw notFound();
+  if (db.translateOnly.includes("sections")) throw forbidden("delete");
+  if (isRequiredSection(now, target)) {
+    const place = placementOf(now.page.template, target.section_type);
+    throw invalidState("section_required", { template: now.page.template, section_key: target.section_type, group: place.hero ? "hero" : null });
+  }
+  const { snapshot, stamp } = beginWrite(db, root);
+  const rest = snapshot.sections.filter((s) => String(s.id) !== sectionId).sort((a, b) => a.sort_order - b.sort_order);
+  renumberSections(rest);
+  snapshot.sections = rest;
+  commitWrite(root, stamp);
+  return { data: { sections: sectionOrder(snapshot), aggregate: stampOf(db, root) }, etag: etagOfPage(root) };
 }
 
 // ---------------------------------------------------------------------------------------------------------------

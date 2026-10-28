@@ -77,6 +77,39 @@ export type SectionSummary = {
   props?: Record<string, unknown>;
 };
 
+// A section with its props (`GET .../sections/{id}`, the `section` of a write answer).
+export type PageSection = SectionSummary & { props: Record<string, unknown> };
+
+export type SectionOrder = { id: number; public_id: string; sort_order: number };
+
+// `POST` (201) / `PATCH .../sections/{id}`: the section, the order of all sections and the page's new stamp. A write
+// answers NOT the page: the page's new ETag is the `ETag` header, its new state is `aggregate`.
+export type SectionWriteResult = {
+  section: PageSection;
+  sections: SectionOrder[];
+  aggregate: AggregateStamp;
+  warnings: SaveLiveWarning[];
+};
+
+// `PUT .../sections/order` and `DELETE .../sections/{id}`.
+export type SectionOrderResult = { sections: SectionOrder[]; aggregate: AggregateStamp };
+
+export type CreateSectionPayload = {
+  section_type_key: string;
+  position?: number;
+  variant?: string | null;
+  props?: Record<string, unknown>;
+  is_visible?: boolean;
+  anchor_id?: string | null;
+};
+
+export type UpdateSectionPayload = {
+  props?: Record<string, unknown>;
+  variant?: string | null;
+  is_visible?: boolean;
+  anchor_id?: string | null;
+};
+
 export type PageWriteResult = PageDetail & {
   aggregate: AggregateStamp;
   warnings: SaveLiveWarning[];

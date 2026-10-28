@@ -116,7 +116,10 @@ Screens and building blocks built so far (phase P1 milestone M1; contract `../do
   "Save-live screens" below.
 
 - **T1.4.7 PublishBar, pages list, publishable history (M4)** - built against the mock API (no page routes in the backend
-  yet). See "Pages and publishing" below. The page EDITOR (SCR-20/21: sections, details, SEO) is T1.4.8, preview links T1.4.4/6.
+  yet). See "Pages and publishing" below. Preview links are T1.4.4/6.
+
+- **T1.4.8 page editor + section editor (SCR-20 / SCR-21, M4)** - built against the mock API (no section routes in the backend yet).
+  See "Page editor (T1.4.8)" below.
 
 To add a module, follow the feature-vertical pattern:
 `src/app/(protected)/(routes)/admin/<feature>/page.tsx` + `src/services/<feature>.api.ts` +
@@ -317,10 +320,8 @@ envelope (the task's wording), so either works.
   **Delete does not call `/references` first**: the first `DELETE` has no `confirm_references`, the 409 carries the list (PG-13), the
   repeat confirms. The ETag of a row is `"<lock_version>"` (`pageEtag`), a stale row = toast + reload. `services/pages.api.ts`,
   `services/publishing.api.ts`, `hooks/use-pages.ts`, `hooks/use-publishing.ts`, types `types/{pages,publishing}.d.ts`.
-- **`/admin/pages/[id]`** is a THIN host (`protected/pages/page-host.tsx`): header, `PublishBar`, Overview (read-only facts), History
-  (`RevisionsTab resource="pages"`). T1.4.8 replaces its body with the editor and keeps the wiring (`isDirty` / `flush` / `onSaveDraft`
-  from the editor's form). "Go to field" puts the pointer in `?field=` (+ `sectionKey`, `sectionIndex`) and shows it; the editor will open
-  the field instead.
+- **`/admin/pages/[id]`** (`protected/pages/page-host.tsx`) loads the page (404 / 403 / error states), shows title + address + the trash
+  notice and renders `PageEditor` (below), keyed by a `generation` counter (a re-seed remounts it).
 - **`RevisionsTab` for a publishable resource** (`isPublishableResource`): rows `draft` / `published` / `history` / `restore`, the live
   version marked (`is_live`), columns "Date" / "By" (not "replaced on"), the draft row has no Restore, restore is "Restore as draft"
   (never reaches the website; the current draft is kept as a `restore` row), preview rows hidden unless the switch is on, a view of a
@@ -334,6 +335,75 @@ blocker, 7 = trashed, 8 = a draft that publishes with warnings, 9 = published wi
 from 10), albums, `Idempotency-Key` replay. Blockers are computed from the page state with the schema form's `computeCompleteness`.
 With `NEXT_PUBLIC_API_MOCKING=true` the browser exposes `window.__MATERM_MOCK__.touchPage(id)` (someone else saved the page: the next
 command with the old ETag is a 409, the model is per tab so a second tab cannot do it).
+
+## Page editor (T1.4.8)
+
+`/admin/pages/[id]` = SCR-20 (page editor) + SCR-21 (section editor). Code in `components/protected/pages/editor/`; the host
+`page-host.tsx` only loads the page and renders `<PageEditor page etag onReseed />` with `key={generation}`.
+
+- **Layout**: `PublishBar` (wired for real: `isDirty` = page fields OR open section dirty, `flush` / `onSaveDraft` = save both and
+  return `false` on any failure, `onResult` writes the answer through, `onGoToField`) -> `PageCompleteness` (per active language: a
+  progress bar from page title / SEO title / SEO description + every visible section's `translation_status`) -> tabs **Content**
+  (default), **Details**, **SEO**, **History** (`?tab=`; Content is `forceMount`ed + hidden so the open section keeps its unsaved edits).
+  Content = `SectionList` (22.5rem) next to `SectionEditor` at `lg`; below `lg` it is list OR editor with a "All sections" back button.
+  URL: `?section=<id>`, `?locale=<code>` (shared by the section form and the SEO tab).
+- **State lives in the editor, not in a tab**: the Details + SEO draft is ONE `PageFieldsDraft` (`page-fields.ts`: `draftFromPage`,
+  `validateFields`, `buildPatch` = only what changed; a language whose texts are all cleared is sent as `null`, never the default one;
+  server 422/409 field errors are mapped back to `title.<l>` / `path` ... keys). `edit === null` means "untouched": the baseline is
+  derived from the page in the cache, so a saved page re-bases itself. The open section's draft lives in `SectionEditor`
+  (`useSchemaFormState`, guard off + own `useUnsavedChangesGuard`) and is reached through `SectionEditorHandle {save, discard, isDirty}`.
+  Switching section with unsaved edits asks (save and open / discard / keep editing).
+- **ETag / cache rules** (`hooks/use-page-sections.ts`): sections query key = `["/pages/<id>/sections"]` (NOT under `["/pages"]`, which
+  `writeThroughPage` invalidates); it loads `?include=props`. A section write answers `{section, sections[order], aggregate}` and the new
+  ETag header, NOT the page: `applySectionWrite` sets the page's ETag, copies `lock_version` / `status` / `has_unpublished_changes` /
+  `updated_at` / `section_count` from `aggregate`, patches the sections cache; no refetch. `usePageWrites(pageId)` runs every write ONE AT A
+  TIME (promise chain) and reads the ETag from the cache when its turn comes. `updatePage` (details / SEO) uses `writeThroughPage`.
+  After discard / History restore / "load the latest" (`onReseed`): refetch page (not for discard / restore: already written through) +
+  sections, THEN bump `generation` so every form starts again from the server's version.
+- **Section list** (`section-list.tsx`): drag / keyboard / up-down (`SortableList`); **a move is sent at once** as `PUT .../order` (07 SCR-20,
+  no "Save order"); the new order is shown while it flies, a 422 puts the old one back with a toast; the client refuses first what the
+  template forbids (`section-structure.ts` `orderProblem`: hero first, after_hero). Eye = `PATCH {is_visible}`. `...` menu: insert
+  above / below (instead of `[+]` between rows), delete (hidden for `required` sections and without `cms.sections:delete`; ConfirmDialog says
+  it can be recovered from History). Chips: Hidden, Not supported, Required, languages that miss texts (`en ⚠3`), "n problems" (422 of the
+  last save), amber dot = unsaved edits. A panel lists the template's requirements (hero, contact section ...) as met / missing.
+  Duplicate / copy-to / detach / shared sections are P2 (not built). No example pictures in the picker (Q-07-6).
+- **Picker** (`section-type-picker.tsx`): `usePageTemplates()` allowed sections x `GET /section-types?is_active=true&scope=page`;
+  `max_per_page` reached = disabled with the reason; `resolvePosition` puts a hero on top and an after-hero section below the hero (said
+  under the cards); `Idempotency-Key` once per open.
+- **Section editor** (`section-editor.tsx`): `SchemaForm` mode `draft`, `serverErrorPrefix="/props"`, controlled `?locale=`. Draft = props +
+  variant (RadioGroup from `ui:variant`); "Save section" = ONE `PATCH` with `props` only when props changed and `variant` only when it
+  changed; hidden switch = immediate `PATCH {is_visible}`. 422 -> the array is kept as `serverErrors` (form focuses the first), `/variant`
+  error shown at the radios, count in the list; 409 -> editor's `ConflictDialog`; 403 is toasted globally. **Rights**: `cms.sections:update`
+  = full; only `translate` = `translateOnly` (all but `x-localized` disabled, `variant` never sent, no hidden switch, list read-only);
+  read only / trashed page = no mutation control; unsupported type (`unsupported` or 404 type) = props JSON read only. Autosave: ONE
+  per-browser switch (`useAutosavePreference`, OFF by default, Q-07-7) in the tab bar; the section editor and the page fields each run
+  `useAutosave` (30 s debounce) through the same save functions.
+- **Details tab**: title per active language (+ "show this language" switch), internal name (read only for system pages), address (client
+  rules of `page-draft.ts`; read only for the home page and `blog`; the `path_changed_published` warning appears while the address of a
+  page that was ever published is edited), template (select only while the page has no sections, else read only), sort order.
+  **SEO tab** (07 3.9, also holds `noindex` / `in_sitemap`: they are SEO fields, PG-14 lets `cms.seo:update` alone edit them): per language
+  SEO title (60 recommended, 120 max), absolute switch, description (160 / 320), share image (`MediaPicker`), canonical address, SERP
+  preview (title template + `site.base_url` from the `seo` / `site` settings when readable). Rights: texts = `pages|seo` update or
+  translate; flags / image / canonical = `pages:update` or `seo:update`; structure = `pages:update`. A language without a title has its
+  SEO fields disabled (the server would refuse a row without a title).
+- **Go to field**: PublishBar's pointer goes into the URL in ONE `router.replace` (`?field=` + `sectionKey` + `sectionIndex` + `fieldCode`
+  + tab / locale). An effect in `PageEditor` consumes it (so a link with `?field=` works too): `/sections/<public_id>/props/...` opens
+  the section and hands `SectionEditor` a `focusRequest` (a new `serverErrors` batch with the blocker's code), which switches the language,
+  opens the array item and focuses the field; page pointers (`/translations/<l>/seo_title`, `/path` ...) open Details / SEO and focus the
+  input by id (`page-field-<name>[-<locale>]`); `/sections` focuses "Add section". Then the params are removed.
+- **Mock additions** (`mocks/mock-pages.ts`, `mock-cms-lookups.ts`, bound in `handlers.ts`): `POST sections` (201 + `Location`,
+  `Idempotency-Key`, `default_props`, position / `out_of_range`, the four template rules with 05 12.5.5 codes and paths, 60 limit,
+  duplicate anchor 409), `PUT sections/order` (exact-set rules `duplicate` / `unknown_reference` / `required` + `params.missing`, template
+  rules at `/sections/<i>/id`, unchanged = same ETag), `DELETE` (409 `INVALID_STATE` `section_required`), a strict `PATCH` (variant,
+  `/props/...` draft checks WITHOUT Ajv: max length of localized text and strings, enum, array size, unknown media / page / album ->
+  `unknown_reference`; nothing changed = same ETag; trashed page 409), translate-only 403 (`db.translateOnly` containing `sections` /
+  `pages`: a differing value outside `x-localized`, or `variant` / `is_visible` / `anchor_id`, create / reorder / delete; page PATCH only
+  title + SEO texts), `GET /section-types[/key]` and the picker lookups (`/posts`, `/albums`, `/albums/:id/items`, `/faq-groups`,
+  `/forms`). Every write moves the PAGE's `lock_version`. In a mock-enabled build `window.__MATERM_MOCK__.setTranslateOnly(true|false)`
+  turns the model AND the cached `/auth/me` into a translator (read + translate on pages / sections / seo) for a click-through.
+- **Tests**: `editor/page-fields.test.ts`, `section-structure.test.ts`, `page-editor.test.tsx` (whole editor over the mock API),
+  `mocks/mock-sections.test.ts`; `page-host.test.tsx` was updated (the "editor is coming" text and the `field-target` notice are gone on
+  purpose: Go to field now opens the field).
 
 ## Schema form engine (W2a, T1.2.10)
 

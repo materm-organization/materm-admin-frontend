@@ -8,6 +8,7 @@ import { mockApiHandlers } from "@/mocks/handlers";
 import { getMockDb, resetMockDb } from "@/mocks/mock-db";
 import { touchPageAsSomeoneElse } from "@/mocks/mock-pages";
 import { axiosInstance, axiosPublicInstance } from "@/lib/axios";
+import { API_ENDPOINTS } from "@/lib/constants/api-endpoints";
 
 // Points the admin's axios instances at the in-memory API (`mocks/mock-db.ts`) while mounted, and says so in a
 // thin banner. Used by the dev playground (`/admin/dev-tools/media`) and, with `NEXT_PUBLIC_API_MOCKING=true`, by
@@ -24,6 +25,23 @@ export default function ApiMockingImpl({ children }: { children: ReactNode }) {
     (window as unknown as { __MATERM_MOCK__?: unknown }).__MATERM_MOCK__ = {
       touchPage: (id: number) => touchPageAsSomeoneElse(getMockDb(), id),
       pages: () => getMockDb().pages.map((p) => ({ id: p.id, status: p.status, lock_version: p.lock_version, deleted_at: p.deleted_at })),
+      // "I am a translator": the model acts as a translate-only writer (403 rules of 05 12.3.3 / 12.5.6) AND the signed-in
+      // user keeps only `read` + `translate` on pages / sections / seo, so the editor shows its translator mode.
+      // `setTranslateOnly(false)` gives every action back. The cached `/auth/me` is overwritten (the dev bypass user).
+      setTranslateOnly: (on: boolean) => {
+        getMockDb().translateOnly = on ? ["pages", "sections", "seo"] : [];
+        queryClient.setQueriesData<{ data: { permissions: Array<{ permission_key: string; actions: string[]; available?: string[] }> } }>(
+          { queryKey: [API_ENDPOINTS.AUTH.ME] },
+          (old) => {
+            if (!old) return old;
+            const original = ((window as unknown as { __MATERM_FULL_ME__?: typeof old.data.permissions }).__MATERM_FULL_ME__ ??= structuredClone(old.data.permissions));
+            const permissions = on
+              ? original.map((p) => (["cms.pages", "cms.sections", "cms.seo"].includes(p.permission_key) ? { ...p, actions: p.actions.filter((a) => a === "read" || a === "translate") } : p))
+              : original;
+            return { ...old, data: { ...old.data, permissions } };
+          }
+        );
+      },
     };
     return true;
   });
