@@ -263,7 +263,8 @@ function SettingsForm({ group, etag, locales, defaultLocale, locale, onLocaleCha
         </Alert>
       ) : null}
 
-      <div className="space-y-5">
+      {/* Two columns on a wide screen (long texts take both), one column on a narrow one. */}
+      <div className="grid items-start gap-x-8 gap-y-5 lg:grid-cols-2">
         {[...group.fields]
           .sort((a, b) => a.sort_order - b.sort_order)
           .map((field) => (
@@ -417,8 +418,10 @@ function SettingField(props: FieldProps) {
   }
 
   return (
-    <div className="space-y-1.5" data-field-key={field.key}>
-      <div className="flex flex-wrap items-center gap-2">
+    <div className={cn("space-y-1.5", field.value_type === "text" && "lg:col-span-2")} data-field-key={field.key}>
+      {/* One label-row height for every field (the "per language" chip makes it taller): fields side by side in the
+          two-column grid keep their inputs on the same line. */}
+      <div className="flex min-h-6 flex-wrap items-center gap-2">
         <Label htmlFor={id}>
           {label}
           {field.required ? <span aria-hidden className="ml-0.5 text-destructive">*</span> : null}
