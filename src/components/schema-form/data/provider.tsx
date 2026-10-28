@@ -3,10 +3,10 @@
 import { useQuery } from "@tanstack/react-query";
 import { createContext, useContext, type ReactNode } from "react";
 
-import type { EntityOption, MediaAssetOption } from "@/types/cms";
+import type { EntityOption, MediaAssetOption, MediaFolderOption } from "@/types/cms";
 
 import { apiSchemaFormData } from "./api-data";
-import type { LookupKind, LookupQuery, SchemaFormData } from "./types";
+import type { LookupKind, LookupQuery, MediaPageResult, MediaQuery, SchemaFormData } from "./types";
 
 const DataContext = createContext<SchemaFormData>(apiSchemaFormData);
 
@@ -58,6 +58,28 @@ export function useMediaAsset(id: number | undefined) {
     queryKey: ["schema-form", "media", id ?? null],
     queryFn: async () => (await data.getMedia(id as number)) ?? null,
     enabled: typeof id === "number" && id > 0,
+    staleTime: STALE,
+  });
+}
+
+// One page of the library for the MediaPicker (`keepPreviousData`-like: the grid stays while the next page loads).
+export function useMediaPage(query: MediaQuery, enabled: boolean) {
+  const data = useSchemaFormData();
+  return useQuery<MediaPageResult>({
+    queryKey: ["schema-form", "media-list", query],
+    queryFn: () => data.listMedia(query),
+    enabled,
+    staleTime: STALE,
+    placeholderData: (previous) => previous,
+  });
+}
+
+export function useMediaFolderOptions(enabled: boolean) {
+  const data = useSchemaFormData();
+  return useQuery<MediaFolderOption[]>({
+    queryKey: ["schema-form", "media-folders"],
+    queryFn: () => data.listMediaFolders(),
+    enabled,
     staleTime: STALE,
   });
 }

@@ -4,35 +4,21 @@ import { ImageIcon, ImageOffIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useId, useState } from "react";
 
+import { MediaPicker, cssRatio } from "@/components/protected/media/media-picker";
+import { MediaThumb } from "@/components/protected/media/media-thumb";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
-import { cn } from "@/lib/utils";
 import type { MediaAssetOption } from "@/types/cms";
 
 import { useIssuesUnder, useFieldLabel, useSchemaFormContext } from "../context";
-import { useMediaAsset, useMediaSearch } from "../data/provider";
+import { useMediaAsset } from "../data/provider";
 import { isPlainObject } from "../schema-walker";
 import type { FieldNode } from "../types";
 import { setLocaleValue } from "../value-ops";
 import { GroupShell, IssueMessages, useControlA11y } from "./field-shell";
-import { useDebouncedValue } from "./use-debounced";
-
-// The aspect ratio of the crop preview from `ui:options.ratio` (doc/07 section 4.2): "hero" = 16:9, "430:562".
-function cssRatio(ratio: string | undefined): string {
-  if (ratio === "hero") return "16 / 9";
-  const match = ratio?.match(/^(\d+):(\d+)$/);
-  return match ? `${match[1]} / ${match[2]}` : "4 / 3";
-}
 
 // An image placement `{media_id, alt?, decorative?}` (doc/04 section 3.1): thumbnail of the chosen media row,
 // choose / change / remove (the MediaPicker below reads the media library; upload comes with P2), the
@@ -97,11 +83,9 @@ export function MediaField({
           ) : asset.isLoading ? (
             <Skeleton className="h-full w-full" />
           ) : asset.data ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={asset.data.thumbnail_url ?? asset.data.url ?? ""}
+            <MediaThumb
+              asset={{ url: asset.data.thumbnail_url ?? asset.data.url, kind: asset.data.kind, mime_type: asset.data.mime_type, focal: asset.data.focal }}
               alt={decorative ? "" : alt || mediaAlt || asset.data.filename}
-              className="h-full w-full object-cover"
             />
           ) : (
             <div className="flex h-full flex-col items-center justify-center gap-1 p-2 text-center text-xs text-destructive">
@@ -171,6 +155,8 @@ export function MediaField({
         open={pickerOpen}
         onOpenChange={setPickerOpen}
         selectedId={mediaId}
+        ratio={node.options.ratio}
+        defaultLocale={defaultLocale}
         onPick={(asset) => {
           patch({ ...image, media_id: asset.id });
           setPickerOpen(false);
@@ -180,73 +166,38 @@ export function MediaField({
   );
 }
 
-// Choose one row of the media library (doc/07 section 3.22: the real MediaPicker comes with the library; this
-// one reads the same `GET /media/assets` list).
+// Choose one row of the media library: the MediaPicker (components/protected/media/media-picker.tsx) in single
+// mode with this field's wording. The rows come through `SchemaFormData` (`listMedia`).
 export function MediaPickerDialog({
   open,
   onOpenChange,
   selectedId,
   onPick,
+  ratio,
+  defaultLocale,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   selectedId?: number;
   onPick: (asset: MediaAssetOption) => void;
+  ratio?: string;
+  // The form's default language (decides the "No alt text" badge).
+  defaultLocale?: string;
 }) {
   const t = useTranslations("schemaForm.media");
-  const [keyword, setKeyword] = useState("");
-  const debounced = useDebouncedValue(keyword, 250);
-  const { data, isLoading, isError } = useMediaSearch(debounced, open);
-  const searchId = useId();
-
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl">
-        <DialogHeader>
-          <DialogTitle>{t("pickerTitle")}</DialogTitle>
-          <DialogDescription>{t("pickerDescription")}</DialogDescription>
-        </DialogHeader>
-        <div className="space-y-1.5">
-          <Label htmlFor={searchId}>{t("search")}</Label>
-          <Input id={searchId} value={keyword} onChange={(e) => setKeyword(e.target.value)} />
-        </div>
-        <div className="max-h-[50vh] overflow-y-auto">
-          {isLoading ? (
-            <div className="grid grid-cols-3 gap-3 sm:grid-cols-4">
-              {Array.from({ length: 8 }).map((_, i) => (
-                <Skeleton key={i} className="aspect-4/3" />
-              ))}
-            </div>
-          ) : isError ? (
-            <p role="alert" className="text-sm text-destructive">
-              {t("loadError")}
-            </p>
-          ) : data && data.length > 0 ? (
-            <ul className="grid grid-cols-3 gap-3 sm:grid-cols-4">
-              {data.map((asset) => (
-                <li key={asset.id}>
-                  <button
-                    type="button"
-                    aria-label={asset.filename}
-                    aria-pressed={asset.id === selectedId}
-                    onClick={() => onPick(asset)}
-                    className={cn(
-                      "block w-full overflow-hidden rounded-md border text-left outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50",
-                      asset.id === selectedId && "border-primary ring-2 ring-primary"
-                    )}
-                  >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={asset.thumbnail_url ?? asset.url ?? ""} alt="" className="aspect-4/3 w-full object-cover" />
-                    <span className="block truncate px-2 py-1 text-xs">{asset.filename}</span>
-                  </button>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="text-sm text-muted-foreground">{t("empty")}</p>
-          )}
-        </div>
-      </DialogContent>
-    </Dialog>
+    <MediaPicker
+      open={open}
+      onOpenChange={onOpenChange}
+      mode="single"
+      accept="image/*"
+      ratio={ratio}
+      defaultLocale={defaultLocale}
+      selectedIds={selectedId !== undefined ? [selectedId] : []}
+      onSelect={([asset]) => asset && onPick(asset)}
+      title={t("pickerTitle")}
+      description={t("pickerDescription")}
+      searchLabel={t("search")}
+    />
   );
 }

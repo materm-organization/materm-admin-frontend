@@ -51,4 +51,18 @@ export const memorySchemaFormData: SchemaFormData = {
     );
   },
   getMedia: (id) => delay(MEDIA_FIXTURES.find((m) => m.id === id)),
+  listMedia: (query) => {
+    const keyword = query.keyword?.toLowerCase();
+    const rows = MEDIA_FIXTURES.filter((m) => (query.ids ? query.ids.includes(m.id) : !keyword || m.filename.toLowerCase().includes(keyword)));
+    const limit = query.limit ?? 24;
+    const page = Math.max(1, query.page ?? 1);
+    return delay({
+      items: rows.slice((page - 1) * limit, page * limit),
+      total: rows.length,
+      page,
+      totalPages: Math.max(1, Math.ceil(rows.length / limit)),
+    });
+  },
+  // The fixture set has no folders.
+  listMediaFolders: () => delay([]),
 };

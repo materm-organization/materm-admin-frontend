@@ -26,3 +26,19 @@ export type SystemStatus = {
   // Additive, P1 (doc/05 section 4.3): not on the P0 backend.
   outbox?: { pending?: number; failed?: number; last_success_at?: string | null } | null;
 };
+
+// POST /system/cache/purge (doc/05 section 11.8). `tags` only with scope "tags" (1..50, the public allow-list).
+export type CachePurgeScope = "tags" | "all";
+
+export type CachePurgePayload =
+  | { scope: "tags"; tags: string[]; reason?: string }
+  | { scope: "all"; reason?: string };
+
+export type CachePurgeResult = {
+  event_id: number;
+  scope: CachePurgeScope;
+  // What was really queued (the server adds the paired tags: `page:3` -> `pages`); `["*"]` for scope "all".
+  tags: string[];
+  status: "queued";
+  queued_at: string;
+};

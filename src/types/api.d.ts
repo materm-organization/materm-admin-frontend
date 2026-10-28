@@ -13,7 +13,8 @@ export type ApiResponse<T> = {
 // `/grants/3/actions/1`; `""` = the whole object. `code` is a field code
 // (`required`, `too_short`, `password_policy.min_length`, ...).
 export type ApiFieldError = {
-  in: "body" | "query" | "path" | "header";
+  // "entity": a path inside a revision snapshot (a restore that refers to data that no longer exists).
+  in: "body" | "query" | "path" | "header" | "entity";
   path: string;
   code: string;
   message?: string;

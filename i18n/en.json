@@ -204,7 +204,8 @@
     "roles": "Roles",
     "ops": "Operations",
     "audit": "Audit log",
-    "system": "System"
+    "system": "System",
+    "media": "Media library"
   },
   "breadcrumb": {
     "admin": "Dashboard",
@@ -213,7 +214,8 @@
     "roles": "Roles",
     "audit": "Audit log",
     "locales": "Languages",
-    "system": "System"
+    "system": "System",
+    "media": "Media library"
   },
   "dashboard": {
     "title": "Dashboard",
@@ -258,7 +260,8 @@
       "INTERNAL_ERROR": "An internal error occurred.",
       "SERVICE_UNAVAILABLE": "The service is temporarily unavailable.",
       "NETWORK_ERROR": "Cannot reach the server. Check your connection and try again.",
-      "UNKNOWN": "Something went wrong."
+      "UNKNOWN": "Something went wrong.",
+      "MEDIA_IN_USE": "The file is still used in {total_usages} place(s) and cannot be deleted."
     },
     "fields": {
       "required": "This field is required.",
@@ -286,7 +289,12 @@
       "email_required": "This account has no e-mail address.",
       "fallback_cycle": "The fallback chain would loop.",
       "fallback_not_default": "The fallback chain must end at the default language.",
-      "date_range_too_large": "The date range is too large for this search. Narrow the range or add a filter."
+      "date_range_too_large": "The date range is too large for this search. Narrow the range or add a filter.",
+      "max_depth_exceeded": "Folders can be nested at most {max_depth} levels deep.",
+      "cycle_detected": "A folder cannot be moved into itself or one of its sub-folders.",
+      "min_properties": "Nothing to change was sent.",
+      "too_many_items": "At most {max} items are allowed.",
+      "duplicate_items": "The same item appears more than once."
     },
     "loadAccount": "Could not load your account. Check your connection and try again."
   },
@@ -976,6 +984,79 @@
       "pending": "Waiting",
       "failed": "Failed",
       "lastSuccess": "Last delivered"
+    },
+    "purge": {
+      "title": "Clear the website cache",
+      "description": "The website keeps copies of pages and settings for speed. Clear certain parts, or everything, when a change does not show up.",
+      "open": "Clear cache...",
+      "dialog": {
+        "title": "Clear the website cache",
+        "description": "Choose what the website should forget. It rebuilds the copies the next time someone visits."
+      },
+      "scope": {
+        "label": "What to clear",
+        "tags": "Selected parts",
+        "tagsHint": "Pick settings, menus, languages or single pages. Quick and cheap.",
+        "all": "Everything",
+        "allHint": "The whole website cache. The website is slower for a moment while it rebuilds. Limited to 3 times an hour."
+      },
+      "tags": {
+        "pick": "Common parts",
+        "custom": "A page, post or other item",
+        "add": "Add",
+        "customHint": "For example page:3, post:12, album:2, faq:1, form:4, menu:main, ui:en, collection:team.",
+        "selected": "{count} of {max} selected",
+        "selectedList": "Selected parts",
+        "none": "Nothing selected yet.",
+        "remove": "Remove {tag}"
+      },
+      "tagInvalid": "\"{tag}\" is not a part that can be cleared.",
+      "reason": {
+        "label": "Reason (optional)",
+        "placeholder": "For example: menu changed but the website still shows the old one"
+      },
+      "cancel": "Cancel",
+      "back": "Back",
+      "submitTags": "{count, plural, one {Clear # part} other {Clear # parts}}",
+      "submitAll": "Clear everything...",
+      "confirmAll": {
+        "title": "Clear the whole cache?",
+        "description": "This cannot be undone, but the website simply rebuilds what it needs.",
+        "warningTitle": "The website will be slower for a moment",
+        "warning": "Every page is rebuilt from the database on its next visit. You can do this 3 times an hour. Clear only the parts that changed if you can.",
+        "confirm": "Yes, clear everything"
+      },
+      "done": {
+        "title": "Cache clear queued",
+        "description": "The website follows within a few seconds.",
+        "queued": "Request #{id} was queued",
+        "all": "The whole cache is cleared.",
+        "tags": "These parts are cleared (the system adds the lists that go with a page or post):",
+        "sent": "Parts sent",
+        "close": "Close"
+      },
+      "problem": {
+        "rate": {
+          "title": "Too many requests",
+          "body": "The limit for clearing the cache was reached. Try again later.",
+          "bodyWait": "The limit for clearing the cache was reached. Try again in about {minutes} minutes."
+        },
+        "forbidden": {
+          "title": "No permission",
+          "body": "You are not allowed to clear the cache."
+        },
+        "unavailable": {
+          "title": "Temporarily unavailable",
+          "body": "The service that limits requests is not available. Try again in a moment."
+        },
+        "tags": {
+          "title": "A part was not accepted",
+          "body": "The parts marked in red are not on the list of parts that can be cleared. Remove them and try again."
+        },
+        "other": {
+          "title": "The cache could not be cleared"
+        }
+      }
     }
   },
   "profile": {
@@ -1172,5 +1253,400 @@
     "partial": "{count, plural, one {# required field missing} other {# required fields missing}}",
     "issues": "{count, plural, one {# problem} other {# problems}}",
     "compare": "Compare with the default language"
+  },
+  "media": {
+    "thumb": {
+      "noUrl": "No preview (file address not configured)",
+      "failed": "The picture could not be loaded",
+      "noPreview": "No preview"
+    },
+    "picker": {
+      "title": "Choose an image",
+      "titleMultiple": "Choose images",
+      "description": "Pick an image from the media library.",
+      "descriptionMultiple": "Pick one or more images from the media library.",
+      "search": "Search by file name",
+      "kind": "Type",
+      "kindAll": "All types",
+      "kindImage": "Images",
+      "kindBrand": "Brand logos",
+      "folders": "Folders",
+      "allFolders": "All folders",
+      "noFolder": "Not in a folder",
+      "results": "Images",
+      "noPermission": "You do not have permission to browse the media library.",
+      "loadError": "The media library could not be loaded.",
+      "retry": "Try again",
+      "empty": "No images found.",
+      "total": "{total, plural, one {# file} other {# files}}",
+      "page": "Page {page} of {totalPages}",
+      "previousPage": "Previous page",
+      "nextPage": "Next page",
+      "selected": "{count} selected",
+      "selectedMax": "{count} of {max} selected",
+      "cancel": "Cancel",
+      "addSelected": "Add selected",
+      "notReady": "Not ready",
+      "noAlt": "No alt text"
+    },
+    "title": "Media library",
+    "description": "Browse the images used on the website, describe them in every language and see where they are used. Uploading comes later.",
+    "searchPlaceholder": "Search file name, alt text, caption or credit",
+    "view": {
+      "label": "View",
+      "grid": "Grid view",
+      "list": "List view"
+    },
+    "filters": {
+      "kind": "Type",
+      "kindAll": "All types",
+      "sort": "Sort by",
+      "unused": "Not used anywhere",
+      "missingAlt": "Missing alt text",
+      "trashed": "Trash"
+    },
+    "kinds": {
+      "image": "Images",
+      "brand": "Brand logos",
+      "video": "Videos",
+      "audio": "Audio",
+      "document": "Documents",
+      "other": "Other"
+    },
+    "sort": {
+      "newest": "Newest first",
+      "oldest": "Oldest first",
+      "nameAsc": "Name A-Z",
+      "nameDesc": "Name Z-A",
+      "largest": "Largest first",
+      "smallest": "Smallest first",
+      "recentlyEdited": "Recently edited"
+    },
+    "bulk": {
+      "copyNames": "Copy file names",
+      "copied": "{count, plural, one {# file name copied} other {# file names copied}}",
+      "copyFailed": "Could not copy to the clipboard.",
+      "note": "Moving and deleting several files at once comes with uploads."
+    },
+    "columns": {
+      "name": "File",
+      "kind": "Type",
+      "size": "Size",
+      "dimensions": "Dimensions",
+      "usedIn": "Used in",
+      "alt": "Alt text",
+      "updated": "Updated",
+      "deleted": "Deleted"
+    },
+    "tile": {
+      "open": "Open {name}",
+      "select": "Select {name}",
+      "usedIn": "{count, plural, one {Used in # place} other {Used in # places}}",
+      "unused": "Not used",
+      "noAlt": "No alt text",
+      "trashed": "In trash"
+    },
+    "grid": {
+      "label": "Files"
+    },
+    "empty": {
+      "title": "The media library is empty",
+      "description": "Images appear here once they are added to the library.",
+      "trashTitle": "The trash is empty"
+    },
+    "folders": {
+      "title": "Folders",
+      "new": "New folder",
+      "all": "All files",
+      "none": "Not in a folder",
+      "rename": "Rename",
+      "delete": "Delete",
+      "actionsFor": "Actions for the folder {name}",
+      "deleteTitle": "Delete the folder {name}?",
+      "deleteDescription": "Only an empty folder can be deleted. Its name becomes free again.",
+      "deleteNotEmpty": "The folder is not empty ({assets, plural, one {# file} other {# files}}, {folders, plural, one {# folder} other {# folders}}). Move or delete them first.",
+      "toast": {
+        "deleted": "The folder {name} was deleted.",
+        "deleteError": "The folder could not be deleted."
+      },
+      "dialog": {
+        "createTitle": "New folder",
+        "renameTitle": "Rename or move {name}",
+        "description": "Folders can be nested up to 4 levels deep.",
+        "name": "Folder name",
+        "nameRequired": "Enter a name.",
+        "parent": "Inside",
+        "topLevel": "Top level",
+        "cancel": "Cancel",
+        "create": "Create folder",
+        "save": "Save",
+        "created": "The folder {name} was created.",
+        "renamed": "The folder {name} was saved.",
+        "error": "The folder could not be saved."
+      }
+    },
+    "focal": {
+      "handle": "Focal point at {x}% across, {y}% down. Use the arrow keys to move it.",
+      "x": "Across (%)",
+      "y": "Down (%)",
+      "clear": "Clear",
+      "hint": "Crops keep this point in view. Click the picture or use the arrow keys (Shift = bigger steps).",
+      "hintEmpty": "No focal point: crops are centred. Click the picture to set one.",
+      "crops": "How the picture is cropped",
+      "crop": {
+        "hero": "Hero 16:9",
+        "card": "Card 430:562",
+        "square": "Square"
+      }
+    },
+    "usage": {
+      "title": "Where this file is used",
+      "draftOnly": "draft only",
+      "types": {
+        "cms_page": "Page",
+        "cms_post": "Post",
+        "cms_album": "Album",
+        "cms_faq": "FAQ",
+        "cms_site_settings": "Settings",
+        "cms_menu": "Menu"
+      }
+    },
+    "sheet": {
+      "title": "Media file",
+      "loading": "Loading the file",
+      "notFound": "This file does not exist",
+      "backToLibrary": "Back to the library",
+      "trashedBadge": "In trash",
+      "trashed": {
+        "title": "This file is in the trash",
+        "body": "It is removed for good on {date}. Restore it to use it again.",
+        "noRestore": "You do not have permission to restore it."
+      },
+      "tabs": {
+        "details": "Details",
+        "usage": "Used in ({count})",
+        "history": "History"
+      },
+      "fields": {
+        "folder_id": "Folder",
+        "is_decorative": "Decorative image",
+        "focal": "Focal point",
+        "alt": "Alt text",
+        "caption": "Caption",
+        "credit": "Credit"
+      },
+      "yes": "Yes",
+      "no": "No",
+      "noFocal": "none",
+      "emptyValue": "(empty)",
+      "noFolder": "Not in a folder",
+      "text": {
+        "title": "Text per language",
+        "decorative": "Decorative image (alt text not required)",
+        "alt": "Alt text",
+        "altOptional": "Not required for a decorative image.",
+        "altHelp": "Describe the picture for people who cannot see it.",
+        "caption": "Caption",
+        "credit": "Credit"
+      },
+      "readOnly": "You can look at this file but not change it.",
+      "translateOnly": "You can edit the text in each language, but not the folder, the focal point or the decorative flag.",
+      "folder": {
+        "label": "Folder"
+      },
+      "warning": {
+        "altMissing": {
+          "title": "The default language has no alt text",
+          "body": "The file is used on pages that cannot be published without it. Add the alt text, or mark the image as decorative."
+        }
+      },
+      "file": {
+        "title": "File",
+        "name": "File name",
+        "type": "Type",
+        "size": "Size",
+        "dimensions": "Dimensions",
+        "checksum": "Checksum (SHA-256)",
+        "source": "Stored in",
+        "sources": {
+          "static": "Website bundle (static)",
+          "file_service": "File service"
+        },
+        "created": "Added",
+        "updated": "Last changed"
+      },
+      "usage": {
+        "title": "Where this file is used",
+        "none": "This file is not used anywhere yet.",
+        "count": "{count, plural, one {Used in # place} other {Used in # places}}"
+      },
+      "restore": "Restore from trash",
+      "close": "Close",
+      "delete": {
+        "button": "Delete",
+        "inUse": "Used in {count, plural, one {# place} other {# places}} - see where",
+        "title": "Delete {name}?",
+        "description": "The file moves to the trash and is removed for good after 30 days. You can restore it until then.",
+        "confirm": "Move to trash"
+      },
+      "discard": {
+        "title": "Discard your changes?",
+        "description": "You changed this file but did not save.",
+        "confirm": "Discard changes"
+      },
+      "toast": {
+        "saved": "The file was saved.",
+        "saveError": "The file could not be saved.",
+        "deleted": "The file was moved to the trash.",
+        "deleteError": "The file could not be deleted.",
+        "restored": "The file was restored.",
+        "restoreError": "The file could not be restored."
+      },
+      "inUse": {
+        "title": "This file cannot be deleted",
+        "draftTitle": "A draft still uses this file",
+        "body": "{count, plural, one {It is used in # place.} other {It is used in # places.}} Remove it from there first.",
+        "draftBody": "{count, plural, one {# draft refers} other {# drafts refer}} to it. Remove it from the draft first.",
+        "listLabel": "Where the file is used",
+        "more": "and {count} more",
+        "close": "Close",
+        "ok": "Show where it is used"
+      }
+    }
+  },
+  "revisions": {
+    "explain": "Each version is the state an item had BEFORE an edit. The date and the person are those of the edit that replaced it.",
+    "showPreview": "Show preview rows",
+    "empty": "No earlier versions yet",
+    "emptyHint": "A version is kept every time something is changed.",
+    "total": "{total, plural, one {# version} other {# versions}}",
+    "system": "System",
+    "previewBadge": "preview",
+    "columns": {
+      "version": "Version",
+      "kind": "Type",
+      "replacedAt": "Replaced on",
+      "by": "Replaced by",
+      "note": "Note",
+      "actions": "Actions"
+    },
+    "kind": {
+      "history": "Before edit",
+      "restore": "Before restore",
+      "published": "Published",
+      "draft": "Draft"
+    },
+    "viewButton": "View",
+    "viewVersion": "View version {version}",
+    "restoreVersion": "Restore version {version}",
+    "close": "Close",
+    "row": "Row {n}",
+    "whole": "Value",
+    "general": "General",
+    "differences": "{count, plural, one {# difference} other {# differences}}",
+    "noDifferences": "No differences.",
+    "emptySnapshot": "This version has no fields.",
+    "wordDiff": "Text with the changed words marked",
+    "op": {
+      "added": "added",
+      "removed": "removed",
+      "changed": "changed"
+    },
+    "value": {
+      "none": "none",
+      "emptyText": "(empty)",
+      "emptyList": "(empty list)",
+      "yes": "Yes",
+      "no": "No"
+    },
+    "view": {
+      "title": "Version {version}",
+      "description": "The state before the edit of {when} by {by}.",
+      "fields": "Fields",
+      "changes": "Changes"
+    },
+    "compare": {
+      "label": "Compare with",
+      "none": "Nothing (show this version)",
+      "current": "Current state",
+      "version": "Version {version}",
+      "pick": "Pick a version above to see what is different.",
+      "restorePreview": "What restoring version {version} would change (current state to version {version})",
+      "fromTo": "Changes from version {from} to version {to}"
+    },
+    "restore": {
+      "button": "Restore",
+      "cancel": "Cancel",
+      "confirm": "Restore version {version}",
+      "title": "Restore version {version}?",
+      "description": "Version {version} is the state before the edit of {when}.",
+      "liveTitle": "This takes effect on the website immediately",
+      "liveBody": "The current state is kept as a new version, so you can undo the restore from this list.",
+      "draftTitle": "This becomes the working draft",
+      "draftBody": "It does not appear on the website until you publish it.",
+      "note": "Note (optional)",
+      "notePlaceholder": "restore of v{version}",
+      "success": "Version {version} was restored.",
+      "issue": {
+        "whole": "Value",
+        "incompatible": {
+          "title": "This version cannot be restored",
+          "body": "It was saved by a newer version of the system than this admin understands. Update the admin, or restore a newer version."
+        },
+        "trashed": {
+          "title": "The item is in the trash",
+          "body": "Restore the item from the trash first, then restore this version."
+        },
+        "refs": {
+          "title": "Some of the data in this version no longer exists",
+          "body": "Nothing was restored. These values point to items that were deleted since:"
+        },
+        "duplicate": {
+          "title": "A value is already used by another item",
+          "body": "Nothing was restored. Change the other item first:"
+        },
+        "missingEtag": {
+          "title": "The current version of the item is unknown",
+          "body": "Reload the page and try again."
+        }
+      }
+    },
+    "fields": {
+      "alt": "Alt text",
+      "caption": "Caption",
+      "credit": "Credit",
+      "folder_id": "Folder",
+      "is_decorative": "Decorative image",
+      "focal_x": "Focal point X",
+      "focal_y": "Focal point Y",
+      "asset": "Image",
+      "translations": "Translations",
+      "label": "Label",
+      "aria_label": "Accessible label",
+      "url": "Link",
+      "page_id": "Page",
+      "link_type": "Link type",
+      "open_in_new_tab": "Open in a new tab",
+      "icon": "Icon",
+      "active_match": "Active when",
+      "is_visible": "Visible",
+      "sort_order": "Order",
+      "name": "Name",
+      "slug": "Slug",
+      "description": "Description",
+      "key": "Key",
+      "is_active": "Active",
+      "value": "Value",
+      "media_asset_id": "Image",
+      "items": "Items",
+      "settings": "Settings",
+      "values": "Text",
+      "notes": "Notes",
+      "group_key": "Group",
+      "category": "Category",
+      "tag": "Tag",
+      "parent_id": "Parent",
+      "public_id": "Id"
+    }
   }
 }

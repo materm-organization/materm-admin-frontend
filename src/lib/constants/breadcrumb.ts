@@ -5,6 +5,7 @@ export const BREADCRUMB_CONFIG: Record<string, string> = {
   "/admin/users": "breadcrumb.users",
   "/admin/roles": "breadcrumb.roles",
   "/admin/audit": "breadcrumb.audit",
+  "/admin/media": "breadcrumb.media",
   "/admin/locales": "breadcrumb.locales",
   "/admin/system": "breadcrumb.system",
   "/admin/profile": "breadcrumb.profile",

@@ -8,6 +8,10 @@
 //    those load. No `'unsafe-inline'`, no `'unsafe-eval'` in production.
 //  - `style-src 'self' 'unsafe-inline'`: React inline `style=""` attributes (Radix, sonner, sidebar) cannot
 //    carry a nonce; style injection is a far smaller risk than script injection.
+//  - `img-src 'self' data: blob: <API origin> <media origins>`: media pictures are served by another origin
+//    (`media.staticBaseUrl` of the backend, e.g. the portal in dev, or the file service `file.path_ip`); list them
+//    in `NEXT_PUBLIC_MEDIA_ORIGINS` (comma separated origins). A picture whose origin is not listed is blocked by the
+//    browser and the media screens show their placeholder tile instead.
 //  - `connect-src 'self' <API origin>`: the browser may only call this app and the backend.
 //  - `frame-src 'none'`: preview opens in a new tab (decision Q-07-5); add the portal origin when an iframe
 //    preview is built.
@@ -19,7 +23,22 @@ export type CspOptions = {
   isDev?: boolean;
   // Origin of the backend (`NEXT_PUBLIC_API_BASE_URL`), when it is not the app's own origin.
   apiOrigin?: string;
+  // Origins that serve media pictures (`NEXT_PUBLIC_MEDIA_ORIGINS`), allowed in `img-src` only.
+  mediaOrigins?: string[];
 };
+
+// "http://localhost:3001, https://files.example.com/path" -> ["http://localhost:3001", "https://files.example.com"].
+// Only http(s) origins survive; anything else (typos, `*`, `javascript:`) is dropped so the policy can not be
+// loosened by a bad value.
+export function mediaOriginsFromEnv(value: string | undefined): string[] {
+  if (!value) return [];
+  const out = new Set<string>();
+  for (const part of value.split(",")) {
+    const origin = apiOriginFromBaseUrl(part.trim());
+    if (origin) out.add(origin);
+  }
+  return [...out];
+}
 
 // "http://localhost:8080/api/v1" -> "http://localhost:8080"; a relative base ("/api/v1"), blank or invalid -> undefined.
 export function apiOriginFromBaseUrl(baseUrl: string | undefined): string | undefined {
@@ -41,13 +60,14 @@ export function generateNonce(): string {
   return btoa(binary);
 }
 
-export function buildContentSecurityPolicy({ nonce, isDev = false, apiOrigin }: CspOptions): string {
+export function buildContentSecurityPolicy({ nonce, isDev = false, apiOrigin, mediaOrigins = [] }: CspOptions): string {
   const api = apiOrigin ? ` ${apiOrigin}` : "";
+  const media = mediaOrigins.map((o) => ` ${o}`).join("");
   const directives = [
     "default-src 'self'",
     `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${isDev ? " 'unsafe-eval'" : ""}`,
     "style-src 'self' 'unsafe-inline'",
-    `img-src 'self' data: blob:${api}`,
+    `img-src 'self' data: blob:${api}${media}`,
     "font-src 'self' data:",
     `connect-src 'self'${api}${isDev ? " ws: wss:" : ""}`,
     "worker-src 'self' blob:",

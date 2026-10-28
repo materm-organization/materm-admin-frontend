@@ -6,6 +6,7 @@ import type { ComponentType } from "react";
 
 import { ErrorState } from "@/components/global/states/error-state";
 import { NoPermission } from "@/components/layout/no-permission";
+import { CachePurgeSection } from "@/components/protected/system/cache-purge";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -181,6 +182,8 @@ export function SystemStatusView() {
             </CardContent>
           </Card>
         ) : null}
+
+        <CachePurgeSection />
       </div>
     </div>
   );

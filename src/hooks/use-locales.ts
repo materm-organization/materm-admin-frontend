@@ -22,3 +22,10 @@ export const useMutationUpdateLocale = () => {
     },
   });
 };
+
+// The default language's code (the one whose alt text decides "missing alt"). `la` until the list is known or when
+// the user may not read it (a media-only editor has no `cms.locales:read`).
+export const useDefaultLocaleCode = (): string => {
+  const { data } = useLocales();
+  return data?.data.find((l) => l.is_default)?.code ?? "la";
+};

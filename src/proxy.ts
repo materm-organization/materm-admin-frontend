@@ -4,6 +4,7 @@ import {
   apiOriginFromBaseUrl,
   buildContentSecurityPolicy,
   generateNonce,
+  mediaOriginsFromEnv,
 } from "@/lib/security/csp";
 
 // Sets the per-request Content-Security-Policy with a fresh nonce (doc/10 R-008; the policy is documented in
@@ -16,6 +17,7 @@ export function proxy(request: NextRequest) {
     nonce,
     isDev: process.env.NODE_ENV === "development",
     apiOrigin: apiOriginFromBaseUrl(process.env.NEXT_PUBLIC_API_BASE_URL),
+    mediaOrigins: mediaOriginsFromEnv(process.env.NEXT_PUBLIC_MEDIA_ORIGINS),
   });
 
   // Next reads the nonce from the CSP *request* header and applies it to its own scripts; `x-nonce` is for

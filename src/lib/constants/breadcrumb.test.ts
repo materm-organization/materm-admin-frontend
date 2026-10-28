@@ -31,4 +31,11 @@ describe("buildBreadcrumbTrail", () => {
     expect(getBreadcrumbKeyForPath("/admin/users/5")).toBe("breadcrumb.users");
     expect(getBreadcrumbKeyForPath("/admin/usersx")).toBe("breadcrumb.admin");
   });
+
+  it("the media library has a breadcrumb", () => {
+    expect(buildBreadcrumbTrail("/admin/media")).toEqual([
+      { key: "breadcrumb.admin", href: "/admin" },
+      { key: "breadcrumb.media" },
+    ]);
+  });
 });

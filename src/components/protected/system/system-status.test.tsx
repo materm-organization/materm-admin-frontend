@@ -11,6 +11,12 @@ import { renderApp } from "@/test/render-app";
 const API = "http://localhost:3000/api/v1";
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn(), replace: vi.fn() }), usePathname: () => "/admin/system" }));
 vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
+// The cache purge card asks the signed-in user for `ops.system:execute` (read-only here: the card stays hidden).
+vi.mock("@/hooks/use-auth", () => ({
+  useFetchCurrentUser: () => ({
+    data: { data: { id: 1, roleID: 2, permissions: [{ id: 1, permission_key: "ops.system", name: "System", description: "", category: "ops", actions: ["read"] }] } },
+  }),
+}));
 
 const STATUS = {
   status: "degraded",

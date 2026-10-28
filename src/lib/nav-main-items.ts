@@ -1,4 +1,4 @@
-import { Activity, Languages, LayoutDashboard, Users, type LucideIcon } from "lucide-react";
+import { Activity, Images, Languages, LayoutDashboard, Users, type LucideIcon } from "lucide-react";
 
 import { PERMISSION_KEYS } from "@/lib/constants/permissions";
 
@@ -32,6 +32,13 @@ export type NavMainGroupConfig = {
 export const NAV_MAIN_CONFIG: NavMainGroupConfig[] = [
   // Dashboard — the `/admin` landing page, open to every authenticated user.
   { title: "nav.dashboard", url: "/admin", icon: LayoutDashboard },
+  // Media library (SCR-35/36, doc/07 section 2.1): one entry, a direct link. `/admin/media?asset=<id>` is its sheet.
+  {
+    title: "nav.media",
+    url: "/admin/media",
+    icon: Images,
+    anyPermission: [PERMISSION_KEYS.MEDIA_LIBRARY],
+  },
   // Localization (doc/07 section 2.1): one entry for now (UI strings come later), so a direct link.
   {
     title: "nav.locales",

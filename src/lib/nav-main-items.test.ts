@@ -111,11 +111,30 @@ describe("W1 iam/ops routes (T1.1.10)", () => {
     ]);
     expect(urls(Object.values(PERMISSION_KEYS))).toEqual([
       "/admin",
+      "/admin/media",
       "/admin/locales",
       "/admin/users",
       "/admin/roles",
       "/admin/audit",
       "/admin/system",
     ]);
+  });
+});
+
+describe("media library route (SCR-35/36)", () => {
+  it("/admin/media and its sheet need read on media.library; sub-paths inherit it", () => {
+    const expected = { kind: "requires", keys: [PERMISSION_KEYS.MEDIA_LIBRARY] };
+    expect(getPermissionsForPath("/admin/media")).toEqual(expected);
+    expect(getPermissionsForPath("/admin/media/anything")).toEqual(expected);
+  });
+
+  it("is in the sidebar only for users who can read the library", () => {
+    const withMedia = buildNavMainItemsForUser([PERMISSION_KEYS.MEDIA_LIBRARY]);
+    expect(withMedia.some((g) => g.url === "/admin/media")).toBe(true);
+    expect(buildNavMainItemsForUser([PERMISSION_KEYS.IAM_USERS]).some((g) => g.url === "/admin/media")).toBe(false);
+  });
+
+  it("the dev playground of the media screens is covered by the /admin/dev-tools entry", () => {
+    expect(getPermissionsForPath("/admin/dev-tools/media")).toEqual({ kind: "open" });
   });
 });

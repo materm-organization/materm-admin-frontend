@@ -50,6 +50,8 @@ export const API_ENDPOINTS = {
   },
   SYSTEM: {
     STATUS: "/system/status",
+    // POST (doc/05 section 11.8): `ops.system:execute`.
+    CACHE_PURGE: "/system/cache/purge",
   },
   // CMS (doc/05 sections 6.2 - 6.12, 10.6). Only what the schema form engine reads (pickers + the registry)
   // is here; the editors of each feature add their own keys.
@@ -57,9 +59,21 @@ export const API_ENDPOINTS = {
     LIST: "/section-types",
     DETAIL: (key: string) => `/section-types/${encodeURIComponent(key)}`,
   },
+  // Media library (doc/05 section 11.6): no upload in P1 (P2).
   MEDIA: {
     ASSETS: "/media/assets",
     ASSET: (id: number | string) => `/media/assets/${id}`,
+    ASSET_RESTORE: (id: number | string) => `/media/assets/${id}/restore`,
+    ASSET_USAGES: (id: number | string) => `/media/assets/${id}/usages`,
+    FOLDERS: "/media/folders",
+    FOLDER: (id: number | string) => `/media/folders/${id}`,
+  },
+  // Revisions of the save-live entities (doc/05 section 11.7). `base` = `/menus/main`, `/settings/brand`,
+  // `/ui-strings/<key>`, `/categories/3`, `/tags/5`, `/media/assets/7` (see `lib/revision-resources.ts`).
+  REVISIONS: {
+    LIST: (base: string) => `${base}/revisions`,
+    DETAIL: (base: string, revId: number | string) => `${base}/revisions/${revId}`,
+    RESTORE: (base: string, revId: number | string) => `${base}/revisions/${revId}/restore`,
   },
   PAGES: {
     LIST: "/pages",

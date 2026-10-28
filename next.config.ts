@@ -18,6 +18,12 @@ const SECURITY_HEADERS = [
 ];
 
 const nextConfig: NextConfig = {
+  // `NEXT_PUBLIC_API_MOCKING=true` (command line of a scratch clone, never an .env file) swaps the backend for the
+  // in-memory API of src/mocks/. Pinned to a literal "true" / "false" at build time, so an unset flag is a constant
+  // and the bundler drops the mock code (msw, fixtures) from a normal build.
+  env: {
+    NEXT_PUBLIC_API_MOCKING: process.env.NEXT_PUBLIC_API_MOCKING === "true" ? "true" : "false",
+  },
   // Pin the Turbopack workspace root to this project so Next's lockfile
   // root-inference can't pick up an unrelated package-lock.json in a parent
   // directory.

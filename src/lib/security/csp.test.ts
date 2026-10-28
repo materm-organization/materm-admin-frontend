@@ -4,6 +4,7 @@ import {
   apiOriginFromBaseUrl,
   buildContentSecurityPolicy,
   generateNonce,
+  mediaOriginsFromEnv,
 } from "@/lib/security/csp";
 
 describe("buildContentSecurityPolicy", () => {
@@ -60,5 +61,26 @@ describe("generateNonce", () => {
     const a = generateNonce();
     expect(a).toMatch(/^[A-Za-z0-9+/]{22}==$/);
     expect(generateNonce()).not.toBe(a);
+  });
+});
+
+describe("media origins (img-src)", () => {
+  it("lists them in img-src only, never in connect-src or script-src", () => {
+    const csp = buildContentSecurityPolicy({ nonce: "n", apiOrigin: "https://api.example.com", mediaOrigins: ["http://localhost:3001", "https://files.example.com"] });
+    const directive = (name: string) => csp.split("; ").find((d) => d.startsWith(`${name} `));
+    expect(directive("img-src")).toBe("img-src 'self' data: blob: https://api.example.com http://localhost:3001 https://files.example.com");
+    expect(directive("connect-src")).toBe("connect-src 'self' https://api.example.com");
+    expect(csp).not.toContain("localhost:3001; script");
+    expect(buildContentSecurityPolicy({ nonce: "n" })).toContain("img-src 'self' data: blob:;");
+  });
+
+  it("reads origins from the env value: trims, de-duplicates, keeps http(s) origins only", () => {
+    expect(mediaOriginsFromEnv("http://localhost:3001, https://files.example.com/media/x , http://localhost:3001")).toEqual([
+      "http://localhost:3001",
+      "https://files.example.com",
+    ]);
+    expect(mediaOriginsFromEnv("*, javascript:alert(1), data:text/html, ftp://x.test, not a url")).toEqual([]);
+    expect(mediaOriginsFromEnv(undefined)).toEqual([]);
+    expect(mediaOriginsFromEnv("")).toEqual([]);
   });
 });

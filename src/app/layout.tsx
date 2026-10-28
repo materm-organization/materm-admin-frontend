@@ -5,6 +5,7 @@ import { getLocale, getMessages } from "next-intl/server";
 import { headers } from "next/headers";
 
 import { QueryProvider } from "@/components/provider/query-provider";
+import { ApiMocking } from "@/mocks/api-mocking";
 import { ReduxProvider } from "@/components/provider/redux-provider";
 import { ThemeProvider } from "@/components/provider/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
@@ -67,7 +68,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           <NextIntlClientProvider messages={messages}>
             <ReduxProvider>
               <QueryProvider>
-                {children}
+                <ApiMocking>{children}</ApiMocking>
                 <Toaster />
               </QueryProvider>
             </ReduxProvider>

@@ -111,4 +111,21 @@ export type MediaAssetOption = {
   height?: number | null;
   // Alt text per locale code (`media_asset_translations.alt`).
   alt?: Record<string, string>;
+  // From the library rows (doc/05 11.6); the old fixtures / tolerant adapter may leave them out.
+  kind?: string;
+  bytes?: number;
+  folder_id?: number | null;
+  focal?: { x: number; y: number } | null;
+  is_decorative?: boolean;
+  usage_count?: number;
+};
+
+// A folder of the media library as the MediaPicker lists it (flat, ordered by path).
+export type MediaFolderOption = {
+  id: number;
+  name: string;
+  path: string;
+  depth: number;
+  parentId: number | null;
+  assetCount?: number;
 };

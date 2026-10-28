@@ -6,8 +6,9 @@ This file provides guidance to Claude Code when working on this project.
 
 `materm-admin-frontend` (Materm Admin) — a Next.js 16 App Router admin/back-office panel:
 auth (sign-in, forgot/reset password, accept invitation, profile), the IAM/ops screens (users, roles +
-permission matrix, audit log, locales, system status), a protected layout shell and shared infrastructure.
-It has no backend of its own; CMS content screens come in later milestones.
+permission matrix, audit log, locales, system status + cache purge), the media library + MediaPicker, the generic
+revisions tab, a protected layout shell and shared infrastructure.
+It has no backend of its own; the other CMS content screens come in later milestones.
 
 ## Tech stack
 
@@ -22,7 +23,7 @@ It has no backend of its own; CMS content screens come in later milestones.
 | UI kit | shadcn/ui ("new-york" style) + Tailwind v4 |
 | i18n | next-intl, cookie-based locale (`la` default, `en`) — no `[locale]` route segment |
 | Auth | JWT in cookies (`js-cookie`), client-side `(protected)` route-group guard; no edge auth gate (`src/proxy.ts` only sets the CSP) |
-| Tests | Vitest + Testing Library + MSW (`npm run test`) |
+| Tests | Vitest + Testing Library + MSW (`npm run test`); `diff` (word-level text diff of revisions) |
 
 ## Run it
 
@@ -42,6 +43,9 @@ system Chrome installed OUTSIDE the project; the sign-in `Globe` needs `--use-an
 working folder.
 
 Env vars: `NEXT_PUBLIC_API_BASE_URL` in `.env.development` / `.env.production` (no secrets in this layer);
+`NEXT_PUBLIC_MEDIA_ORIGINS` (optional, comma separated origins, set in the deployment env) lets `img-src` of the CSP
+load media pictures from another origin (`media.staticBaseUrl` / the file service);
+`NEXT_PUBLIC_API_MOCKING=true` is for a SCRATCH CLONE only, on the command line (never an `.env` file): see "Mock API" below;
 `.env.development` also sets `NEXT_PUBLIC_DISABLE_AUTH_GUARD=true` (bypass user, dev only, never in `.env.production`).
 The backend allows only the origins in its `server.corsOrigins` (dev default `http://localhost:3000`): on another
 dev port add that origin there and set the backend's `server.adminBaseUrl`.
@@ -104,6 +108,10 @@ Screens and building blocks built so far (phase P1 milestone M1; contract `../do
   entry in `lib/nav-main-items.ts`; a folder called `_dev` would NOT be routed by Next.js). Shadcn primitives added:
   `alert`, `progress`, `radio-group`, `toggle-group`.
 
+- **T1.3.9 media library, MediaPicker, revisions, cache purge (M3)** - built against MSW + the typed API layer; the
+  backends are written in parallel (contract = `doc/api/openapi-admin.yaml`, `doc/05` sections 11.6 - 11.8). See
+  "Media, revisions and cache purge" below. No upload anywhere (P2, AS-2).
+
 To add a module, follow the feature-vertical pattern:
 `src/app/(protected)/(routes)/admin/<feature>/page.tsx` + `src/services/<feature>.api.ts` +
 `src/hooks/use-<feature>.ts` + `src/types/<feature>.d.ts` + `src/components/protected/<feature>/`,
@@ -159,6 +167,70 @@ differ). A public page goes under `src/app/auth/`.
   (`src/lib/security/csp.ts` holds the policy: strict `script-src`, `connect-src` = the app + the API origin
   from `NEXT_PUBLIC_API_BASE_URL`); static headers are in `next.config.ts`. A new external origin (file/media
   host, iframe preview) must be added to the policy. The root layout passes the nonce to `next-themes`.
+
+## Media, revisions and cache purge (T1.3.9)
+
+- **`/admin/media`** (SCR-35, sidebar entry `nav.media`, key `media.library`; breadcrumb `breadcrumb.media`):
+  `components/protected/media/media-library.tsx`. List state in the URL through `useListParams(MEDIA_LIST_CONFIG)`
+  (`kind`, `folder_id` = id or `root`, `unused`, `missing_alt`, `trashed`, sort, keyword); the open file is
+  `?asset=<id>` and is NOT part of the list config (opening / closing keeps the list params; a list change drops it);
+  grid / list choice is a per-browser preference (`use-media-view.ts`, `localStorage` in try/catch). Folder tree =
+  `media-folders.tsx` (create / rename-move / delete, `Idempotency-Key` once per dialog open). Selection works, but there
+  is no bulk endpoint in P1 (`POST /media/assets/bulk` is P2, and the list rule forbids looping single requests): the bar
+  only offers "Copy file names". `url: null` (no `media.staticBaseUrl`) and a picture the browser can not load (CSP,
+  404) both show a placeholder tile (`media-thumb.tsx`).
+- **Detail sheet** (SCR-36, `media-asset-sheet.tsx`): the editor is keyed by the asset's ETag (`withEtag`), so a save or a
+  reload from the `ConflictDialog` starts a fresh draft; the chosen language / tab live in the parent. Escape / the X / the
+  overlay go through the editor's `requestClose` (ref registered in the parent) so unsaved edits are asked about first (a plain
+  `router.push` is not stopped by the navigation guard). Draft -> PATCH body
+  in `asset-draft.ts` (only changed fields, caption / credit cleared = `null`, focal rounded to 3 decimals). Permissions:
+  `update` (or `update_own` on my upload - seed rows have `created_by = null`, so never) edits everything, `translate`
+  only alt / caption / credit, `delete` deletes / restores. A used file (`usage_count > 0`) has Delete disabled with a link
+  to the usage tab; `MEDIA_IN_USE` / `ENTITY_REFERENCED` from the server (stale page) open `InUseDialog` with the list
+  (`UsageList` links only owners whose route exists, `usageHref` in `lib/media.ts`). Languages = active locales; without
+  `cms.locales:read` it falls back to the languages the file already has.
+- **`MediaPicker`** (`media-picker.tsx`): props `{ open, onOpenChange, mode: "single" | "multiple", max, accept (mime),
+  ratio, selectedIds, onSelect(assets), title, description, searchLabel, defaultLocale }`. Single = a click picks and
+  closes; multiple = toggle + "Add selected"; arrows / Home / End move between tiles. It reads through `SchemaFormData`
+  (`listMedia`, `listMediaFolders`; `apiSchemaFormData` = the API, `memorySchemaFormData` = fixtures), and
+  `MediaPickerDialog` of the schema form's `MediaField` is now a thin wrapper of it (same accessible names as before).
+  Pass `defaultLocale` when the host knows it (saves a `/locales` request). In multiple mode the images already chosen are
+  resolved by id (`MediaQuery.ids`, <= 50, sent alone as the API requires) so "Add selected" returns them even when they
+  are on another page / folder; it stays disabled until they are loaded. `SchemaFormData` now REQUIRES `listMedia` and
+  `listMediaFolders` (any new implementation must provide them).
+- **`RevisionsTab`** (`components/global/revisions/`, SCR-37): `<RevisionsTab resource id canRestore onRestored etag?
+  resolveEtag? onRefresh? currentSnapshot? restoreEffect? pageSize? />`. `resource` is one of `menus`, `settings`,
+  `ui-strings`, `categories`, `tags`, `media/assets` (`lib/revision-resources.ts` maps it to the URL base and the keys; add
+  the publishable ones there in T1.4.7); `id` is the entity's id or key (menu key, settings group, ui-string key). Save-live
+  revisions are the state BEFORE an edit: who / when = the edit that replaced it. Restore sends `If-Match` = the `etag` prop
+  (the entity's ETag as the editor holds it), else `resolveEtag()`, else the entity's own GET; `onRestored({ data, etag,
+  restoredFrom })` is where the editor re-seeds its cache with the new ETag; 409/412 -> `ConflictDialog` (`onRefresh`);
+  `snapshot_incompatible`, `trashed`, 422 `unknown_reference` (`in: "entity"`, paths shown as field names) and
+  409 duplicates are explained inside the dialog. `include_preview` is sent only when the switch is on and `is_preview`
+  rows are also filtered client-side. `DiffView` / `SnapshotView` (`diff-view.tsx`, `snapshot-diff.ts`) turn any snapshot
+  into labelled fields (arrays of rows with `locale_code` / `public_id` / `key` / `id` are keyed by it), grouped by language,
+  word-level text diffs with `diff`. Labels: `revisions.fields.<name>` in the i18n files (add new field names there).
+  `assetSnapshot()` (`protected/media/asset-snapshot.ts`) is the pattern for `currentSnapshot`.
+- **Cache purge** (SCR-45): `protected/system/cache-purge.tsx` inside `SystemStatusView`, shown only with
+  `ops.system:execute`. Tags are validated with the exact allow-list (`lib/cache-tags.ts`), `scope=all` needs a second
+  confirmation, 429 (with `Retry-After`) / 403 / 503 / 422 `/tags/<i>` are explained in the dialog (the global toast also
+  fires for 403/429/5xx), the answer lists the tags the server really queued. No `Idempotency-Key` (05 11.1.5).
+- **CSP**: pictures of another origin need `NEXT_PUBLIC_MEDIA_ORIGINS` (`lib/security/csp.ts` `mediaOriginsFromEnv`); only
+  `img-src` is widened, only for http(s) origins.
+
+### Mock API (`src/mocks/`)
+
+`mock-db.ts` is a strict in-memory model of the media / revisions / purge endpoints (unknown query params and body fields
+are 422, no `If-Match` is 428, a stale one 409, `MEDIA_IN_USE`, `snapshot_incompatible` ...), seeded with the 24 `static/`
+assets of the portal bundle; `handlers.ts` binds it to MSW (`*/api/v1/...`, base-agnostic). Tests: `useMockApi()` from
+`mocks/test-setup.ts` in a `describe` (fresh model per test; extra `server.use(...)` handlers go in front). Browser: the
+dev playground `/admin/dev-tools/media` (picker, revisions on media / menu / settings, purge) installs it itself
+(`api-mocking-impl.tsx`, an axios adapter on top of msw's `getResponse`: no service worker, no `public/` file);
+`NEXT_PUBLIC_API_MOCKING=true` on the command line of a scratch clone (`NEXT_PUBLIC_API_MOCKING=true
+NEXT_PUBLIC_DISABLE_AUTH_GUARD=true npx next build` / `next dev`) mocks the whole app so `/admin/media` and
+`/admin/system` can be clicked through. `next.config.ts` pins the flag to a build-time literal, so a normal build contains
+none of it (checked: no mock strings in `.next`). The model is a stand-in, not the backend: when the real endpoints exist,
+delete nothing here - just stop using the flag.
 
 ## Schema form engine (W2a, T1.2.10)
 
