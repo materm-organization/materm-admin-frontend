@@ -27,6 +27,16 @@ import type { ActionDef, RolePermission } from "@/types/iam";
 //  - every box except `read` stays DISABLED until `read` of the row is ticked (BR-22); unticking `read`
 //    clears the row. `readOnly` (the super role, or no `iam.roles:update`) disables everything.
 // Controlled: the parent owns the matrix (and the diff / save).
+// Every cell of a row must carry the SAME opaque colour: the first column is sticky (it has to cover what scrolls
+// under it), so a translucent tint on the row (`bg-muted/50`) next to an opaque cell shows as two shades, most of
+// all in dark mode. The tints are therefore mixed with the page background instead of made see-through. For the same
+// reason the table is `border-separate` with the row lines drawn on the CELLS: with `border-collapse` a row border
+// is painted per cell and Chrome breaks it (shifted / lighter segments) where a sticky cell sits.
+const GROUP_ROW = "bg-[color-mix(in_oklab,var(--muted)_60%,var(--background))]";
+const ROW_HOVER = "hover:bg-[color-mix(in_oklab,var(--muted)_25%,var(--background))]";
+const ROW_HOVER_CELL = "group-hover/row:bg-[color-mix(in_oklab,var(--muted)_25%,var(--background))]";
+const ROW_ERROR = "bg-[color-mix(in_oklab,var(--destructive)_8%,var(--background))]";
+
 export function PermissionMatrix({
   permissions,
   actions,
@@ -61,9 +71,9 @@ export function PermissionMatrix({
         {readOnly ? t("hintReadOnly") : t("hint")}
       </p>
       <div className="overflow-x-auto rounded-md border" data-testid="permission-matrix">
-        <table className="w-full min-w-[960px] border-collapse text-sm" aria-describedby={hintId}>
+        <table className="w-full min-w-[960px] border-separate border-spacing-0 text-sm [&_td]:border-b [&_th]:border-b [&_tbody>tr:last-child>*]:border-b-0" aria-describedby={hintId}>
           <thead>
-            <tr className="border-b bg-muted/50 text-xs">
+            <tr className="bg-muted text-xs">
               <th scope="col" className="sticky left-0 z-10 min-w-56 bg-muted px-3 py-2 text-left font-medium">
                 {t("feature")}
               </th>
@@ -96,8 +106,8 @@ export function PermissionMatrix({
               const catState = states.every((s) => s === "full") ? "full" : states.every((s) => s === "none") ? "none" : "partial";
               return (
                 <Fragment key={group.category}>
-                  <tr className="border-b bg-muted/30">
-                    <th scope="rowgroup" colSpan={2} className="sticky left-0 z-10 bg-muted px-3 py-1.5 text-left text-xs font-semibold tracking-wide uppercase">
+                  <tr className={GROUP_ROW}>
+                    <th scope="rowgroup" colSpan={2} className={cn("sticky left-0 z-10 px-3 py-1.5 text-left text-xs font-semibold tracking-wide uppercase", GROUP_ROW)}>
                       <span className="flex items-center gap-2">
                         <Checkbox
                           aria-label={t("categoryAll", { category: categoryLabel(group.category) })}
@@ -108,7 +118,7 @@ export function PermissionMatrix({
                         {categoryLabel(group.category)}
                       </span>
                     </th>
-                    <td colSpan={actions.length} className="bg-muted/30" />
+                    <td colSpan={actions.length} />
                   </tr>
                   {group.permissions.map((p) => {
                     const row = matrix[p.permission_key] ?? [];
@@ -118,10 +128,10 @@ export function PermissionMatrix({
                     return (
                       <Fragment key={p.permission_key}>
                         <tr
-                          className={cn("border-b hover:bg-muted/20", error && "bg-destructive/5")}
+                          className={cn("group/row bg-background", error ? ROW_ERROR : ROW_HOVER)}
                           data-testid={`row-${p.permission_key}`}
                         >
-                          <th scope="row" className="sticky left-0 z-10 bg-background px-3 py-1.5 text-left font-normal" title={p.description}>
+                          <th scope="row" className={cn("sticky left-0 z-10 px-3 py-1.5 text-left font-normal", error ? ROW_ERROR : cn("bg-background", ROW_HOVER_CELL))} title={p.description}>
                             <div className="font-medium">{p.name}</div>
                             <div className="font-mono text-[11px] text-muted-foreground">
                               {p.permission_key}
@@ -162,7 +172,7 @@ export function PermissionMatrix({
                           })}
                         </tr>
                         {error ? (
-                          <tr className="border-b bg-destructive/5">
+                          <tr className={ROW_ERROR}>
                             <td colSpan={actions.length + 2} className="px-3 py-1 text-xs text-destructive" role="alert">
                               {p.name}: {error}
                             </td>
