@@ -172,6 +172,7 @@ export function UiStringsPage() {
         onRetry={() => void refetch()}
         getRowId={(r) => r.key}
         keywordPlaceholder={t("searchPlaceholder")}
+        filtersAlignEnd
         filters={
           <div className="flex flex-wrap items-end gap-x-4 gap-y-2">
             <div className="space-y-1">

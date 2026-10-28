@@ -7,6 +7,7 @@ import { useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { MAX_KEYWORD_LENGTH } from "@/lib/list-params";
+import { cn } from "@/lib/utils";
 
 // Keyword box: sent on Enter / the search button (the behaviour `UsersList` always had). The draft text is
 // local; the URL value (`value`) re-seeds it through the `key` the caller sets to that value.
@@ -55,6 +56,7 @@ export function FilterBar({
   onKeywordSubmit,
   keywordPlaceholder,
   hideKeyword = false,
+  alignEnd = false,
   hasActiveFilters,
   onClear,
   actions,
@@ -64,6 +66,9 @@ export function FilterBar({
   onKeywordSubmit: (keyword: string) => void;
   keywordPlaceholder?: string;
   hideKeyword?: boolean;
+  // Filters with a label ABOVE the control make the filter group taller than the keyword box: align the row to
+  // the bottom so the box, its button and the controls share one baseline (default: centred, for chip filters).
+  alignEnd?: boolean;
   hasActiveFilters: boolean;
   onClear: () => void;
   actions?: ReactNode;
@@ -72,7 +77,7 @@ export function FilterBar({
   const t = useTranslations("list");
 
   return (
-    <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
+    <div className={cn("flex flex-col gap-2 sm:flex-row sm:flex-wrap", alignEnd ? "sm:items-end" : "sm:items-center")}>
       {hideKeyword ? null : (
         <KeywordSearch
           key={keyword}

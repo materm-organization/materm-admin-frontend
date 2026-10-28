@@ -53,6 +53,7 @@ export function ListPage<TData, F extends z.ZodRawShape = z.ZodRawShape>({
   keywordPlaceholder,
   hideKeyword,
   filters,
+  filtersAlignEnd,
   toolbarActions,
   selection,
   emptyTitle,
@@ -75,6 +76,8 @@ export function ListPage<TData, F extends z.ZodRawShape = z.ZodRawShape>({
   keywordPlaceholder?: string;
   hideKeyword?: boolean;
   filters?: ReactNode;
+  // Align the filter row to the bottom (filters whose label sits above the control).
+  filtersAlignEnd?: boolean;
   toolbarActions?: ReactNode;
   // Row selection + bulk commands; omit for lists without a bulk endpoint (no checkboxes at all).
   selection?: {
@@ -121,6 +124,7 @@ export function ListPage<TData, F extends z.ZodRawShape = z.ZodRawShape>({
         onKeywordSubmit={list.setKeyword}
         keywordPlaceholder={keywordPlaceholder}
         hideKeyword={hideKeyword}
+        alignEnd={filtersAlignEnd}
         hasActiveFilters={list.hasActiveFilters}
         onClear={list.clearFilters}
         actions={
