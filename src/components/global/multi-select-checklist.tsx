@@ -226,7 +226,9 @@ export function MultiSelectChecklist({
             ) : null}
           </button>
         </PopoverTrigger>
-        <PopoverContent className="w-72 p-0" align="start">
+        {/* `mt-2` + `-ml-7` as in the other chip filters (keyword, single select, date range): the same gap under the
+            chip, and the list lines up with the chip's label when the x button is showing */}
+        <PopoverContent className={cn("mt-2 w-72 p-0", hasSelection && "-ml-7")} align="start">
           <Command shouldFilter={!setSelectSearch}>
             <CommandInput
               value={searchInput}
