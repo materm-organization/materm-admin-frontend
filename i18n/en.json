@@ -213,7 +213,8 @@
     "site": "Website",
     "settings": "Site settings",
     "seo": "SEO",
-    "uiStrings": "UI strings"
+    "uiStrings": "UI strings",
+    "pages": "Pages"
   },
   "breadcrumb": {
     "admin": "Dashboard",
@@ -229,7 +230,8 @@
     "seo": "SEO",
     "categories": "Categories",
     "tags": "Tags",
-    "uiStrings": "UI strings"
+    "uiStrings": "UI strings",
+    "pages": "Pages"
   },
   "dashboard": {
     "title": "Dashboard",
@@ -275,7 +277,8 @@
       "SERVICE_UNAVAILABLE": "The service is temporarily unavailable.",
       "NETWORK_ERROR": "Cannot reach the server. Check your connection and try again.",
       "UNKNOWN": "Something went wrong.",
-      "MEDIA_IN_USE": "The file is still used in {total_usages} place(s) and cannot be deleted."
+      "MEDIA_IN_USE": "The file is still used in {total_usages} place(s) and cannot be deleted.",
+      "PUBLISH_BLOCKED": "It cannot be published yet: some things need to be fixed first."
     },
     "fields": {
       "required": "This field is required.",
@@ -314,7 +317,10 @@
       "placeholder_mismatch": "The placeholders must match the original text. Missing: {missing}. Not in the original: {unexpected}.",
       "limit_exceeded": "The limit of {max} items is reached.",
       "not_applicable": "This field does not apply here.",
-      "media_not_ready": "This image is not ready to use yet."
+      "media_not_ready": "This image is not ready to use yet.",
+      "empty_default_locale": "This text is required in the default language.",
+      "template_violation": "This does not fit the page template.",
+      "media_alt_missing": "The image has no alt text in the default language."
     },
     "loadAccount": "Could not load your account. Check your connection and try again."
   },
@@ -1629,7 +1635,13 @@
           "title": "The current version of the item is unknown",
           "body": "Reload the page and try again."
         }
-      }
+      },
+      "buttonDraft": "Restore as draft",
+      "titleDraft": "Restore version {version} as draft?",
+      "confirmDraft": "Restore version {version} as draft",
+      "descriptionPublished": "Version {version} was published on {when}.",
+      "draftKept": "The draft you have now is kept in the history as a version you can restore.",
+      "successDraft": "Version {version} is the working draft now."
     },
     "fields": {
       "alt": "Alt text",
@@ -1666,7 +1678,41 @@
       "category": "Category",
       "tag": "Tag",
       "parent_id": "Parent",
-      "public_id": "Id"
+      "public_id": "Id",
+      "title": "Title",
+      "seo_title": "SEO title",
+      "seo_title_absolute": "SEO title without the site name",
+      "seo_description": "SEO description",
+      "og_image_id": "Share image",
+      "canonical_path": "Canonical address",
+      "is_enabled": "Language switched on",
+      "template": "Template",
+      "path": "Address",
+      "noindex": "Hidden from search engines",
+      "in_sitemap": "In the sitemap",
+      "is_home": "Home page",
+      "section_type": "Section type",
+      "section_version": "Section type version",
+      "variant": "Variant",
+      "anchor_id": "Anchor",
+      "props": "Content",
+      "shared_section_id": "Shared section",
+      "sections": "Sections",
+      "page": "Page",
+      "locale_code": "Language"
+    },
+    "publishable": {
+      "explain": "The working draft, every published version and the versions kept before an edit or a restore. Restoring a version makes it the working draft: it does not reach the website until you publish.",
+      "columns": {
+        "when": "Date",
+        "by": "By"
+      },
+      "live": "Live",
+      "restoreVersion": "Restore version {version} as draft",
+      "view": {
+        "draft": "The working draft, started on {when} by {by}.",
+        "published": "Published on {when} by {by}."
+      }
     }
   },
   "settings": {
@@ -2115,6 +2161,380 @@
       "restoreConfirm": "Restore original",
       "restoredOriginal": "Original text restored.",
       "restoreFailed": "The original could not be restored."
+    }
+  },
+  "status": {
+    "state": {
+      "draft": "Draft only",
+      "in_review": "In review",
+      "scheduled": "Scheduled",
+      "published": "Published",
+      "pending": "Published, changes pending",
+      "archived": "Archived",
+      "trashed": "In the trash"
+    },
+    "translation": {
+      "label": "Languages",
+      "complete": "{locale}: complete",
+      "missing": "{locale}: {count, plural, one {# text} other {# texts}} missing",
+      "off": "{locale}: switched off for this page"
+    }
+  },
+  "publishing": {
+    "barLabel": "Publishing",
+    "noun": {
+      "pages": "page"
+    },
+    "actions": {
+      "saveDraft": "Save draft",
+      "saving": "Saving...",
+      "publish": "Publish",
+      "publishChanges": "Publish changes",
+      "unpublish": "Unpublish",
+      "discard": "Discard changes",
+      "preview": "Preview"
+    },
+    "hints": {
+      "loading": "Loading the current version...",
+      "dirty": "Save your changes first. The draft is what gets published.",
+      "unsaved": "You have unsaved changes.",
+      "nothingToSave": "There is nothing to save.",
+      "previewUnavailable": "Preview links are not available yet."
+    },
+    "confirm": {
+      "title": "Publish this {noun}?",
+      "titleChanges": "Publish the changes to this {noun}?",
+      "description": "It goes live on the website at once.",
+      "descriptionChanges": "The edited version replaces the one on the website at once.",
+      "languages": "Languages that are not complete",
+      "languageLine": "{locale}: {missing, plural, one {# text is} other {# texts are}} missing. The website shows the fallback language for them.",
+      "warnings": "Good to know (this does not stop the publish)",
+      "note": "Change note (optional)",
+      "notePlaceholder": "What changed?",
+      "cancel": "Cancel",
+      "confirm": "Publish",
+      "confirmChanges": "Publish changes"
+    },
+    "blockers": {
+      "title": "This {noun} cannot be published yet",
+      "description": "{count, plural, one {# thing needs} other {# things need}} to be fixed first. Nothing was changed.",
+      "truncated": "Only the first {shown} of {count} are listed.",
+      "warningsTitle": "Also good to know (these do not block)",
+      "goToField": "Go to field",
+      "goToFieldFor": "Go to field: {field}",
+      "close": "Close"
+    },
+    "groups": {
+      "page": "Page details",
+      "structure": "Page structure",
+      "section": "Section {n}: {name}",
+      "sectionUnknown": "A section"
+    },
+    "fields": {
+      "whole": "Whole value",
+      "title": "Title",
+      "seo_title": "SEO title",
+      "seo_description": "SEO description",
+      "path": "Address",
+      "template": "Template",
+      "sections": "Sections",
+      "section_type": "Section type",
+      "variant": "Variant",
+      "props": "Content",
+      "album_id": "Album",
+      "album_item_id": "Album photo",
+      "page_id": "Page",
+      "media_id": "Image",
+      "background": "Background image",
+      "cta": "Button",
+      "link": "Link",
+      "label": "Label",
+      "eyebrow": "Eyebrow",
+      "description": "Description",
+      "text": "Text",
+      "items": "Items",
+      "rows": "Rows",
+      "slots": "Slots",
+      "alt": "Alt text",
+      "group_key": "FAQ group",
+      "form_slug": "Form",
+      "accessible_heading": "Accessible heading",
+      "og_image_id": "Share image",
+      "canonical_path": "Canonical address"
+    },
+    "issues": {
+      "unknown": "Not accepted ({code}).",
+      "empty_default_locale": "Required in the default language ({locale}).",
+      "required": "This is required.",
+      "unknown_reference": "It points to something that no longer exists.",
+      "reference_not_published": "It points to something that is not published.",
+      "media_not_ready": "The image is not ready yet.",
+      "media_alt_missing": "The image has no alt text in the default language.",
+      "section_type_unknown": "This kind of section is not known any more.",
+      "section_type_inactive": "This kind of section has been switched off.",
+      "not_in_enum": "This value is not allowed.",
+      "duplicate": "This address is already used by another page.",
+      "invalid_type": "The value has the wrong type.",
+      "invalid_format": "The value has an invalid format.",
+      "pattern_mismatch": "The value does not match the required pattern.",
+      "too_long": "The text is too long.",
+      "too_short": "The text is too short.",
+      "out_of_range": "The value is out of range.",
+      "template_violation": "This does not fit the page template.",
+      "template_violation_hero_required": "The page needs a visible hero section at the top.",
+      "template_violation_section_required": "The page needs a visible {section} section.",
+      "template_violation_section_not_allowed": "This kind of section is not allowed in this template.",
+      "template_violation_max_per_page": "There are too many sections of this kind.",
+      "template_violation_hero_first": "The hero section has to be the first one.",
+      "template_violation_after_hero": "This section has to come right after the hero.",
+      "translation_incomplete": "{locale}: {missing, plural, one {# text is} other {# texts are}} missing. The website shows the fallback language.",
+      "link_page_not_published": "A link points to a page that is not published. The link is hidden on the website.",
+      "post_not_published": "A post it shows is not published. The website leaves it out.",
+      "serp_title_long": "The SEO title is longer than {recommended} characters; search engines may cut it.",
+      "serp_description_long": "The SEO description is longer than {recommended} characters; search engines may cut it.",
+      "section_hidden_unchecked": "This hidden section would block publishing if it were visible.",
+      "album_item_not_in_album": "The photo does not belong to the chosen album.",
+      "too_many_issues": "There are more problems in this section than are listed."
+    },
+    "sectionTypes": {
+      "hero_brand": "Hero (brand)",
+      "hero_article": "Hero (article)",
+      "teaser_collage": "Teaser collage",
+      "intro_heading": "Intro heading",
+      "intro_text": "Intro text",
+      "about_blocks": "About blocks",
+      "blog_strip": "Blog strip",
+      "gallery_cards": "Gallery cards",
+      "photo_story": "Photo story",
+      "post_list": "Post list",
+      "faq": "FAQ",
+      "contact_section": "Contact section"
+    },
+    "unpublish": {
+      "title": "Take this {noun} off the website?",
+      "description": "The {noun} disappears from the website at once, and menu items that point to it are hidden. You can publish it again later.",
+      "withDraft": "Your unpublished changes are not lost: they are kept in the History tab.",
+      "confirm": "Unpublish"
+    },
+    "referenced": {
+      "title": "This {noun} is linked from other places",
+      "description": {
+        "unpublish": "{count, plural, one {# place links} other {# places link}} to it. If you go on, menu items that point to it are hidden and links in sections are hidden on the website.",
+        "delete": "{count, plural, one {# place links} other {# places link}} to it. If you go on, menu items that point to it are hidden and links in sections are hidden on the website."
+      },
+      "menuItem": "Menu item \"{title}\" ({menu} menu)",
+      "sectionProps": "A link in a section of \"{title}\"",
+      "draftProps": "A link in the unpublished changes of \"{title}\"",
+      "more": "and {count} more",
+      "cancel": "Cancel",
+      "confirm": {
+        "unpublish": "Unpublish anyway",
+        "delete": "Move to the trash anyway"
+      }
+    },
+    "discard": {
+      "title": "Discard the unpublished changes?",
+      "description": "The {noun} goes back to what is on the website. The discarded version stays in the History tab, marked \"discarded\".",
+      "confirm": "Discard changes"
+    },
+    "notices": {
+      "dismiss": "Dismiss",
+      "draft_kept_as_history": {
+        "title": "Your unpublished changes were kept",
+        "body": "They are in the History tab, so you can restore them later."
+      },
+      "page_referenced": {
+        "title": "Links to this page are hidden",
+        "body": "Menu items and links in sections that point to it are hidden on the website."
+      },
+      "path_changed_published": {
+        "title": "The address of a published page changed",
+        "body": "Links to the old address no longer work."
+      }
+    },
+    "toast": {
+      "publish": "Published.",
+      "unpublish": "Unpublished.",
+      "discard": "Changes discarded.",
+      "publishFailed": "It could not be published.",
+      "unpublishFailed": "It could not be unpublished.",
+      "discardFailed": "The changes could not be discarded.",
+      "saveFirst": "Your changes could not be saved, so nothing was published."
+    },
+    "invalidState": {
+      "nothing_to_publish": "There is nothing to publish: no changes since the last publish.",
+      "not_published": "This page is not published.",
+      "is_home": "The home page cannot be unpublished.",
+      "no_draft": "There are no unpublished changes to discard.",
+      "trashed": "This page is in the trash.",
+      "system_page": "A system page cannot be deleted.",
+      "section_required": "A section the template requires cannot be removed.",
+      "other": "The page is not in the state this screen showed. It was reloaded."
+    }
+  },
+  "pages": {
+    "title": "Pages",
+    "description": "The pages of the website. A page is built from sections and goes live when it is published.",
+    "noun": "page",
+    "searchPlaceholder": "Search by title, name or address",
+    "status": {
+      "draft": "Draft",
+      "published": "Published",
+      "archived": "Archived"
+    },
+    "filters": {
+      "status": "Status",
+      "template": "Template",
+      "homeOnly": "Home page only",
+      "pendingOnly": "With unpublished changes"
+    },
+    "trash": "Show trash",
+    "templates": {
+      "home": "Home",
+      "standard": "Standard",
+      "blog_index": "Blog index",
+      "contact": "Contact"
+    },
+    "columns": {
+      "title": "Title",
+      "path": "Address",
+      "template": "Template",
+      "status": "Status",
+      "translations": "Languages",
+      "updated": "Updated",
+      "deleted": "Deleted",
+      "actions": "Actions"
+    },
+    "homeBadge": "Home page",
+    "purgeOn": "Removed for good on {when}",
+    "empty": "No pages yet.",
+    "emptyHint": "Create the first page with the button above.",
+    "emptyTrash": "The trash is empty.",
+    "stale": "This page was changed by someone else. The list was reloaded.",
+    "actions": {
+      "menu": "Actions for {name}",
+      "open": "Open",
+      "setHome": "Make home page",
+      "delete": "Move to the trash",
+      "restore": "Restore {name}",
+      "restoreShort": "Restore"
+    },
+    "delete": {
+      "title": "Move \"{title}\" to the trash?",
+      "description": "It goes to the trash for 30 days and can be restored from there.",
+      "publishedNote": "It is published, so it disappears from the website now.",
+      "confirm": "Move to the trash",
+      "done": "\"{title}\" is in the trash for 30 days.",
+      "draftKept": "Its unpublished changes were kept in the History tab.",
+      "failed": "It could not be moved to the trash.",
+      "invalidState": {
+        "is_home": "The home page cannot be deleted. Make another page the home page first.",
+        "system_page": "A system page cannot be deleted.",
+        "trashed": "It is in the trash already."
+      }
+    },
+    "restore": {
+      "done": "\"{title}\" was restored as a draft.",
+      "duplicate": "It cannot be restored: {fields} is used by another page now.",
+      "key": "the key",
+      "path": "the address",
+      "failed": "It could not be restored."
+    },
+    "create": {
+      "open": "New page",
+      "title": "New page",
+      "description": "Choose a template, a title and an address. The page starts as a draft with the sections its template needs.",
+      "template": "Template",
+      "templatePlaceholder": "Choose a template",
+      "startsWith": "Starts with:",
+      "mustHave": "Must have to publish:",
+      "heroGroup": "A hero section",
+      "titleLabel": "Title ({locale})",
+      "titleHint": "Other languages are added in the page editor.",
+      "pathLabel": "Address",
+      "pathHint": "Lower-case letters, numbers and hyphens, starting with /. Filled in from the title until you change it.",
+      "cancel": "Cancel",
+      "submit": "Create page",
+      "created": "The page was created.",
+      "failed": "The page could not be created.",
+      "errors": {
+        "pathTaken": "Another page already uses this address.",
+        "template": {
+          "required": "Choose a template."
+        },
+        "title": {
+          "required": "Enter a title.",
+          "too_long": "The title can have up to 120 characters."
+        },
+        "path": {
+          "required": "Enter an address.",
+          "root": "The address / belongs to the home page. Use another address.",
+          "format": "Use lower-case letters, numbers and hyphens, starting with /, for example /events.",
+          "reserved": "This address is reserved by the system.",
+          "blog_child": "Addresses under /blog/ belong to blog posts.",
+          "too_long": "The address can have up to 200 characters."
+        }
+      },
+      "templates": {
+        "home": {
+          "name": "Home",
+          "description": "Hero, teaser, blog strip and gallery cards. Made for the home page."
+        },
+        "standard": {
+          "name": "Standard",
+          "description": "A hero and any sections you add. The usual choice."
+        },
+        "blog_index": {
+          "name": "Blog index",
+          "description": "A hero and the list of blog posts."
+        },
+        "contact": {
+          "name": "Contact",
+          "description": "A hero, the contact details with the form, and an optional FAQ."
+        }
+      }
+    },
+    "setHome": {
+      "title": "Make \"{title}\" the home page?",
+      "description": "It takes the address / and stops using {path}. The page that is the home page now moves to another address and stays published.",
+      "previousLabel": "New address of \"{title}\"",
+      "previousHint": "Where the current home page goes. You can change it.",
+      "cancel": "Cancel",
+      "confirm": "Make home page",
+      "done": "\"{title}\" is the home page now.",
+      "stale": "This page was changed by someone else. The list was reloaded.",
+      "failed": "The home page could not be changed.",
+      "pathTaken": "Another page already uses this address.",
+      "pathInvalid": "This address is not valid.",
+      "invalidState": {
+        "not_published": "Only a published page can be the home page.",
+        "trashed": "A page in the trash cannot be the home page."
+      }
+    },
+    "host": {
+      "backToList": "All pages",
+      "notFoundTitle": "Page not found",
+      "notFoundDescription": "This page does not exist or was removed for good.",
+      "trashedTitle": "This page is in the trash",
+      "trashedBody": "It is not on the website. Restore it from the trash of the page list to work on it.",
+      "tabs": {
+        "overview": "Overview",
+        "revisions": "History"
+      },
+      "editorSoonTitle": "The page editor is coming",
+      "editorSoonBody": "Sections, details and SEO are edited here in the next step. Publishing and the history already work.",
+      "overview": {
+        "path": "Address",
+        "template": "Template",
+        "sections": "Sections",
+        "publishedAt": "Published",
+        "updatedAt": "Last changed",
+        "never": "Never"
+      },
+      "fieldTarget": {
+        "title": "Go to field",
+        "close": "Close"
+      }
     }
   }
 }

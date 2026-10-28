@@ -2,10 +2,11 @@
 // (components/global/revisions/) takes `{ resource, id }`; this table turns it into the URL base, the key a user
 // needs to restore and the URL of the entity itself (whose ETag is the `If-Match` of a restore).
 //
-// T1.4.7 adds the publishable resources (`pages`, `posts`, ...: kinds `draft` / `published`) here.
+// The publishable resources (`pages` now, `posts`, `albums`... in M5: kinds `draft` / `published`, a restore becomes
+// the working draft - doc/05 section 12.8) carry `publishable: true`.
 import { PERMISSION_KEYS } from "@/lib/constants/permissions";
 
-export type RevisionResource = "menus" | "settings" | "ui-strings" | "categories" | "tags" | "media/assets";
+export type RevisionResource = "menus" | "settings" | "ui-strings" | "categories" | "tags" | "media/assets" | "pages";
 
 export type RevisionEntityId = string | number;
 
@@ -19,6 +20,9 @@ type ResourceConfig = {
   // `GET` of the entity itself (answers its current ETag). `null` = there is no single-entity read (ui-strings):
   // the editor passes the ETag in.
   entityPath: ((id: RevisionEntityId) => string) | null;
+  // Publishable entity (draft / published / history / restore rows, a restore becomes the working draft). Save-live
+  // entities leave it out.
+  publishable?: boolean;
 };
 
 const seg = (id: RevisionEntityId) => encodeURIComponent(String(id));
@@ -61,6 +65,14 @@ export const REVISION_RESOURCES: Record<RevisionResource, ResourceConfig> = {
     restoreActions: ["update"],
     entityPath: (id) => `/tags/${seg(id)}`,
   },
+  pages: {
+    base: (id) => `/pages/${seg(id)}`,
+    readKey: () => PERMISSION_KEYS.CMS_PAGES,
+    restoreKey: () => PERMISSION_KEYS.CMS_PAGES,
+    restoreActions: ["update"],
+    entityPath: (id) => `/pages/${seg(id)}`,
+    publishable: true,
+  },
   "media/assets": {
     base: (id) => `/media/assets/${seg(id)}`,
     readKey: () => PERMISSION_KEYS.MEDIA_LIBRARY,
@@ -77,3 +89,5 @@ export function revisionBase(resource: RevisionResource, id: RevisionEntityId): 
 // Query-key prefix of everything revision related for one entity (list pages + opened revisions).
 export const revisionsQueryKey = (resource: RevisionResource, id: RevisionEntityId) =>
   ["revisions", resource, String(id)] as const;
+
+export const isPublishableResource = (resource: RevisionResource): boolean => REVISION_RESOURCES[resource].publishable === true;

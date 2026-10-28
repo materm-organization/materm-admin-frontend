@@ -7,7 +7,28 @@
 import { http, HttpResponse, type HttpHandler } from "msw";
 
 import { LOCALE_ROWS } from "@/components/schema-form/fixtures/lookup";
-import { createMenuItem, deleteMenuItem, getMenu, getPage, listMenus, listPages, patchMenuItem, reorderMenuItems } from "@/mocks/mock-menus";
+import { createMenuItem, deleteMenuItem, getMenu, listMenus, patchMenuItem, reorderMenuItems } from "@/mocks/mock-menus";
+import {
+  createPage,
+  deletePage,
+  discardDraft,
+  getPage,
+  getPageRevision,
+  getReferences,
+  getSection,
+  getTemplates,
+  listPageRevisions,
+  listPages,
+  listSections,
+  patchPage,
+  patchSection,
+  publishPage,
+  restorePage,
+  restorePageRevision,
+  setHome,
+  unpublishPage,
+  withIdempotency,
+} from "@/mocks/mock-pages";
 import { getSettingsGroup, listSettingsGroups, putSettingsGroup } from "@/mocks/mock-settings";
 import {
   createTaxonomy,
@@ -191,12 +212,83 @@ const menuHandlers: HttpHandler[] = [
   })),
 ];
 
+// Pages, the publish engine and the page revisions (T1.4.7; 05 section 12). `Idempotency-Key` is honoured on the
+// four routes that list it (create, set-home, publish, unpublish): the same key with the same request replays the
+// stored answer (`Idempotent-Replayed: true`), the same key with another request is a 422.
+function idempotent(request: Request, params: Record<string, string | readonly string[] | undefined>, run: () => { status: number; data: unknown; etag?: string }) {
+  const url = new URL(request.url);
+  const fingerprint = `${request.method} ${url.pathname}${url.search} ${request.headers.get("If-Match") ?? ""}`;
+  void params;
+  const result = withIdempotency(getMockDb(), request.headers.get("Idempotency-Key"), fingerprint, run);
+  const headers: Record<string, string> = {};
+  if (result.etag) headers.ETag = result.etag;
+  if (result.replayed) headers["Idempotent-Replayed"] = "true";
+  return HttpResponse.json({ success: true, data: result.data }, { status: result.status, headers });
+}
+
 const pageHandlers: HttpHandler[] = [
   http.get(P("/pages"), guard(({ request }) => {
     const { data, meta } = listPages(getMockDb(), searchOf(request));
     return ok(data, { meta });
   })),
-  http.get(P("/pages/:id"), guard(({ params }) => ok(getPage(getMockDb(), param(params, "id"))))),
+  http.post(P("/pages"), guard(async ({ request, params }) => {
+    const body = await jsonBody(request);
+    return idempotent(request, params, () => ({ status: 201, ...createPage(getMockDb(), body) }));
+  })),
+  http.get(P("/page-templates"), guard(({ request }) => ok(getTemplates(getMockDb(), searchOf(request))))),
+  http.get(P("/pages/:id"), guard(({ params }) => {
+    const { data, etag } = getPage(getMockDb(), param(params, "id"));
+    return ok(data, { etag });
+  })),
+  http.patch(P("/pages/:id"), guard(async ({ request, params }) => {
+    const { data, etag } = patchPage(getMockDb(), param(params, "id"), await jsonBody(request), request.headers.get("If-Match"));
+    return ok(data, { etag });
+  })),
+  http.delete(P("/pages/:id"), guard(({ request, params }) => {
+    const { data, etag } = deletePage(getMockDb(), param(params, "id"), searchOf(request), request.headers.get("If-Match"));
+    return ok(data, { etag });
+  })),
+  http.post(P("/pages/:id/restore"), guard(({ request, params }) => {
+    const { data, etag } = restorePage(getMockDb(), param(params, "id"), request.headers.get("If-Match"));
+    return ok(data, { etag });
+  })),
+  http.post(P("/pages/:id/set-home"), guard(async ({ request, params }) => {
+    const body = await jsonBody(request);
+    return idempotent(request, params, () => ({ status: 200, ...setHome(getMockDb(), param(params, "id"), body, request.headers.get("If-Match")) }));
+  })),
+  http.get(P("/pages/:id/references"), guard(({ params }) => ok(getReferences(getMockDb(), param(params, "id"))))),
+  http.get(P("/pages/:id/sections"), guard(({ request, params }) => {
+    const { data, etag } = listSections(getMockDb(), param(params, "id"), searchOf(request));
+    return ok(data, { etag });
+  })),
+  http.get(P("/pages/:id/sections/:sectionId"), guard(({ params }) => {
+    const { data, etag } = getSection(getMockDb(), param(params, "id"), param(params, "sectionId"));
+    return ok(data, { etag });
+  })),
+  http.patch(P("/pages/:id/sections/:sectionId"), guard(async ({ request, params }) => {
+    const { data, etag } = patchSection(getMockDb(), param(params, "id"), param(params, "sectionId"), await jsonBody(request), request.headers.get("If-Match"));
+    return ok(data, { etag });
+  })),
+  http.post(P("/pages/:id/publish"), guard(async ({ request, params }) => {
+    const body = await jsonBody(request);
+    return idempotent(request, params, () => ({ status: 200, ...publishPage(getMockDb(), param(params, "id"), searchOf(request), body, request.headers.get("If-Match")) }));
+  })),
+  http.post(P("/pages/:id/unpublish"), guard(({ request, params }) =>
+    idempotent(request, params, () => ({ status: 200, ...unpublishPage(getMockDb(), param(params, "id"), searchOf(request), request.headers.get("If-Match")) }))
+  )),
+  http.post(P("/pages/:id/discard-draft"), guard(({ request, params }) => {
+    const { data, etag } = discardDraft(getMockDb(), param(params, "id"), request.headers.get("If-Match"));
+    return ok(data, { etag });
+  })),
+  http.get(P("/pages/:id/revisions"), guard(({ request, params }) => {
+    const { data, meta } = listPageRevisions(getMockDb(), param(params, "id"), searchOf(request));
+    return ok(data, { meta });
+  })),
+  http.get(P("/pages/:id/revisions/:revId"), guard(({ params }) => ok(getPageRevision(getMockDb(), param(params, "id"), param(params, "revId"))))),
+  http.post(P("/pages/:id/revisions/:revId/restore"), guard(async ({ request, params }) => {
+    const { data, etag } = restorePageRevision(getMockDb(), param(params, "id"), param(params, "revId"), await jsonBody(request), request.headers.get("If-Match"));
+    return ok(data, { etag });
+  })),
 ];
 
 const settingsHandlers: HttpHandler[] = [

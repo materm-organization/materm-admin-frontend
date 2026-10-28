@@ -78,6 +78,22 @@ export const API_ENDPOINTS = {
   PAGES: {
     LIST: "/pages",
     DETAIL: (id: number | string) => `/pages/${id}`,
+    RESTORE: (id: number | string) => `/pages/${id}/restore`,
+    SET_HOME: (id: number | string) => `/pages/${id}/set-home`,
+    REFERENCES: (id: number | string) => `/pages/${id}/references`,
+    SECTIONS: (id: number | string) => `/pages/${id}/sections`,
+    SECTION: (id: number | string, sectionId: number | string) => `/pages/${id}/sections/${sectionId}`,
+  },
+  // Templates of the pages (doc/05 section 12.4): a registry in the backend's code, 4 rows, not paginated.
+  PAGE_TEMPLATES: {
+    LIST: "/page-templates",
+  },
+  // Publish engine (doc/05 section 12.7), the same three commands for every publishable entity. `base` = the
+  // entity's URL (`/pages/12`, later `/posts/3`): see `lib/publishable-resources.ts`.
+  PUBLISHING: {
+    PUBLISH: (base: string) => `${base}/publish`,
+    UNPUBLISH: (base: string) => `${base}/unpublish`,
+    DISCARD_DRAFT: (base: string) => `${base}/discard-draft`,
   },
   POSTS: {
     LIST: "/posts",

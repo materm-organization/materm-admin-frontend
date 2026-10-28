@@ -39,3 +39,15 @@ describe("buildBreadcrumbTrail", () => {
     ]);
   });
 });
+
+describe("pages (T1.4.7)", () => {
+  it("the list and a page below it have a breadcrumb", () => {
+    expect(getBreadcrumbKeyForPath("/admin/pages")).toBe("breadcrumb.pages");
+    expect(getBreadcrumbKeyForPath("/admin/pages/9")).toBe("breadcrumb.pages");
+    expect(buildBreadcrumbTrail("/admin/pages/9", { title: "Events" })).toEqual([
+      { key: "breadcrumb.admin", href: "/admin" },
+      { key: "breadcrumb.pages", href: "/admin/pages" },
+      { title: "Events" },
+    ]);
+  });
+});

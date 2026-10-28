@@ -37,6 +37,7 @@ import { translateApiError, translateFieldError } from "@/lib/api-error-messages
 import { withEtag } from "@/lib/etag";
 import {
   REVISION_RESOURCES,
+  isPublishableResource,
   revisionsQueryKey,
   type RevisionEntityId,
   type RevisionResource,
@@ -73,8 +74,8 @@ export type RevisionsTabProps = {
   // The entity's current state in the SAME shape as a revision snapshot (05 11.7 item 3). With it the detail view can
   // answer "what would restoring this change?". Optional.
   currentSnapshot?: Record<string, unknown>;
-  // Wording of the restore warning: save-live entities change the website at once (default); the publishable
-  // ones (T1.4.7) become the working draft instead.
+  // Wording of the restore warning: save-live entities change the website at once; a publishable entity
+  // (`pages`...) becomes the working draft instead. Default: by the resource.
   restoreEffect?: "immediate" | "draft";
   pageSize?: number;
   className?: string;
@@ -94,9 +95,12 @@ type RestoreIssue =
   | { kind: "missingEtag" }
   | { kind: "other"; message: string };
 
-// SCR-37 (doc/07 section 3.23, doc/05 section 11.7): the history of one save-live entity. `resource` + `id` pick
-// the endpoint (`GET /{e}/{id}/revisions`); rows are "the state before an edit" (who/when = the edit that replaced
-// it). A row opens a read-only view of the snapshot - as fields, never raw JSON - with a comparison against the
+// SCR-37 (doc/07 section 3.23, doc/05 sections 11.7 and 12.8): the history of one entity. `resource` + `id` pick
+// the endpoint (`GET /{e}/{id}/revisions`). A SAVE-LIVE entity's rows are "the state before an edit" (who/when = the edit
+// that replaced it). A PUBLISHABLE entity (`pages`; `publishable` in lib/revision-resources.ts) also has the working
+// `draft` row (who started editing), every `published` row (who published, when; the one that is live is marked), and
+// `history` / `restore` rows as before; "restore" becomes "Restore as draft": it never reaches the website by itself, and the
+// draft row itself has no Restore. Preview rows (a link was issued) are hidden unless the switch is on. A row opens a read-only view of the snapshot - as fields, never raw JSON - with a comparison against the
 // current state or another version; "Restore" asks first (it is live at once), sends `If-Match`, reports the
 // result and hands the new entity to `onRestored`. Reusable by every editor:
 //
@@ -111,11 +115,13 @@ export function RevisionsTab({
   resolveEtag,
   onRefresh,
   currentSnapshot,
-  restoreEffect = "immediate",
+  restoreEffect,
   pageSize = 20,
   className,
 }: RevisionsTabProps) {
   const t = useTranslations("revisions");
+  const publishable = isPublishableResource(resource);
+  const effect = restoreEffect ?? (publishable ? "draft" : "immediate");
   const format = useFormatter();
   const switchId = useId();
   const queryClient = useQueryClient();
@@ -153,7 +159,7 @@ export function RevisionsTab({
   return (
     <div className={className} data-testid="revisions-tab">
       <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-        <p className="max-w-2xl text-sm text-muted-foreground">{t("explain")}</p>
+        <p className="max-w-2xl text-sm text-muted-foreground">{publishable ? t("publishable.explain") : t("explain")}</p>
         <div className="flex items-center gap-2">
           <Switch
             id={switchId}
@@ -185,8 +191,8 @@ export function RevisionsTab({
               <TableRow>
                 <TableHead>{t("columns.version")}</TableHead>
                 <TableHead>{t("columns.kind")}</TableHead>
-                <TableHead>{t("columns.replacedAt")}</TableHead>
-                <TableHead>{t("columns.by")}</TableHead>
+                <TableHead>{publishable ? t("publishable.columns.when") : t("columns.replacedAt")}</TableHead>
+                <TableHead>{publishable ? t("publishable.columns.by") : t("columns.by")}</TableHead>
                 <TableHead>{t("columns.note")}</TableHead>
                 <TableHead className="text-right">
                   <span className="sr-only">{t("columns.actions")}</span>
@@ -198,7 +204,14 @@ export function RevisionsTab({
                 <TableRow key={revision.id}>
                   <TableCell className="font-mono">v{revision.version}</TableCell>
                   <TableCell>
-                    <Badge variant={revision.kind === "restore" ? "secondary" : "outline"}>{kindLabel(revision.kind)}</Badge>
+                    <Badge variant={revision.kind === "restore" ? "secondary" : "outline"} data-kind={revision.kind}>
+                      {kindLabel(revision.kind)}
+                    </Badge>
+                    {revision.is_live ? (
+                      <Badge variant="outline" className="ml-1 border-emerald-600/40 bg-emerald-100 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-200">
+                        {t("publishable.live")}
+                      </Badge>
+                    ) : null}
                     {revision.is_preview ? <Badge variant="outline" className="ml-1">{t("previewBadge")}</Badge> : null}
                   </TableCell>
                   <TableCell>
@@ -219,16 +232,17 @@ export function RevisionsTab({
                       <EyeIcon />
                       {t("viewButton")}
                     </Button>
-                    {canRestore ? (
+                    {/* The working draft already IS the working copy: nothing to restore. */}
+                    {canRestore && !(publishable && revision.kind === "draft") ? (
                       <Button
                         type="button"
                         variant="outline"
                         size="sm"
-                        aria-label={t("restoreVersion", { version: revision.version })}
+                        aria-label={publishable ? t("publishable.restoreVersion", { version: revision.version }) : t("restoreVersion", { version: revision.version })}
                         onClick={() => setRestoring(revision)}
                       >
                         <RotateCcwIcon />
-                        {t("restore.button")}
+                        {effect === "draft" ? t("restore.buttonDraft") : t("restore.button")}
                       </Button>
                     ) : null}
                   </TableCell>
@@ -260,7 +274,8 @@ export function RevisionsTab({
           revision={viewing}
           rows={rows}
           currentSnapshot={currentSnapshot}
-          canRestore={canRestore}
+          canRestore={canRestore && !(publishable && viewing.kind === "draft")}
+          effect={effect}
           onClose={() => setViewing(null)}
           onRestore={() => {
             setRestoring(viewing);
@@ -276,7 +291,7 @@ export function RevisionsTab({
           revision={restoring}
           etag={etag}
           resolveEtag={resolveEtag}
-          effect={restoreEffect}
+          effect={effect}
           onClose={() => setRestoring(null)}
           onConflict={() => {
             setRestoring(null);
@@ -284,7 +299,7 @@ export function RevisionsTab({
           }}
           onDone={async (result) => {
             setRestoring(null);
-            toast.success(t("restore.success", { version: restoring.version }));
+            toast.success(effect === "draft" ? t("restore.successDraft", { version: restoring.version }) : t("restore.success", { version: restoring.version }));
             void queryClient.invalidateQueries({ queryKey: revisionsQueryKey(resource, id) });
             await onRestored(result);
           }}
@@ -309,6 +324,7 @@ function RevisionViewDialog({
   rows,
   currentSnapshot,
   canRestore,
+  effect,
   onClose,
   onRestore,
 }: {
@@ -318,6 +334,7 @@ function RevisionViewDialog({
   rows: RevisionSummary[];
   currentSnapshot?: Record<string, unknown>;
   canRestore: boolean;
+  effect: "immediate" | "draft";
   onClose: () => void;
   onRestore: () => void;
 }) {
@@ -347,7 +364,9 @@ function RevisionViewDialog({
             {t("view.title", { version: revision.version })}
           </DialogTitle>
           <DialogDescription>
-            {t("view.description", { when, by: revision.created_by?.name ?? t("system") })}
+            {resource && isPublishableResource(resource) && (revision.kind === "draft" || revision.kind === "published")
+              ? t(revision.kind === "draft" ? "publishable.view.draft" : "publishable.view.published", { when, by: revision.created_by?.name ?? t("system") })
+              : t("view.description", { when, by: revision.created_by?.name ?? t("system") })}
           </DialogDescription>
         </DialogHeader>
 
@@ -419,7 +438,7 @@ function RevisionViewDialog({
           {canRestore ? (
             <Button type="button" onClick={onRestore}>
               <RotateCcwIcon />
-              {t("restore.button")}
+              {effect === "draft" ? t("restore.buttonDraft") : t("restore.button")}
             </Button>
           ) : null}
         </DialogFooter>
@@ -512,13 +531,18 @@ function RestoreDialog({
     <Dialog open onOpenChange={(open) => (!open && !busy ? onClose() : undefined)}>
       <DialogContent className="md:max-w-lg">
         <DialogHeader>
-          <DialogTitle>{t("title", { version: revision.version })}</DialogTitle>
-          <DialogDescription>{t("description", { version: revision.version, when })}</DialogDescription>
+          <DialogTitle>{effect === "draft" ? t("titleDraft", { version: revision.version }) : t("title", { version: revision.version })}</DialogTitle>
+          <DialogDescription>
+            {revision.kind === "published" ? t("descriptionPublished", { version: revision.version, when }) : t("description", { version: revision.version, when })}
+          </DialogDescription>
         </DialogHeader>
 
         <Alert>
           <AlertTitle>{effect === "immediate" ? t("liveTitle") : t("draftTitle")}</AlertTitle>
-          <AlertDescription>{effect === "immediate" ? t("liveBody") : t("draftBody")}</AlertDescription>
+          <AlertDescription>
+            {effect === "immediate" ? t("liveBody") : t("draftBody")}
+            {effect === "draft" ? <span className="mt-1 block">{t("draftKept")}</span> : null}
+          </AlertDescription>
         </Alert>
 
         <div className="space-y-1.5">
@@ -556,7 +580,7 @@ function RestoreDialog({
           </Button>
           <Button type="button" disabled={busy || issue?.kind === "incompatible" || issue?.kind === "trashed"} onClick={() => void submit()}>
             {busy ? <Spinner /> : <RotateCcwIcon />}
-            {t("confirm", { version: revision.version })}
+            {effect === "draft" ? t("confirmDraft", { version: revision.version }) : t("confirm", { version: revision.version })}
           </Button>
         </DialogFooter>
       </DialogContent>

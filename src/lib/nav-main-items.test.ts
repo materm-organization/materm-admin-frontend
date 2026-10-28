@@ -112,7 +112,8 @@ describe("W1 iam/ops routes (T1.1.10)", () => {
     expect(urls(Object.values(PERMISSION_KEYS))).toEqual([
       "/admin",
       "/admin/media",
-      // T1.3.8 save-live screens
+      // T1.4.7 pages (first entry of the content group), then the T1.3.8 save-live screens
+      "/admin/pages",
       "/admin/menus",
       "/admin/blog/categories",
       "/admin/blog/tags",
@@ -168,5 +169,20 @@ describe("T1.3.8 save-live routes", () => {
     const urls = (keys: string[]) => buildNavMainItemsForUser(keys).flatMap((g) => (g.items ? g.items.map((i) => i.url) : [g.url]));
     expect(urls([PERMISSION_KEYS.CMS_SEO])).toEqual(["/admin", "/admin/seo"]);
     expect(urls([PERMISSION_KEYS.CMS_SETTINGS])).toEqual(["/admin", "/admin/settings"]);
+  });
+});
+
+describe("T1.4.7 pages route (SCR-19)", () => {
+  it("/admin/pages and the page below it need read on cms.pages", () => {
+    const expected = { kind: "requires", keys: [PERMISSION_KEYS.CMS_PAGES] };
+    expect(getPermissionsForPath("/admin/pages")).toEqual(expected);
+    expect(getPermissionsForPath("/admin/pages/9")).toEqual(expected);
+    expect(getPermissionsForPath("/admin/pagesx")).toEqual({ kind: "unknown" });
+  });
+
+  it("is the first entry of the content group and shows only for users who can read pages", () => {
+    const urls = (keys: string[]) => buildNavMainItemsForUser(keys).flatMap((g) => (g.items ? g.items.map((i) => i.url) : [g.url]));
+    expect(urls([PERMISSION_KEYS.CMS_PAGES, PERMISSION_KEYS.CMS_MENUS])).toEqual(["/admin", "/admin/pages", "/admin/menus"]);
+    expect(urls([PERMISSION_KEYS.CMS_MENUS])).not.toContain("/admin/pages");
   });
 });

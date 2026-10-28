@@ -115,6 +115,9 @@ Screens and building blocks built so far (phase P1 milestone M1; contract `../do
 - **T1.3.8 save-live screens (M3)** - built against the mock API (the backend routes are written in parallel). See
   "Save-live screens" below.
 
+- **T1.4.7 PublishBar, pages list, publishable history (M4)** - built against the mock API (no page routes in the backend
+  yet). See "Pages and publishing" below. The page EDITOR (SCR-20/21: sections, details, SEO) is T1.4.8, preview links T1.4.4/6.
+
 To add a module, follow the feature-vertical pattern:
 `src/app/(protected)/(routes)/admin/<feature>/page.tsx` + `src/services/<feature>.api.ts` +
 `src/hooks/use-<feature>.ts` + `src/types/<feature>.d.ts` + `src/components/protected/<feature>/`,
@@ -203,8 +206,8 @@ differ). A public page goes under `src/app/auth/`.
   `listMediaFolders` (any new implementation must provide them).
 - **`RevisionsTab`** (`components/global/revisions/`, SCR-37): `<RevisionsTab resource id canRestore onRestored etag?
   resolveEtag? onRefresh? currentSnapshot? restoreEffect? pageSize? />`. `resource` is one of `menus`, `settings`,
-  `ui-strings`, `categories`, `tags`, `media/assets` (`lib/revision-resources.ts` maps it to the URL base and the keys; add
-  the publishable ones there in T1.4.7); `id` is the entity's id or key (menu key, settings group, ui-string key). Save-live
+  `ui-strings`, `categories`, `tags`, `media/assets` and the publishable `pages` (`lib/revision-resources.ts` maps it to the URL base
+  and the keys; `publishable: true` switches the publishable wording, see "Pages and publishing"); `id` is the entity's id or key (menu key, settings group, ui-string key). Save-live
   revisions are the state BEFORE an edit: who / when = the edit that replaced it. Restore sends `If-Match` = the `etag` prop
   (the entity's ETag as the editor holds it), else `resolveEtag()`, else the entity's own GET; `onRestored({ data, etag,
   restoredFrom })` is where the editor re-seeds its cache with the new ETag; 409/412 -> `ConflictDialog` (`onRefresh`);
@@ -278,6 +281,59 @@ NEXT_PUBLIC_DISABLE_AUTH_GUARD=true npx next build` / `next dev`) mocks the whol
 `/admin/system` can be clicked through. `next.config.ts` pins the flag to a build-time literal, so a normal build contains
 none of it (checked: no mock strings in `.next`). The model is a stand-in, not the backend: when the real endpoints exist,
 delete nothing here - just stop using the flag.
+
+## Pages and publishing (T1.4.7)
+
+Contract: `doc/05` sections 12.2 - 12.8, `doc/api/openapi-admin.yaml` (PageListItem ... PublishBlockedError). Two decisions made after
+05 12.7 was written: **UNPUBLISH always succeeds** (a pending draft becomes a `history` row and the answer carries the warning
+`draft_kept_as_history`; no 409 `draft_has_broken_references`), **DISCARD-DRAFT turns the draft into a `history` row** (change note
+"discarded"), it is not deleted. The client reads a success' warnings from `data.warnings[]` (OpenAPI) AND `details.warnings[]` of the
+envelope (the task's wording), so either works.
+
+- **`PublishBar`** (`components/global/publishing/publish-bar.tsx`, SCR-38), generic by `resource` (`lib/publishable-resources.ts`:
+  URL base, `cms.pages` permission key, preview actions; posts / albums / FAQ / forms add one entry in M5). Props: `resource`,
+  `entity` (`{id, status, has_unpublished_changes, deleted_at?, is_home?, is_system?}`), `etag` (the host's current one: every command
+  sends it as `If-Match`; no ETag = commands disabled), `isDirty` (Publish disabled with a reason until saved), `flush()` (awaited
+  before the dry run; `false` stops), `onSaveDraft` / `isSaving` (the host's own save; no callback = no button), `onResult({action,
+  data, etag, warnings})` (EVERY answer, with the NEW ETag: the host `setQueryData`s it, no refetch - `writeThroughPage` in
+  `hooks/use-pages.ts` does it for pages), `onRefresh` (ConflictDialog "load the latest"), `onGoToField(PublishIssueTarget)`,
+  `onCreatePreviewLink` (T1.4.4: without it the button is shown disabled with a tooltip). Controls the user may not use are hidden
+  (`publish` / `unpublish` / `update` for discard and save / `read` + `update|review` for preview).
+  **Publish = dry run first** (`?dry_run=true`, no ETag change): 422 `PUBLISH_BLOCKED` -> `PublishBlockersDialog` (blockers grouped
+  by page / structure / section, "Go to field" per blocker when `onGoToField` is given, warnings listed), pass -> `PublishConfirmDialog`
+  (incomplete languages from `translation_incomplete`, other warnings, change note) -> the real publish. The dry run counts toward the
+  server's 60/h publish limit (05 12.7.6): that is the price of showing the summary before the confirmation. A 422 on the real publish
+  opens the blockers as well. **Idempotency-Key**: one per dialog open (`useIdempotencyKey`), only on the real publish and unpublish
+  (never on the dry run), reused by a retry of the same dialog; the `confirm_references=true` repeat is another request and has its own
+  key. **Unpublish**: ConfirmDialog, 409 `ENTITY_REFERENCED` -> `ReferencedDialog` (also used by the pages list delete) -> repeat with
+  `confirm_references=true` (the first request never carries it); a success with `draft_kept_as_history` / `page_referenced` shows a
+  dismissible notice. 409 `CONFLICT_LOCK_VERSION` -> `ConflictDialog`; 409 `INVALID_STATE` -> the `publishing.invalidState.<reason>` text
+  and `onRefresh`. `StatusBadge` / `TranslationBadges` are in `components/global/status/`.
+- **`/admin/pages`** (SCR-19, `nav.pages` = first entry of the Content group, key `cms.pages`): `protected/pages/pages-list.tsx`
+  (`ListPage`; URL: status (multi) / template (multi) / `is_home` / `has_unpublished_changes` / `trashed`), `page-create-dialog.tsx`
+  (template from `GET /page-templates` with its description and initial sections, title in the default language, address filled from the
+  title until edited, client path rules in `page-draft.ts`, Idempotency-Key per open, then opens the new page), `page-set-home-dialog.tsx`
+  (offers the old home's new address). Row menu: open, make home page (published, not home), move to the trash (not home, not system).
+  **Delete does not call `/references` first**: the first `DELETE` has no `confirm_references`, the 409 carries the list (PG-13), the
+  repeat confirms. The ETag of a row is `"<lock_version>"` (`pageEtag`), a stale row = toast + reload. `services/pages.api.ts`,
+  `services/publishing.api.ts`, `hooks/use-pages.ts`, `hooks/use-publishing.ts`, types `types/{pages,publishing}.d.ts`.
+- **`/admin/pages/[id]`** is a THIN host (`protected/pages/page-host.tsx`): header, `PublishBar`, Overview (read-only facts), History
+  (`RevisionsTab resource="pages"`). T1.4.8 replaces its body with the editor and keeps the wiring (`isDirty` / `flush` / `onSaveDraft`
+  from the editor's form). "Go to field" puts the pointer in `?field=` (+ `sectionKey`, `sectionIndex`) and shows it; the editor will open
+  the field instead.
+- **`RevisionsTab` for a publishable resource** (`isPublishableResource`): rows `draft` / `published` / `history` / `restore`, the live
+  version marked (`is_live`), columns "Date" / "By" (not "replaced on"), the draft row has no Restore, restore is "Restore as draft"
+  (never reaches the website; the current draft is kept as a `restore` row), preview rows hidden unless the switch is on, a view of a
+  `published` / `draft` row says who published / started it. Wording lives in `revisions.publishable.*` and `revisions.restore.*Draft`.
+
+Mock additions (`src/mocks/mock-pages.ts`, bound in `handlers.ts`): a strict model of `GET/POST /pages`, `GET /page-templates`,
+`GET/PATCH /pages/{id}`, `DELETE`, `restore`, `set-home`, `references`, `GET sections` / `GET|PATCH sections/{id}`, `publish`
+(dry run), `unpublish`, `discard-draft`, `GET revisions` / `{revId}` / `restore`. `db.pages` is now the full page model (the menu mock
+reads its live rows). Seeded: pages 1 - 5 from the examples of `doc/content-schemas` (system pages), INVENTED 6 - 10 (6 = every kind of
+blocker, 7 = trashed, 8 = a draft that publishes with warnings, 9 = published with a pending draft + a preview row + history, linked
+from 10), albums, `Idempotency-Key` replay. Blockers are computed from the page state with the schema form's `computeCompleteness`.
+With `NEXT_PUBLIC_API_MOCKING=true` the browser exposes `window.__MATERM_MOCK__.touchPage(id)` (someone else saved the page: the next
+command with the old ETag is a 409, the model is per tab so a second tab cannot do it).
 
 ## Schema form engine (W2a, T1.2.10)
 

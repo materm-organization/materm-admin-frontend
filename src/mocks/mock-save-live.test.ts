@@ -155,7 +155,7 @@ describe("menus (05 11.2)", () => {
     const db = getMockDb();
     const list = listRevisions(db, "menus", "main", q("sort=version")).data;
     fails(() => restoreRevision(db, "menus", "main", String(list[0].id), undefined, null), 428);
-    db.pages.find((p) => p.id === 3)!.is_trashed = true;
+    db.pages.find((p) => p.id === 3)!.deleted_at = "2026-10-27T03:00:00.000000Z";
     const e = fails(() => restoreRevision(db, "menus", "main", String(list[1].id), undefined, etag()), 422);
     expect(errorsOf(e)[0]).toMatchObject({ in: "entity", code: "unknown_reference" });
     const future = { ...getRevision(db, "menus", "main", String(list[0].id)), schema_version: 99 };

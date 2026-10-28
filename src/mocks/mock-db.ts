@@ -29,7 +29,8 @@ import {
   type Params,
   type StoredRevision,
 } from "@/mocks/mock-core";
-import { MENU_NEXT_ITEM_ID, restoreMenu, seedMenuRevisions, seedMenus, seedPages } from "@/mocks/mock-menus";
+import { MENU_NEXT_ITEM_ID, restoreMenu, seedMenuRevisions, seedMenus } from "@/mocks/mock-menus";
+import { seedAlbums, seedPageRevisions, seedPages } from "@/mocks/mock-pages";
 import { SEED_SETTINGS_UPDATED, restoreSettings, seedSettings, seedSettingsRevisions } from "@/mocks/mock-settings";
 import { restoreTaxonomy, seedPosts, seedTaxonomy, seedTaxonomyRevisions } from "@/mocks/mock-taxonomy";
 import { restoreUiString, seedUiStringRevisions, seedUiStrings, uiStringKnown } from "@/mocks/mock-ui-strings";
@@ -167,7 +168,11 @@ export function createMockDb(): MockDb {
     purges: { tags: 0, all: 0 },
     nextRevisionId: 9000,
     nextFolderId: 100,
-    pages: seedPages(),
+    pages: [],
+    nextPageId: 11,
+    nextSectionId: 301,
+    albums: seedAlbums(),
+    idempotency: {},
     posts: seedPosts(),
     menus: seedMenus(),
     nextMenuItemId: MENU_NEXT_ITEM_ID,
@@ -202,9 +207,11 @@ export function createMockDb(): MockDb {
     updated_at: stamp,
   }));
   recomputeFolders(db);
+  db.pages = seedPages(db);
   seedUiStrings(db);
   seedTaxonomy(db);
   seedRevisions(db);
+  seedPageRevisions(db);
   seedMenuRevisions(db);
   seedSettingsRevisions(db);
   seedUiStringRevisions(db);

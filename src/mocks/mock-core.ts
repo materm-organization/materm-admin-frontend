@@ -4,7 +4,8 @@
 import type { ApiFieldError } from "@/types/api";
 import type { MediaAssetDetail, MediaFolder, MediaUsage, UserRef } from "@/types/media";
 import type { MenuDetail } from "@/types/menus";
-import type { RevisionDetail } from "@/types/revisions";
+import type { PublishableStatus } from "@/types/publishing";
+import type { RevisionDetail, RevisionKind } from "@/types/revisions";
 import type { CachePurgeResult } from "@/types/system";
 import type { Category, Tag } from "@/types/taxonomy";
 
@@ -55,8 +56,67 @@ export function micros(ms: number, extra = 0): string {
 export type StoredRevision = RevisionDetail;
 export type MockEntity = { etag: string; body: Record<string, unknown> };
 
-// Row of the pages the menu picker and the in-use rules read (`GET /pages`).
-export type MockPage = { id: number; key: string; name: string; title: Record<string, string>; path: string; status: "published" | "draft" | "archived"; is_trashed: boolean };
+// A page of the mock (doc/05 section 12.2.2): the REAL rows (`live`, written directly while the page is not
+// published) and, for a published page with pending edits, a `kind = "draft"` row in `db.revisions["pages/<id>"]`
+// holding the working copy (PG-1). Both use the snapshot shape of doc/04 section 5.2 / doc/05 12.8.2.
+export type MockSnapshotSection = {
+  id: number;
+  public_id: string;
+  section_type: string;
+  section_version: number;
+  variant: string | null;
+  sort_order: number;
+  is_visible: boolean;
+  anchor_id: string | null;
+  props: Record<string, unknown>;
+  shared_section_id: null;
+};
+export type MockSnapshotTranslation = {
+  locale_code: string;
+  title: string;
+  seo_title: string | null;
+  seo_title_absolute: boolean;
+  seo_description: string | null;
+  og_image_id: number | null;
+  canonical_path: string | null;
+  is_enabled: boolean;
+};
+export type MockPageSnapshot = {
+  page: {
+    key: string;
+    name: string;
+    template: string;
+    path: string;
+    parent_id: null;
+    is_home: boolean;
+    noindex: boolean;
+    in_sitemap: boolean;
+    sort_order: number;
+  };
+  translations: MockSnapshotTranslation[];
+  sections: MockSnapshotSection[];
+};
+export type MockPageRoot = {
+  id: number;
+  public_id: string;
+  is_system: boolean;
+  status: PublishableStatus;
+  // ETag = `"<lock_version>"`.
+  lock_version: number;
+  published_at: string | null;
+  first_published_at: string | null;
+  unpublished_at: string | null;
+  created_by: UserRef;
+  updated_by: UserRef;
+  created_at: string;
+  updated_at: string;
+  deleted_at: string | null;
+  live: MockPageSnapshot;
+};
+// Albums only exist for the `album_id` references of a section.
+export type MockAlbum = { id: number; title: string; status: "published" | "draft" };
+// A stored answer of a request that carried an `Idempotency-Key` (create page, set-home, publish, unpublish).
+export type MockIdempotent = { fingerprint: string; status: number; data: unknown; etag?: string };
 // Posts only exist for the "category / tag in use" rules.
 export type MockPost = { id: number; title: string; status: "published" | "draft" | "scheduled" | "archived"; category_id: number | null; tag_ids: number[]; is_trashed: boolean };
 
@@ -110,7 +170,11 @@ export type MockDb = {
   nextRevisionId: number;
   nextFolderId: number;
   // --- T1.3.8 save-live ---------------------------------------------------------------------------------------
-  pages: MockPage[];
+  pages: MockPageRoot[];
+  nextPageId: number;
+  nextSectionId: number;
+  albums: MockAlbum[];
+  idempotency: Record<string, MockIdempotent>;
   posts: MockPost[];
   menus: MockMenu[];
   nextMenuItemId: number;
@@ -149,7 +213,7 @@ export function pushRevision(
   resource: string,
   id: string | number,
   entityType: string,
-  kind: "history" | "restore",
+  kind: RevisionKind,
   snapshot: Record<string, unknown>,
   changeNote: string | null,
   createdAt: string,
@@ -172,8 +236,10 @@ export function pushRevision(
     snapshot,
   };
   list.push(rev);
-  // Save-live keeps the latest 50 versions per entity (doc/05 11.1.2).
-  if (list.length > 50) list.splice(0, list.length - 50);
+  // The latest 50 versions per entity are kept (doc/05 11.1.2); a publishable entity also keeps every `published`
+  // row and its `draft` (05 12.2.4).
+  const prunable = list.filter((r) => r.kind === "history" || r.kind === "restore");
+  for (let i = 0; i < prunable.length && list.length > 50; i++) list.splice(list.indexOf(prunable[i]), 1);
   return rev;
 }
 

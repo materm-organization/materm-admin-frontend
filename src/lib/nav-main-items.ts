@@ -39,12 +39,14 @@ export const NAV_MAIN_CONFIG: NavMainGroupConfig[] = [
     icon: Images,
     anyPermission: [PERMISSION_KEYS.MEDIA_LIBRARY],
   },
-  // Site content that is saved live (T1.3.8): menus, blog categories / tags. Each entry is guarded by its own key.
+  // Site content: pages (SCR-19, published through the publish engine), then what is saved live (T1.3.8): menus, blog
+  // categories / tags. Each entry is guarded by its own key. `/admin/pages/<id>` is the page editor (SCR-20).
   {
     title: "nav.content",
     url: "#",
     icon: Newspaper,
     items: [
+      { title: "nav.pages", url: "/admin/pages", anyPermission: [PERMISSION_KEYS.CMS_PAGES] },
       { title: "nav.menus", url: "/admin/menus", anyPermission: [PERMISSION_KEYS.CMS_MENUS] },
       { title: "nav.categories", url: "/admin/blog/categories", anyPermission: [PERMISSION_KEYS.CMS_CATEGORIES] },
       { title: "nav.tags", url: "/admin/blog/tags", anyPermission: [PERMISSION_KEYS.CMS_CATEGORIES] },

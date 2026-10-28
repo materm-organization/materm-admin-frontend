@@ -3,7 +3,7 @@
 // BEFORE an edit: `created_by` / `created_at` are who replaced that state and when (05 11.1.2).
 import type { UserRef } from "@/types/media";
 
-// `history` / `restore` for save-live. `draft` / `published` come with the publishable entities (T1.4.7).
+// `history` / `restore` for save-live; a publishable entity also has `draft` (at most one) and `published` rows.
 export type RevisionKind = "history" | "restore" | "published" | "draft";
 
 export type RevisionSummary = {
@@ -16,6 +16,8 @@ export type RevisionSummary = {
   schema_version: number;
   created_at: string;
   created_by: UserRef;
+  // Publishable entities only: the latest `published` row of a page that is published right now.
+  is_live?: boolean;
 };
 
 export type RevisionDetail = RevisionSummary & {

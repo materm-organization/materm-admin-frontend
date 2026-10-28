@@ -11,24 +11,21 @@ import {
   MOCK_LOCALE_CODES,
   MOCK_USER,
   badRequest,
-  boolParam,
   etagOf,
   forbidden,
   invalidState,
   keyOf,
   micros,
   notFound,
-  paginate,
   pushRevision,
-  rejectUnknown,
   requireIfMatch,
   tick,
   validationFailed,
   type MockDb,
   type MockMenu,
-  type MockPage,
-  type Params,
+  type MockPageRoot,
 } from "@/mocks/mock-core";
+import { isTrashed, pageName, pagePath } from "@/mocks/mock-pages";
 import type { ApiFieldError } from "@/types/api";
 import type { SaveLiveWarning, UserRef } from "@/types/media";
 import type {
@@ -50,19 +47,6 @@ const SEED_AT = micros(Date.UTC(2026, 9, 26, 9, 0, 0), 150);
 // ---------------------------------------------------------------------------------------------------------------
 // Seed
 // ---------------------------------------------------------------------------------------------------------------
-export function seedPages(): MockPage[] {
-  return [
-    { id: 1, key: "home", name: "Home", title: { la: "Home", en: "Home" }, path: "/", status: "published", is_trashed: false },
-    { id: 2, key: "our-path", name: "Our Path", title: { la: "Our Path", en: "Our Path" }, path: "/our-path", status: "published", is_trashed: false },
-    { id: 3, key: "blog", name: "The Blog", title: { la: "The Blog", en: "The Blog" }, path: "/blog", status: "published", is_trashed: false },
-    { id: 4, key: "gallery", name: "Gallery", title: { la: "Gallery", en: "Gallery" }, path: "/gallery", status: "published", is_trashed: false },
-    { id: 5, key: "contact", name: "Contact", title: { la: "Contact", en: "Contact" }, path: "/contact", status: "published", is_trashed: false },
-    // INVENTED: a draft page (a link to it carries the `link_page_not_published` warning) and a trashed one.
-    { id: 6, key: "spring", name: "Spring campaign (draft)", title: { la: "Spring campaign", en: "Spring campaign" }, path: "/spring", status: "draft", is_trashed: false },
-    { id: 7, key: "old-promo", name: "Old promo", title: { la: "Old promo", en: "Old promo" }, path: "/old-promo", status: "archived", is_trashed: true },
-  ];
-}
-
 function seedItem(
   id: number,
   sort: number,
@@ -158,14 +142,14 @@ export const MENU_NEXT_ITEM_ID = 14;
 // ---------------------------------------------------------------------------------------------------------------
 // Derived fields
 // ---------------------------------------------------------------------------------------------------------------
-function pageOfLink(db: MockDb, link: MenuLink): MockPage | undefined {
+function pageOfLink(db: MockDb, link: MenuLink): MockPageRoot | undefined {
   return link.type === "page" ? db.pages.find((p) => p.id === link.page_id) : undefined;
 }
 
 function decorate(db: MockDb, menu: MockMenu, item: MenuItem): MenuItem {
   const page = pageOfLink(db, item.link);
   const linkState: MenuItem["link_state"] = page
-    ? page.is_trashed
+    ? isTrashed(page)
       ? "page_trashed"
       : page.status !== "published"
         ? "page_unpublished"
@@ -176,7 +160,7 @@ function decorate(db: MockDb, menu: MockMenu, item: MenuItem): MenuItem {
   return {
     ...item,
     missing_locales: MOCK_ACTIVE_LOCALE_CODES.filter((code) => !item.translations[code]?.label),
-    page: page ? { id: page.id, name: page.name, path: page.path, status: page.status, is_trashed: page.is_trashed } : null,
+    page: page ? { id: page.id, name: pageName(page), path: pagePath(page), status: page.status, is_trashed: isTrashed(page) } : null,
     link_state: linkState,
   };
 }
@@ -264,32 +248,6 @@ export function getMenu(db: MockDb, key: string) {
   return { menu: detailOf(db, menu), etag: etagOf(menu.updated_at) };
 }
 
-// `GET /pages` as the menu's page picker reads it (list of 05 12.3.4, abridged: the picker only needs these).
-export function listPages(db: MockDb, params: Params) {
-  rejectUnknown(params, ["page", "limit", "keyword", "trashed", "locale", "status", "template", "is_home", "has_draft", "sort"]);
-  const trashed = boolParam(params, "trashed") ?? false;
-  const keyword = params.get("keyword")?.trim().toLowerCase();
-  const rows = db.pages
-    .filter((p) => p.is_trashed === trashed)
-    .filter((p) => !keyword || p.name.toLowerCase().includes(keyword) || p.path.toLowerCase().includes(keyword))
-    .map((p) => ({
-      id: p.id,
-      key: p.key,
-      name: p.name,
-      title: p.title[DEFAULT_LOCALE_CODE] ?? p.name,
-      path: p.path,
-      status: p.status,
-      is_home: p.id === 1,
-    }));
-  return paginate(rows, params);
-}
-
-export function getPage(db: MockDb, id: string) {
-  const page = db.pages.find((p) => String(p.id) === id);
-  if (!page) throw notFound();
-  return { id: page.id, key: page.key, name: page.name, title: page.title[DEFAULT_LOCALE_CODE] ?? page.name, path: page.path, status: page.status };
-}
-
 // ---------------------------------------------------------------------------------------------------------------
 // Validation
 // ---------------------------------------------------------------------------------------------------------------
@@ -321,7 +279,7 @@ function checkLink(db: MockDb, menu: MockMenu, link: unknown, errors: ApiFieldEr
     if (link.url !== undefined && link.url !== null) errors.push({ in: "body", path: "/link/url", code: "not_applicable" });
     const page = typeof link.page_id === "number" ? db.pages.find((p) => p.id === link.page_id) : undefined;
     if (link.page_id === undefined || link.page_id === null) errors.push({ in: "body", path: "/link/page_id", code: "required" });
-    else if (!page || page.is_trashed) errors.push({ in: "body", path: "/link/page_id", code: "unknown_reference" });
+    else if (!page || isTrashed(page)) errors.push({ in: "body", path: "/link/page_id", code: "unknown_reference" });
   } else {
     if (link.page_id !== undefined && link.page_id !== null) errors.push({ in: "body", path: "/link/page_id", code: "not_applicable" });
     const url = link.url;
@@ -648,7 +606,7 @@ export function restoreMenu(db: MockDb, key: string, rev: { id: number; version:
   items.forEach((it, i) => {
     if (it.link_type === "page") {
       const page = db.pages.find((p) => p.id === it.page_id);
-      if (!page || page.is_trashed) errors.push({ in: "entity", path: `/items/${i}/page_id`, code: "unknown_reference" });
+      if (!page || isTrashed(page)) errors.push({ in: "entity", path: `/items/${i}/page_id`, code: "unknown_reference" });
     }
     for (const t of it.translations) {
       if (!(MOCK_LOCALE_CODES as readonly string[]).includes(t.locale_code)) {
