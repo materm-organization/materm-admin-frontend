@@ -142,7 +142,7 @@ export function MediaLibrary() {
             aria-label={t("tile.open", { name: row.original.original_filename })}
           >
             <span className="block size-12 shrink-0 overflow-hidden rounded border bg-muted">
-              <MediaThumb asset={row.original} alt="" />
+              <MediaThumb asset={row.original} alt="" compact />
             </span>
             <span className="min-w-0 truncate font-medium">{row.original.original_filename}</span>
           </button>

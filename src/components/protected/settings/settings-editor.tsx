@@ -489,7 +489,7 @@ function MediaSettingField({ group, field, value, disabled, onChange, picked, on
   return (
     <div className="flex flex-wrap items-center gap-3">
       <div className={cn("flex size-20 items-center justify-center overflow-hidden rounded-md border bg-muted", ratio && "h-[63px] w-[120px]")}>
-        {asset ? <MediaThumb asset={{ url: asset.url ?? null, kind: "image", mime_type: asset.mime_type }} alt={asset.name} fill={false} /> : <ImageIcon className="size-6 text-muted-foreground" aria-hidden />}
+        {asset ? <MediaThumb asset={{ url: asset.url ?? null, kind: "image", mime_type: asset.mime_type }} alt={asset.name} fill={false} compact /> : <ImageIcon className="size-6 text-muted-foreground" aria-hidden />}
       </div>
       <div className="flex flex-col gap-1">
         <span className="text-sm" data-testid={`media-name-${field.key}`}>{asset ? asset.name : t("noImage")}</span>

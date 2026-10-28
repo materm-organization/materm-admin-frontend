@@ -24,6 +24,15 @@ describe("MediaThumb", () => {
     expect(container.querySelector("img")).toBeNull();
   });
 
+  it("compact (small tiles): the placeholder is only the icon, the reason is the tooltip and nothing is squeezed in as text", () => {
+    const { container } = renderWithIntl(<MediaThumb asset={{ url: null, kind: "image" }} alt="x" compact />);
+    const tile = screen.getByRole("img", { name: "x" });
+    expect(tile).toHaveAttribute("title", "No preview (file address not configured)");
+    expect(tile).toHaveTextContent("");
+    expect(container.querySelector("svg")).not.toBeNull();
+    expect(container.querySelector("img")).toBeNull();
+  });
+
   it("a picture the browser can not load (CSP, 404) is replaced by the placeholder", () => {
     renderWithIntl(<MediaThumb asset={{ url: "http://blocked/a.jpg", kind: "image" }} alt="x" />);
     fireEvent.error(screen.getByRole("img"));
