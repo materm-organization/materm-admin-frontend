@@ -407,7 +407,7 @@ describe("PageEditor: Details, SEO and the publishing bar", () => {
 
   it("SEO: counts characters, previews the search result and saves the texts per language", async () => {
     const user = userEvent.setup();
-    nav.search = "tab=seo&locale=en";
+    nav.search = "tab=seo&seoLocale=en";
     renderApp(<PageHost id={8} />);
     const seo = await screen.findByTestId("page-seo");
     const title = await within(seo).findByLabelText(/^SEO title \(EN\)/);
@@ -421,9 +421,72 @@ describe("PageEditor: Details, SEO and the publishing bar", () => {
     expect(root(8).live.translations.find((t) => t.locale_code === "en")!.seo_title).toBe("Summer trek in the hills");
   });
 
+  // B6: the SEO tab keeps its own language. English picked in the section editor must not hide the required
+  // default-language SEO title.
+  it("SEO: the language picked in the section editor does not switch the SEO tab", async () => {
+    nav.search = `tab=seo&section=${heroOf(8).id}&locale=en`;
+    renderApp(<PageHost id={8} />);
+    const seo = await screen.findByTestId("page-seo");
+    await waitFor(() => expect(seo.querySelector("#page-field-seo_title-la")).toBeEnabled());
+    expect(seo.querySelector("#page-field-seo_title-en")).toBeNull();
+    expect(within(seo).queryByTestId("seo-default-missing")).not.toBeInTheDocument();
+  });
+
+  it("SEO: picking a language in the SEO tab changes ?seoLocale= and leaves the section editor's ?locale= alone", async () => {
+    const user = userEvent.setup();
+    nav.search = `tab=seo&locale=en&section=${heroOf(8).id}`;
+    renderApp(<PageHost id={8} />);
+    const seo = await screen.findByTestId("page-seo");
+    await user.click(await within(seo).findByRole("radio", { name: /^English/ }));
+    const url = new URL(nav.replace.mock.calls.at(-1)![0] as string, "http://x");
+    expect(url.searchParams.get("seoLocale")).toBe("en");
+    expect(url.searchParams.get("locale")).toBe("en"); // untouched (the test address carried it)
+  });
+
+  it("SEO: going back to the default language drops ?seoLocale=", async () => {
+    const user = userEvent.setup();
+    nav.search = "tab=seo&seoLocale=en";
+    renderApp(<PageHost id={8} />);
+    const seo = await screen.findByTestId("page-seo");
+    await user.click(await within(seo).findByRole("radio", { name: /^Lao/ }));
+    const back = new URL(nav.replace.mock.calls.at(-1)![0] as string, "http://x");
+    expect(back.searchParams.has("seoLocale")).toBe(false); // the default language needs no parameter
+  });
+
+  it("SEO: while another language is shown and the default one has no SEO title, a notice offers a one-click way back", async () => {
+    const user = userEvent.setup();
+    nav.search = "tab=seo&seoLocale=en";
+    renderApp(<PageHost id={6} />); // page 6: no Lao SEO title
+    const seo = await screen.findByTestId("page-seo");
+    const notice = await within(seo).findByTestId("seo-default-missing");
+    expect(notice).toHaveTextContent(/SEO title is still empty/);
+    await user.click(within(notice).getByRole("button", { name: /^Show / }));
+    const url = new URL(nav.replace.mock.calls.at(-1)![0] as string, "http://x");
+    expect(url.searchParams.has("seoLocale")).toBe(false);
+  });
+
+  it("SEO: no notice when the default language is the one on screen or already has its SEO title", async () => {
+    nav.search = "tab=seo";
+    renderApp(<PageHost id={6} />);
+    const seo = await screen.findByTestId("page-seo");
+    await waitFor(() => expect(seo.querySelector("#page-field-seo_title-la")).not.toBeNull());
+    expect(within(seo).queryByTestId("seo-default-missing")).not.toBeInTheDocument();
+  });
+
+  it("Go to field for a default-language SEO blocker opens the SEO tab in THAT language and leaves the section language alone", async () => {
+    // a link with ?field= for the English SEO description picks the SEO tab's language only
+    nav.search = `locale=en&field=${encodeURIComponent("/translations/en/seo_description")}`;
+    renderApp(<PageHost id={6} />);
+    await waitFor(() => expect(nav.replace).toHaveBeenCalled());
+    const url = new URL(nav.replace.mock.calls.at(-1)![0] as string, "http://x");
+    expect(url.searchParams.get("tab")).toBe("seo");
+    expect(url.searchParams.get("seoLocale")).toBe("en");
+    expect(url.searchParams.get("locale")).toBe("en");
+  });
+
   it("SEO: a language without a title asks for the title first", async () => {
     getMockDb().pages.find((p) => p.id === 8)!.live.translations = [getMockDb().pages.find((p) => p.id === 8)!.live.translations[0]];
-    nav.search = "tab=seo&locale=en";
+    nav.search = "tab=seo&seoLocale=en";
     renderApp(<PageHost id={8} />);
     expect(await screen.findByText(/Add the title of the EN version on the Details tab/)).toBeInTheDocument();
     expect(await screen.findByLabelText(/^SEO title \(EN\)/)).toBeDisabled();

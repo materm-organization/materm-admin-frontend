@@ -346,7 +346,7 @@ command with the old ETag is a 409, the model is per tab so a second tab cannot 
   progress bar from page title / SEO title / SEO description + every visible section's `translation_status`) -> tabs **Content**
   (default), **Details**, **SEO**, **History** (`?tab=`; Content is `forceMount`ed + hidden so the open section keeps its unsaved edits).
   Content = `SectionList` (22.5rem) next to `SectionEditor` at `lg`; below `lg` it is list OR editor with a "All sections" back button.
-  URL: `?section=<id>`, `?locale=<code>` (shared by the section form and the SEO tab).
+  URL: `?section=<id>`, `?locale=<code>` (the SECTION form's language) and `?seoLocale=<code>` (the SEO tab's own language, absent = the default language; B6 of the cross-system e2e: English picked in the section editor used to switch the SEO tab too and hid the required default-language SEO title). "Go to field" sets `?locale=` for a section pointer and `?seoLocale=` (from `/translations/<l>/...`) for a page pointer. While the SEO tab shows another language and the default one has no SEO title, a notice (`data-testid=seo-default-missing`) with a "Show <default>" button brings it back in one click.
 - **State lives in the editor, not in a tab**: the Details + SEO draft is ONE `PageFieldsDraft` (`page-fields.ts`: `draftFromPage`,
   `validateFields`, `buildPatch` = only what changed; a language whose texts are all cleared is sent as `null`, never the default one;
   server 422/409 field errors are mapped back to `title.<l>` / `path` ... keys). `edit === null` means "untouched": the baseline is

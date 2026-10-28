@@ -270,6 +270,10 @@ export function PageSeoTab({
   const titleLen = [...(d?.seo_title ?? "")].length;
   const descLen = [...(d?.seo_description ?? "")].length;
   const noTitle = !d || d.title.trim() === "";
+  // The default language is the one publish requires: when another language is on screen and the default one still has
+  // no SEO title, say so and offer the one-click way back (B6), so the required field is never hidden behind a language.
+  const defaultShort = locales.find((l) => l.code === defaultLocale)?.short_label || defaultLocale.toUpperCase();
+  const defaultSeoMissing = current !== defaultLocale && (draft.translations[defaultLocale]?.seo_title ?? "").trim() === "";
 
   return (
     <div className="max-w-3xl space-y-6" data-testid="page-seo">
@@ -294,6 +298,16 @@ export function PageSeoTab({
       <section className="space-y-4" aria-labelledby="page-seo-texts">
         <h2 id="page-seo-texts" className="text-sm font-semibold">{t("texts")}</h2>
         {locales.length > 1 ? <EditorLocaleSwitcher locales={locales} value={current} onChange={onLocaleChange} completeness={completeness} /> : null}
+        {defaultSeoMissing ? (
+          <Alert data-testid="seo-default-missing">
+            <AlertDescription className="flex flex-wrap items-center gap-x-3 gap-y-2">
+              <span>{t("defaultMissing", { locale: defaultShort })}</span>
+              <Button type="button" size="sm" variant="outline" onClick={() => onLocaleChange(defaultLocale)}>
+                {t("showDefault", { locale: defaultShort })}
+              </Button>
+            </AlertDescription>
+          </Alert>
+        ) : null}
         {d ? (
           <div className="space-y-4">
             {noTitle ? <Alert><AlertDescription>{t("needsTitle", { locale: shortLocale })}</AlertDescription></Alert> : null}

@@ -2754,6 +2754,8 @@
         "inSitemapHint": "Search engines find the page more easily.",
         "texts": "Search result and sharing",
         "needsTitle": "Add the title of the {locale} version on the Details tab before filling in its SEO texts.",
+        "defaultMissing": "The {locale} SEO title is still empty. Publishing needs it.",
+        "showDefault": "Show {locale}",
         "seoTitle": "SEO title ({locale})",
         "seoTitleHint": "Empty = the page title. Best up to {recommended} characters.",
         "titleLong": "Longer than {recommended} characters: search engines may cut it.",

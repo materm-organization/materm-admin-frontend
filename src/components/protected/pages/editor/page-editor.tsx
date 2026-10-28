@@ -123,6 +123,11 @@ export function PageEditor({ page, etag, onReseed }: PageEditorProps) {
   const selectedId = sectionParam && /^[1-9]\d{0,17}$/.test(sectionParam) ? Number(sectionParam) : null;
   const localeParam = search.get("locale");
   const locale = locales.some((l) => l.code === localeParam) ? (localeParam as string) : defaultLocale;
+  // The SEO tab has its OWN language (?seoLocale=, default = the default language): picking English in the section editor
+  // must not hide the required default-language SEO title (B6). Only an explicit pick in the SEO tab (or "Go to field")
+  // changes it.
+  const seoLocaleParam = search.get("seoLocale");
+  const seoLocale = locales.some((l) => l.code === seoLocaleParam) ? (seoLocaleParam as string) : defaultLocale;
   const fieldParam = search.get("field");
   const selected = selectedId !== null ? (sections.find((s) => s.id === selectedId) ?? null) : null;
 
@@ -351,7 +356,8 @@ export function PageEditor({ page, etag, onReseed }: PageEditorProps) {
       sectionKey: target.sectionKey ?? null,
       sectionIndex: target.sectionIndex !== undefined ? String(target.sectionIndex) : null,
       tab: bySection || pagePointerTab(target.pointer) === null ? null : pagePointerTab(target.pointer),
-      locale: target.locale ?? search.get("locale"),
+      // a section pointer picks the SECTION editor's language; a page pointer picks the SEO tab's (the effect below)
+      locale: bySection ? (target.locale ?? search.get("locale")) : search.get("locale"),
       fieldCode: target.code || null,
     });
   };
@@ -378,7 +384,9 @@ export function PageEditor({ page, etag, onReseed }: PageEditorProps) {
     setHandledField(fieldParam);
     const target = pagePointerTab(fieldParam);
     const id = pagePointerFieldId(fieldParam);
-    setParams({ ...clear, tab: target });
+    const pointerLocale = /^\/translations\/([^/]+)\//.exec(fieldParam)?.[1];
+    const seoPick: Record<string, string> = target === "seo" && pointerLocale && locales.some((l) => l.code === pointerLocale) ? { seoLocale: pointerLocale } : {};
+    setParams({ ...clear, ...seoPick, tab: target });
     if (fieldParam === "/sections" || !target) focusWhenPresent("add-section-button");
     else if (id) focusWhenPresent(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -539,7 +547,7 @@ export function PageEditor({ page, etag, onReseed }: PageEditorProps) {
           {ready ? <PageDetailsTab {...formProps} /> : <EditorSkeleton />}
         </TabsContent>
         <TabsContent value="seo" className="pt-2">
-          {ready ? <PageSeoTab {...formProps} locale={locale} onLocaleChange={(code) => setParams({ locale: code })} /> : <EditorSkeleton />}
+          {ready ? <PageSeoTab {...formProps} locale={seoLocale} onLocaleChange={(code) => setParams({ seoLocale: code === defaultLocale ? null : code })} /> : <EditorSkeleton />}
         </TabsContent>
         <TabsContent value="revisions" className="pt-2">
           <RevisionsTab resource="pages" id={pageId} canRestore={canUpdatePage && !trashed} etag={etag} onRestored={onRestored} onRefresh={() => onReseed({ refetchPage: true })} />
