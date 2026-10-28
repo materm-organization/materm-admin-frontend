@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 // "Not found": a route nobody registered (the guard's `unknown` kind), a 404 `NOT_FOUND` from a GET of one
 // item, or Next's `notFound()` inside the protected shell. Defaults are the page-level wording; a detail page
@@ -14,18 +15,23 @@ export function NotFoundState({
   description,
   backHref = "/admin",
   backLabel,
+  className,
 }: {
   title?: string;
   description?: string;
   backHref?: string;
   backLabel?: string;
+  className?: string;
 }) {
   const t = useTranslations("states.notFound");
 
   return (
     <div
       role="alert"
-      className="flex min-h-[40vh] flex-col items-center justify-center gap-3 text-center"
+      className={cn(
+        "flex min-h-[calc(100svh-10rem)] flex-col items-center justify-center gap-3 text-center",
+        className,
+      )}
     >
       <FileQuestionIcon className="size-6 text-muted-foreground" aria-hidden />
       <div className="space-y-1">

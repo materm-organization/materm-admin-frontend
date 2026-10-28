@@ -147,8 +147,8 @@ export function RevisionsTab({
     }
   };
 
-  if (error && isNoPermissionError(error)) return <NoPermission />;
-  if (error && !data) return <ErrorState error={error} onRetry={() => void refetch()} isRetrying={isFetching} />;
+  if (error && isNoPermissionError(error)) return <NoPermission className="min-h-40 py-8" />;
+  if (error && !data) return <ErrorState error={error} onRetry={() => void refetch()} isRetrying={isFetching} className="min-h-40 py-8" />;
 
   return (
     <div className={className} data-testid="revisions-tab">
@@ -353,9 +353,9 @@ function RevisionViewDialog({
 
         <div className="min-h-0 flex-1 overflow-y-auto">
           {error && isNoPermissionError(error) ? (
-            <NoPermission />
+            <NoPermission className="min-h-40 py-8" />
           ) : error ? (
-            <ErrorState error={error} onRetry={() => void refetch()} />
+            <ErrorState error={error} onRetry={() => void refetch()} className="min-h-40 py-8" />
           ) : isLoading || !snapshot ? (
             <div className="space-y-2" aria-busy="true">
               <Skeleton className="h-8 w-full" />
@@ -403,7 +403,7 @@ function RevisionViewDialog({
                     <DiffView before={compareSnapshot} after={snapshot} />
                   </>
                 ) : compareQuery.error ? (
-                  <ErrorState error={compareQuery.error} onRetry={() => void compareQuery.refetch()} />
+                  <ErrorState error={compareQuery.error} onRetry={() => void compareQuery.refetch()} className="min-h-40 py-8" />
                 ) : (
                   <Skeleton className="h-16 w-full" />
                 )}

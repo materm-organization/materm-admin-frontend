@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
+import { cn } from "@/lib/utils";
 import { parseApiError } from "@/lib/api-error";
 
 // "Error": a read that failed with a network error / 5xx (already toasted once by QueryProvider). Shows a
@@ -16,12 +17,15 @@ export function ErrorState({
   isRetrying = false,
   title,
   description,
+  className,
 }: {
   error?: unknown;
   onRetry?: () => void;
   isRetrying?: boolean;
   title?: string;
   description?: string;
+  // Default fills the content area; pass a smaller min-height when it sits inside a sheet, dialog or tab.
+  className?: string;
 }) {
   const t = useTranslations("states.error");
   const tCommon = useTranslations("common");
@@ -30,7 +34,10 @@ export function ErrorState({
   return (
     <div
       role="alert"
-      className="flex min-h-[40vh] flex-col items-center justify-center gap-3 text-center"
+      className={cn(
+        "flex min-h-[calc(100svh-10rem)] flex-col items-center justify-center gap-3 text-center",
+        className,
+      )}
     >
       <TriangleAlertIcon className="size-6 text-muted-foreground" aria-hidden />
       <div className="space-y-1">

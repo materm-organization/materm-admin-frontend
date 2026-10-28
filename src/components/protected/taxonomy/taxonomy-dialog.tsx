@@ -86,8 +86,8 @@ function Loader(props: Props & { id: number }) {
     queryKey: [kind === "categories" ? API_ENDPOINTS.CATEGORIES.DETAIL(id) : API_ENDPOINTS.TAGS.DETAIL(id)],
     queryFn: () => (kind === "categories" ? CategoriesAPI.Get(id) : TagsAPI.Get(id)),
   });
-  if (query.error && isNoPermissionError(query.error)) return <NoPermission />;
-  if (query.error && !query.data) return <ErrorState error={query.error} onRetry={() => void query.refetch()} isRetrying={query.isFetching} />;
+  if (query.error && isNoPermissionError(query.error)) return <NoPermission className="min-h-40 py-8" />;
+  if (query.error && !query.data) return <ErrorState error={query.error} onRetry={() => void query.refetch()} isRetrying={query.isFetching} className="min-h-40 py-8" />;
   if (!query.data) return <Skeleton className="h-48 w-full" />;
   const row = query.data.data.data as Category | Tag;
   return <Editor {...props} row={row} etag={query.data.etag} reload={() => query.refetch()} />;

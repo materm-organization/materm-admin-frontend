@@ -111,7 +111,7 @@ export function MediaAssetSheet({ assetId, onClose }: { assetId: number; onClose
               <SheetTitle>{t("title")}</SheetTitle>
             </SheetHeader>
             <div className="px-4">
-              <NoPermission />
+              <NoPermission className="min-h-40 py-8" />
             </div>
           </>
         ) : error && parseApiError(error).status === 404 ? (
@@ -120,7 +120,7 @@ export function MediaAssetSheet({ assetId, onClose }: { assetId: number; onClose
               <SheetTitle>{t("title")}</SheetTitle>
             </SheetHeader>
             <div className="px-4">
-              <NotFoundState title={t("notFound")} backHref="/admin/media" backLabel={t("backToLibrary")} />
+              <NotFoundState title={t("notFound")} backHref="/admin/media" backLabel={t("backToLibrary")} className="min-h-40 py-8" />
             </div>
           </>
         ) : error && !data ? (
@@ -129,7 +129,7 @@ export function MediaAssetSheet({ assetId, onClose }: { assetId: number; onClose
               <SheetTitle>{t("title")}</SheetTitle>
             </SheetHeader>
             <div className="px-4">
-              <ErrorState error={error} onRetry={() => void refetch()} isRetrying={isFetching} />
+              <ErrorState error={error} onRetry={() => void refetch()} isRetrying={isFetching} className="min-h-40 py-8" />
             </div>
           </>
         ) : isLoading || !asset || !localesSettled ? (
@@ -571,9 +571,9 @@ function AssetEditor({
             {usages.isLoading ? (
               <Skeleton className="h-16 w-full" />
             ) : usages.error && isNoPermissionError(usages.error) ? (
-              <NoPermission />
+              <NoPermission className="min-h-40 py-8" />
             ) : usages.error ? (
-              <ErrorState error={usages.error} onRetry={() => void usages.refetch()} />
+              <ErrorState error={usages.error} onRetry={() => void usages.refetch()} className="min-h-40 py-8" />
             ) : (usages.data?.data.length ?? 0) === 0 ? (
               <p className="text-sm text-muted-foreground">{t("usage.none")}</p>
             ) : (

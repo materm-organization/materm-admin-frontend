@@ -12,13 +12,16 @@ import { useSettingsGroup } from "@/hooks/use-settings";
 // address comes from `site.base_url`) + a search-result preview per language.
 export function SeoPage() {
   const t = useTranslations("seo");
+  // Unreadable group = page state, full width (see SettingsPage); otherwise the form keeps its reading width.
+  const query = useSettingsGroup("seo");
+  const unreadable = !!query.error && !query.data;
   return (
     <div className="space-y-4">
       <div>
         <h1 className="text-2xl font-semibold tracking-wide">{t("title")}</h1>
         <p className="mt-1 text-base text-muted-foreground">{t("description")}</p>
       </div>
-      <div className="max-w-3xl">
+      <div className={unreadable ? undefined : "max-w-3xl"}>
         <SettingsEditor group="seo" extras={(ctx) => <SeoExtras {...ctx} />} />
       </div>
     </div>

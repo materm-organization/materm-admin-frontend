@@ -25,8 +25,8 @@ export function UserHistory({ userId }: { userId: number }) {
   });
 
   if (isLoading) return <Skeleton className="h-32 w-full" />;
-  if (error && isNoPermissionError(error)) return <NoPermission />;
-  if (error) return <ErrorState error={error} onRetry={() => void refetch()} isRetrying={isFetching} />;
+  if (error && isNoPermissionError(error)) return <NoPermission className="min-h-40 py-8" />;
+  if (error) return <ErrorState error={error} onRetry={() => void refetch()} isRetrying={isFetching} className="min-h-40 py-8" />;
 
   const rows = data?.data ?? [];
   return (

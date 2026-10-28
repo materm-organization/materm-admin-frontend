@@ -59,7 +59,7 @@ export function RoutePermissionGuard({ children }: { children: React.ReactNode }
 
   if (isError) {
     return (
-      <div className="flex min-h-[40vh] flex-col items-center justify-center gap-3 text-center">
+      <div className="flex min-h-[calc(100svh-10rem)] flex-col items-center justify-center gap-3 text-center">
         <p className="text-sm text-muted-foreground">{tErrors("loadAccount")}</p>
         <Button variant="outline" onClick={() => refetch()} disabled={isFetching}>
           {isFetching ? <Spinner /> : null}
@@ -70,11 +70,11 @@ export function RoutePermissionGuard({ children }: { children: React.ReactNode }
   }
 
   if (hasToken === null || isLoading || !data) {
-    // `min-h-[40vh]` (not `flex-1`) — unlike `flex-1`, this centers
+    // `min-h-[calc(100svh-10rem)]` (not `flex-1`) — unlike `flex-1`, this centers
     // correctly on its own regardless of whether the parent (`<main>` in
     // the protected layout) happens to be a flex container.
     return (
-      <div className="flex min-h-[40vh] items-center justify-center">
+      <div className="flex min-h-[calc(100svh-10rem)] items-center justify-center">
         <Spinner className="size-6" />
       </div>
     );
@@ -83,7 +83,7 @@ export function RoutePermissionGuard({ children }: { children: React.ReactNode }
   if (data.data.must_change_password) {
     return (
       <>
-        <div className="flex min-h-[40vh] items-center justify-center">
+        <div className="flex min-h-[calc(100svh-10rem)] items-center justify-center">
           <Spinner className="size-6" />
         </div>
         <ChangePasswordDialog open forced onOpenChange={() => {}} />

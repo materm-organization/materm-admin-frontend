@@ -139,13 +139,14 @@ export function AuditDetailSheet({
                 {query.isLoading ? (
                   <Skeleton className="h-24 w-full" />
                 ) : query.error && isNoPermissionError(query.error) ? (
-                  <NoPermission />
+                  <NoPermission className="min-h-40 py-8" />
                 ) : query.error ? (
                   <ErrorState
                     error={query.error}
                     onRetry={() => void query.refetch()}
                     isRetrying={query.isFetching}
                     description={parseApiError(query.error).status === 404 ? t("notFound") : undefined}
+                    className="min-h-40 py-8"
                   />
                 ) : rows.length === 0 ? (
                   <p className="text-sm text-muted-foreground">{t("noDiff")}</p>
