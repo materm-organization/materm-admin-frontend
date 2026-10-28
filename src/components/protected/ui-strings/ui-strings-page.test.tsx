@@ -12,11 +12,11 @@ import type { PermissionGrant } from "@/types/user";
 
 const API = "*/api/v1";
 const me = vi.hoisted(() => ({ current: { id: 6, roleID: 2, permissions: [] as PermissionGrant[] } }));
-const nav = vi.hoisted(() => ({ search: "" }));
+const nav = vi.hoisted(() => ({ search: "", push: vi.fn() }));
 vi.mock("@/hooks/use-auth", () => ({ useFetchCurrentUser: () => ({ data: { data: me.current } }) }));
 vi.mock("next/navigation", () => ({
   usePathname: () => "/admin/ui-strings",
-  useRouter: () => ({ push: vi.fn(), replace: vi.fn() }),
+  useRouter: () => ({ push: nav.push, replace: vi.fn() }),
   useSearchParams: () => new URLSearchParams(nav.search),
 }));
 const toast = vi.hoisted(() => ({ success: vi.fn(), error: vi.fn() }));
@@ -26,6 +26,7 @@ const FULL = grants({ "cms.ui_strings": ["read", "update", "translate", "import"
 beforeEach(() => {
   me.current = { id: 6, roleID: 2, permissions: FULL };
   nav.search = "";
+  nav.push.mockReset();
   toast.success.mockReset();
   toast.error.mockReset();
 });
@@ -70,6 +71,26 @@ describe("UiStringsPage (SCR-34)", () => {
     await screen.findByRole("button", { name: "Edit site.nav.label in Lao" });
     expect(screen.queryByRole("button", { name: "Edit site.nav.label in English" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Edit blog.categories.all in Lao" })).not.toBeInTheDocument(); // translated
+  });
+
+  it("the filters are chips (as in the users and pages lists): picking a language writes it to the URL, the chip's x clears it", async () => {
+    const user = userEvent.setup();
+    const { unmount } = renderApp(<UiStringsPage />);
+    await screen.findByRole("button", { name: "Edit blog.categories.all in Lao" });
+    await user.click(screen.getByText("Not translated in"));
+    await user.click(await screen.findByRole("menuitem", { name: /Lao/ }));
+    await user.keyboard("{Escape}"); // a chip applies its choice when its menu closes
+    await waitFor(() => expect(nav.push).toHaveBeenCalled());
+    expect(String(nav.push.mock.calls.at(-1)![0])).toContain("missing=la");
+    unmount();
+    // with the filter in the URL the chip shows the choice and its x removes it
+    nav.search = "missing=la";
+    nav.push.mockReset();
+    renderApp(<UiStringsPage />);
+    await waitFor(() => expect(document.querySelector("svg.lucide-circle-x")).not.toBeNull());
+    await user.click(document.querySelector("svg.lucide-circle-x")!.closest("button")!);
+    await waitFor(() => expect(nav.push).toHaveBeenCalled());
+    expect(String(nav.push.mock.calls.at(-1)![0])).not.toContain("missing=");
   });
 
   it("editing: the ICU check runs while typing (placeholder set, syntax, plural 'other'), Save stays disabled until the text is valid", async () => {

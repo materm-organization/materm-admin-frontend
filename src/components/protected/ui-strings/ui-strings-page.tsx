@@ -7,13 +7,13 @@ import { useMemo, useState } from "react";
 import { z } from "zod";
 
 import { ListPage } from "@/components/global/list/list-page";
+import { SingleSelectFilter, type SelectedType } from "@/components/global/single-select-filter";
 import { BundleSyncDialog } from "@/components/protected/ui-strings/bundle-sync-dialog";
 import { UiStringSheet } from "@/components/protected/ui-strings/ui-string-sheet";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { useListParams } from "@/hooks/use-list-params";
 import { useLocales } from "@/hooks/use-locales";
@@ -27,7 +27,17 @@ import type { UiStringItem, UiStringsListQuery } from "@/types/ui-strings";
 
 const NAMESPACES = ["site", "home", "ourPath", "blog", "gallery", "contact", "forms"] as const;
 const LOCALE = /^[a-z]{2,3}(-[A-Za-z0-9]{2,8})*$/;
-const ANY = "__any__";
+
+// Filter chips (the same faceted pills the users and pages lists use): the URL holds a plain value, the chip a
+// (value, name) pair; clearing is the chip's own x button.
+function facetValue(value: string | undefined, options: SelectedType[]): SelectedType | null {
+  if (!value) return null;
+  return options.find((o) => o.value === value) ?? { value, name: value };
+}
+function pickFacet(action: React.SetStateAction<SelectedType | null>, current: SelectedType | null): string | undefined {
+  const next = typeof action === "function" ? action(current) : action;
+  return next?.value;
+}
 
 // URL state: the filters of doc/07 section 3.21. `copy_of_en` = "the text of this language is still the English
 // one" (the server's `same_as`, which needs a single `locale`): it narrows the table to that language.
@@ -68,6 +78,12 @@ export function UiStringsPage() {
   const shown = useMemo(() => (query.locale ? locales.filter((l) => l.code === query.locale) : locales), [query.locale, locales]);
   const meta = data?.meta;
   const summary = meta?.summary;
+  const namespaceOptions = useMemo<SelectedType[]>(() => NAMESPACES.map((n) => ({ value: n, name: n })), []);
+  const missingOptions = useMemo<SelectedType[]>(
+    () => locales.map((l) => ({ value: l.code, name: `${l.name}${summary?.missing?.[l.code] ? ` (${summary.missing[l.code]})` : ""}` })),
+    [locales, summary]
+  );
+  const copyOptions = useMemo<SelectedType[]>(() => locales.filter((l) => l.code !== "en").map((l) => ({ value: l.code, name: l.name })), [locales]);
   const parsedError = error ? parseApiError(error) : null;
   const notSynced = parsedError?.status === 409 && (parsedError.details as { reason?: string } | undefined)?.reason === "bundle_not_synced";
 
@@ -172,50 +188,40 @@ export function UiStringsPage() {
         onRetry={() => void refetch()}
         getRowId={(r) => r.key}
         keywordPlaceholder={t("searchPlaceholder")}
-        filtersAlignEnd
         filters={
-          <div className="flex flex-wrap items-end gap-x-4 gap-y-2">
-            <div className="space-y-1">
-              <Label htmlFor="ui-ns" className="text-xs">{t("filters.namespace")}</Label>
-              <Select value={filters.namespace ?? ANY} onValueChange={(v) => list.setFilters({ namespace: v === ANY ? undefined : (v as (typeof NAMESPACES)[number]) })}>
-                <SelectTrigger id="ui-ns" size="sm" className="w-36"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value={ANY}>{t("filters.allNamespaces")}</SelectItem>
-                  {NAMESPACES.map((n) => <SelectItem key={n} value={n}>{n}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1">
-              <Label htmlFor="ui-missing" className="text-xs">{t("filters.missingIn")}</Label>
-              <Select value={filters.missing ?? ANY} onValueChange={(v) => list.setFilters({ missing: v === ANY ? undefined : v })}>
-                <SelectTrigger id="ui-missing" size="sm" className="w-40"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value={ANY}>{t("filters.anyLanguage")}</SelectItem>
-                  {locales.map((l) => (
-                    <SelectItem key={l.code} value={l.code}>{l.name}{summary?.missing?.[l.code] ? ` (${summary.missing[l.code]})` : ""}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1">
-              <Label htmlFor="ui-copy" className="text-xs">{t("filters.copyOfEnglish")}</Label>
-              <Select value={filters.copy_of_en ?? ANY} onValueChange={(v) => list.setFilters({ copy_of_en: v === ANY ? undefined : v })}>
-                <SelectTrigger id="ui-copy" size="sm" className="w-40"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value={ANY}>{t("filters.anyLanguage")}</SelectItem>
-                  {locales.filter((l) => l.code !== "en").map((l) => <SelectItem key={l.code} value={l.code}>{l.name}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex items-center gap-2 pb-1">
+          <>
+            <SingleSelectFilter
+              label={t("filters.namespace")}
+              data={namespaceOptions}
+              instantApply
+              selectedValue={facetValue(filters.namespace, namespaceOptions)}
+              setSelectedValue={(action) =>
+                list.setFilters({ namespace: pickFacet(action, facetValue(filters.namespace, namespaceOptions)) as (typeof NAMESPACES)[number] | undefined })
+              }
+            />
+            <SingleSelectFilter
+              label={t("filters.missingIn")}
+              data={missingOptions}
+              instantApply
+              selectedValue={facetValue(filters.missing, missingOptions)}
+              setSelectedValue={(action) => list.setFilters({ missing: pickFacet(action, facetValue(filters.missing, missingOptions)) })}
+            />
+            <SingleSelectFilter
+              label={t("filters.copyOfEnglish")}
+              data={copyOptions}
+              instantApply
+              selectedValue={facetValue(filters.copy_of_en, copyOptions)}
+              setSelectedValue={(action) => list.setFilters({ copy_of_en: pickFacet(action, facetValue(filters.copy_of_en, copyOptions)) })}
+            />
+            <div className="flex items-center gap-2">
               <Switch id="ui-over" checked={filters.overridden === "true"} onCheckedChange={(v) => list.setFilters({ overridden: v ? "true" : undefined })} />
               <Label htmlFor="ui-over" className="font-normal">{t("filters.overridden")}</Label>
             </div>
-            <div className="flex items-center gap-2 pb-1">
+            <div className="flex items-center gap-2">
               <Switch id="ui-orphan" checked={filters.orphan === "true"} onCheckedChange={(v) => list.setFilters({ orphan: v ? "true" : undefined })} />
               <Label htmlFor="ui-orphan" className="font-normal">{t("filters.orphans")}</Label>
             </div>
-          </div>
+          </>
         }
         emptyTitle={t("empty")}
       />
