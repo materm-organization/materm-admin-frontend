@@ -52,7 +52,9 @@ function SelectTrigger({
 function SelectContent({
   className,
   children,
-  position = "item-aligned",
+  // "popper" opens the list BELOW the trigger (never over it) and as wide as the trigger; the shadcn default
+  // "item-aligned" paints the list on top of the button that was clicked.
+  position = "popper",
   align = "center",
   ...props
 }: React.ComponentProps<typeof SelectPrimitive.Content>) {
