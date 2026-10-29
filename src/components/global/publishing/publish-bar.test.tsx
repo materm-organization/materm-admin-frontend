@@ -441,3 +441,53 @@ describe("PublishBar: unpublish, discard and conflicts", () => {
     expect(await button("Publish")).toBeDisabled();
   });
 });
+
+// The posts entry (T1.5.5): `update_own` counts for the creator on save / discard / preview, never on publish / unpublish.
+describe("PublishBar: a kind with update_own (posts, 05 13.3.2)", () => {
+  useMockApi();
+  const bar = (ownerId: number | null, status: "draft" | "published" = "published", pending = true) =>
+    renderApp(
+      <PublishBar
+        resource="posts"
+        entity={{ id: 3, status, has_unpublished_changes: pending, owner_id: ownerId }}
+        etag='"1"'
+        onSaveDraft={() => undefined}
+        isDirty
+        onCreatePreviewLink={() => undefined}
+        onResult={() => undefined}
+      />
+    );
+
+  it("the creator with update_own saves, discards and previews, but has no Publish / Unpublish", async () => {
+    me.current = { id: 6, roleID: 3, permissions: grants({ "cms.blog": ["read", "create", "update_own", "delete_own", "translate"] }) };
+    bar(6);
+    expect(await button("Save draft")).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Discard changes" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Preview" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Publish changes" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Unpublish" })).not.toBeInTheDocument();
+  });
+
+  it("somebody else's post: a translator can save texts but there is no discard and no preview", async () => {
+    me.current = { id: 6, roleID: 3, permissions: grants({ "cms.blog": ["read", "create", "update_own", "delete_own", "translate"] }) };
+    bar(4);
+    expect(await button("Save draft")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Discard changes" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Preview" })).not.toBeInTheDocument();
+  });
+
+  it("an editor (update, publish, unpublish) has everything on any post; the buttons carry the post's wording", async () => {
+    me.current = { id: 6, roleID: 2, permissions: grants({ "cms.blog": ["read", "update", "publish", "unpublish", "review", "translate"] }) };
+    bar(4);
+    expect(await button("Publish changes")).toBeDisabled(); // dirty
+    expect(screen.getByRole("button", { name: "Unpublish" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Preview" })).toBeInTheDocument();
+  });
+
+  it("pages are unaffected by the owner: cms.pages has no update_own", async () => {
+    me.current = { id: 6, roleID: 3, permissions: grants({ "cms.pages": ["read", "update_own"] }) };
+    renderApp(<PublishBar resource="pages" entity={{ id: 8, status: "draft", has_unpublished_changes: false, owner_id: 6 }} etag='"1"' onSaveDraft={() => undefined} onResult={() => undefined} />);
+    await screen.findByTestId("publish-bar");
+    expect(screen.queryByRole("button", { name: "Save draft" })).not.toBeInTheDocument();
+  });
+});

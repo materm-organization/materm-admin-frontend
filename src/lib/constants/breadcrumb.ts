@@ -10,6 +10,7 @@ export const BREADCRUMB_CONFIG: Record<string, string> = {
   "/admin/menus": "breadcrumb.menus",
   "/admin/settings": "breadcrumb.settings",
   "/admin/seo": "breadcrumb.seo",
+  "/admin/blog/posts": "breadcrumb.posts",
   "/admin/blog/categories": "breadcrumb.categories",
   "/admin/blog/tags": "breadcrumb.tags",
   "/admin/ui-strings": "breadcrumb.uiStrings",

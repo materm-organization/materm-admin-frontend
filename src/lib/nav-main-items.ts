@@ -47,6 +47,7 @@ export const NAV_MAIN_CONFIG: NavMainGroupConfig[] = [
     icon: Newspaper,
     items: [
       { title: "nav.pages", url: "/admin/pages", anyPermission: [PERMISSION_KEYS.CMS_PAGES] },
+      { title: "nav.posts", url: "/admin/blog/posts", anyPermission: [PERMISSION_KEYS.CMS_BLOG] },
       { title: "nav.menus", url: "/admin/menus", anyPermission: [PERMISSION_KEYS.CMS_MENUS] },
       { title: "nav.categories", url: "/admin/blog/categories", anyPermission: [PERMISSION_KEYS.CMS_CATEGORIES] },
       { title: "nav.tags", url: "/admin/blog/tags", anyPermission: [PERMISSION_KEYS.CMS_CATEGORIES] },

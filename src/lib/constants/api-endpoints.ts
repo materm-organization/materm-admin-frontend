@@ -102,9 +102,13 @@ export const API_ENDPOINTS = {
     COLLECTION: (base: string) => `${base}/preview-links`,
     DETAIL: (id: number | string) => `/preview-links/${id}`,
   },
+  // Posts (doc/05 section 13.3). `SLUG_CHECK` is a fixed segment next to `/posts/{id}`.
   POSTS: {
     LIST: "/posts",
     DETAIL: (id: number | string) => `/posts/${id}`,
+    RESTORE: (id: number | string) => `/posts/${id}/restore`,
+    MEDIA: (id: number | string) => `/posts/${id}/media`,
+    SLUG_CHECK: "/posts/slug-check",
   },
   ALBUMS: {
     LIST: "/albums",

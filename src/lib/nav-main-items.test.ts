@@ -112,8 +112,9 @@ describe("W1 iam/ops routes (T1.1.10)", () => {
     expect(urls(Object.values(PERMISSION_KEYS))).toEqual([
       "/admin",
       "/admin/media",
-      // T1.4.7 pages (first entry of the content group), then the T1.3.8 save-live screens
+      // T1.4.7 pages (first entry of the content group), T1.5.5 blog posts, then the T1.3.8 save-live screens
       "/admin/pages",
+      "/admin/blog/posts",
       "/admin/menus",
       "/admin/blog/categories",
       "/admin/blog/tags",
@@ -126,6 +127,15 @@ describe("W1 iam/ops routes (T1.1.10)", () => {
       "/admin/audit",
       "/admin/system",
     ]);
+  });
+});
+
+describe("blog posts routes (SCR-24/25, T1.5.5)", () => {
+  it("the list and the editor need read on cms.blog; /admin/blog itself is not a page", () => {
+    const expected = { kind: "requires", keys: [PERMISSION_KEYS.CMS_BLOG] };
+    expect(getPermissionsForPath("/admin/blog/posts")).toEqual(expected);
+    expect(getPermissionsForPath("/admin/blog/posts/12")).toEqual(expected);
+    expect(getPermissionsForPath("/admin/blog")).toEqual({ kind: "unknown" });
   });
 });
 

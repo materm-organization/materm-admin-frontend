@@ -33,6 +33,22 @@ import {
   unpublishPage,
   withIdempotency,
 } from "@/mocks/mock-pages";
+import {
+  checkPostSlug,
+  createPost,
+  deletePost,
+  discardPostDraft,
+  getPost,
+  getPostRevision,
+  listPostRevisions,
+  listPosts,
+  patchPost,
+  publishPost,
+  replacePostMedia,
+  restorePost,
+  restorePostRevision,
+  unpublishPost,
+} from "@/mocks/mock-posts";
 import { createPreviewLink, listPreviewLinks, revokePreviewLink } from "@/mocks/mock-preview";
 import { getSettingsGroup, listSettingsGroups, putSettingsGroup } from "@/mocks/mock-settings";
 import {
@@ -314,7 +330,64 @@ const pageHandlers: HttpHandler[] = [
   })),
 ];
 
-// Preview links (T1.4.4, doc/05 12.9). The creation answer carries the raw token in `url` and must not be cached.
+// Posts, their publish engine and revisions (T1.5.5; 05 section 13.3). `slug-check` is registered BEFORE `:id` or the id
+// route would swallow it (05 13.3.4). `Idempotency-Key` is honoured on create, publish and unpublish.
+const postHandlers: HttpHandler[] = [
+  http.get(P("/posts"), guard(({ request }) => {
+    const { data, meta } = listPosts(getMockDb(), searchOf(request));
+    return ok(data, { meta });
+  })),
+  http.post(P("/posts"), guard(async ({ request, params }) => {
+    const body = await jsonBody(request);
+    return idempotent(request, params, () => {
+      const done = createPost(getMockDb(), body);
+      return { status: 201, ...done, location: `/api/v1/posts/${(done.data as { id: number }).id}` };
+    });
+  })),
+  http.get(P("/posts/slug-check"), guard(({ request }) => ok(checkPostSlug(getMockDb(), searchOf(request))))),
+  http.get(P("/posts/:id"), guard(({ request, params }) => {
+    const { data, etag } = getPost(getMockDb(), param(params, "id"), searchOf(request));
+    return ok(data, { etag });
+  })),
+  http.patch(P("/posts/:id"), guard(async ({ request, params }) => {
+    const { data, etag } = patchPost(getMockDb(), param(params, "id"), await jsonBody(request), request.headers.get("If-Match"));
+    return ok(data, { etag });
+  })),
+  http.delete(P("/posts/:id"), guard(({ request, params }) => {
+    const { data, etag } = deletePost(getMockDb(), param(params, "id"), searchOf(request), request.headers.get("If-Match"));
+    return ok(data, { etag });
+  })),
+  http.post(P("/posts/:id/restore"), guard(({ request, params }) => {
+    const { data, etag } = restorePost(getMockDb(), param(params, "id"), request.headers.get("If-Match"));
+    return ok(data, { etag });
+  })),
+  http.put(P("/posts/:id/media"), guard(async ({ request, params }) => {
+    const { data, etag } = replacePostMedia(getMockDb(), param(params, "id"), await jsonBody(request), request.headers.get("If-Match"));
+    return ok(data, { etag });
+  })),
+  http.post(P("/posts/:id/publish"), guard(async ({ request, params }) => {
+    const body = await jsonBody(request);
+    return idempotent(request, params, () => ({ status: 200, ...publishPost(getMockDb(), param(params, "id"), searchOf(request), body, request.headers.get("If-Match")) }));
+  })),
+  http.post(P("/posts/:id/unpublish"), guard(({ request, params }) =>
+    idempotent(request, params, () => ({ status: 200, ...unpublishPost(getMockDb(), param(params, "id"), searchOf(request), request.headers.get("If-Match")) }))
+  )),
+  http.post(P("/posts/:id/discard-draft"), guard(({ request, params }) => {
+    const { data, etag } = discardPostDraft(getMockDb(), param(params, "id"), request.headers.get("If-Match"));
+    return ok(data, { etag });
+  })),
+  http.get(P("/posts/:id/revisions"), guard(({ request, params }) => {
+    const { data, meta } = listPostRevisions(getMockDb(), param(params, "id"), searchOf(request));
+    return ok(data, { meta });
+  })),
+  http.get(P("/posts/:id/revisions/:revId"), guard(({ params }) => ok(getPostRevision(getMockDb(), param(params, "id"), param(params, "revId"))))),
+  http.post(P("/posts/:id/revisions/:revId/restore"), guard(async ({ request, params }) => {
+    const { data, etag } = restorePostRevision(getMockDb(), param(params, "id"), param(params, "revId"), await jsonBody(request), request.headers.get("If-Match"));
+    return ok(data, { etag });
+  })),
+];
+
+// Preview links (T1.4.4, doc/05 12.9; posts 13.3.8). The creation answer carries the raw token in `url` and must not be cached.
 const previewLinkHandlers: HttpHandler[] = [
   http.post(P("/pages/:id/preview-links"), guard(async ({ request, params }) => {
     const link = createPreviewLink(getMockDb(), param(params, "id"), await jsonBody(request));
@@ -324,6 +397,14 @@ const previewLinkHandlers: HttpHandler[] = [
     const { data, meta } = listPreviewLinks(getMockDb(), param(params, "id"), searchOf(request));
     return ok(data, { meta });
   })),
+  http.post(P("/posts/:id/preview-links"), guard(async ({ request, params }) => {
+    const link = createPreviewLink(getMockDb(), param(params, "id"), await jsonBody(request), "posts");
+    return HttpResponse.json({ success: true, data: link }, { status: 201, headers: { "Cache-Control": "no-store" } });
+  })),
+  http.get(P("/posts/:id/preview-links"), guard(({ request, params }) => {
+    const { data, meta } = listPreviewLinks(getMockDb(), param(params, "id"), searchOf(request), "posts");
+    return ok(data, { meta });
+  })),
   http.delete(P("/preview-links/:id"), guard(({ params }) => ok(revokePreviewLink(getMockDb(), param(params, "id"))))),
 ];
 
@@ -331,7 +412,7 @@ const previewLinkHandlers: HttpHandler[] = [
 const cmsLookupHandlers: HttpHandler[] = [
   http.get(P("/section-types"), guard(({ request }) => ok(listSectionTypes(getMockDb(), searchOf(request))))),
   http.get(P("/section-types/:key"), guard(({ params }) => ok(getSectionType(param(params, "key"))))),
-  ...(["posts", "albums", "faq-groups", "forms"] as const).map((kind) =>
+  ...(["albums", "faq-groups", "forms"] as const).map((kind) =>
     http.get(P(`/${kind}`), guard(({ request }) => {
       const { data, meta } = listLookup(getMockDb(), kind, searchOf(request));
       return ok(data, { meta });
@@ -400,6 +481,7 @@ function taxonomyHandlers(kind: "categories" | "tags"): HttpHandler[] {
 export const saveLiveApiHandlers: HttpHandler[] = [
   ...menuHandlers,
   ...pageHandlers,
+  ...postHandlers,
   ...previewLinkHandlers,
   ...cmsLookupHandlers,
   ...settingsHandlers,

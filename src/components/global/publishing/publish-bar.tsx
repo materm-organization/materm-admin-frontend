@@ -71,7 +71,14 @@ export type PublishBarProps = {
 };
 
 // Warnings of a success the user should read (not only a toast): the draft kept in the History, links that are hidden.
-const NOTICE_CODES = new Set(["draft_kept_as_history", "page_referenced", "path_changed_published"]);
+const NOTICE_CODES = new Set(["draft_kept_as_history", "page_referenced", "post_referenced", "path_changed_published", "slug_changed_published"]);
+
+// ICU arguments of a notice from its `params` (primitives only).
+function noticeValues(notice: CommandWarning): Record<string, string | number> {
+  const out: Record<string, string | number> = {};
+  for (const [k, v] of Object.entries(notice.params ?? {})) if (typeof v === "string" || typeof v === "number") out[k] = v;
+  return out;
+}
 
 function DisabledHint({ reason, children }: { reason: string | null; children: ReactNode }) {
   if (!reason) return <>{children}</>;
@@ -123,10 +130,13 @@ export function PublishBar({
 
   const canPublish = useCan(config.permissionKey, PERMISSION_ACTIONS.PUBLISH);
   const canUnpublish = useCan(config.permissionKey, PERMISSION_ACTIONS.UNPUBLISH);
-  const canUpdate = useCan(config.permissionKey, PERMISSION_ACTIONS.UPDATE);
+  // A kind with `update_own` (posts): the creator may save, discard and issue preview links of their own thing; publish and
+  // unpublish never count the creator.
+  const own = config.ownActions ? { ownerId: entity.owner_id } : {};
+  const canUpdate = useCan(config.permissionKey, PERMISSION_ACTIONS.UPDATE, own);
   const canTranslate = useCan(config.permissionKey, PERMISSION_ACTIONS.TRANSLATE);
   const canRead = useCan(config.permissionKey, PERMISSION_ACTIONS.READ);
-  const canPreviewAction = useCan(config.permissionKey, config.previewActions);
+  const canPreviewAction = useCan(config.permissionKey, config.previewActions, own);
 
   const publishMutation = useMutationPublish(resource, entity.id);
   const unpublishMutation = useMutationUnpublish(resource, entity.id);
@@ -193,7 +203,7 @@ export function PublishBar({
     }
     if (parsed.code === "INVALID_STATE" && parsed.status === 409) {
       const reason = String(parsed.details?.reason ?? "");
-      toast.error(t.has(`invalidState.${reason}`) ? t(`invalidState.${reason}`) : t("invalidState.other"));
+      toast.error(t.has(`invalidState.${reason}`) ? t(`invalidState.${reason}`, { noun }) : t("invalidState.other", { noun }));
       // The entity is not in the state the page showed: load what it is now.
       await onRefresh?.();
       return "stale";
@@ -337,9 +347,9 @@ export function PublishBar({
           <div className="space-y-2" data-testid="publish-notices">
             {notices.map((notice, i) => (
               <Alert key={`${notice.code}-${i}`} className="border-amber-500/50 bg-amber-50 text-amber-950 dark:bg-amber-950/40 dark:text-amber-100" data-testid={`notice-${notice.code}`}>
-                <AlertTitle className="line-clamp-none">{t.has(`notices.${notice.code}.title`) ? t(`notices.${notice.code}.title`) : notice.code}</AlertTitle>
+                <AlertTitle className="line-clamp-none">{t.has(`notices.${notice.code}.title`) ? t(`notices.${notice.code}.title`, noticeValues(notice)) : notice.code}</AlertTitle>
                 <AlertDescription className="flex items-start justify-between gap-2 text-amber-950/90 dark:text-amber-100/90">
-                  <span>{t.has(`notices.${notice.code}.body`) ? t(`notices.${notice.code}.body`) : (notice.message ?? "")}</span>
+                  <span>{t.has(`notices.${notice.code}.body`) ? t(`notices.${notice.code}.body`, noticeValues(notice)) : (notice.message ?? "")}</span>
                   <Button
                     type="button"
                     variant="ghost"
@@ -374,6 +384,7 @@ export function PublishBar({
         blockerCount={blocked?.count}
         truncated={blocked?.truncated}
         noun={noun}
+        resource={resource}
         onGoToField={onGoToField}
       />
       <ConfirmDialog

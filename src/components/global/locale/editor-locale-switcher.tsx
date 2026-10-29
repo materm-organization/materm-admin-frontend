@@ -77,7 +77,7 @@ export function EditorLocaleSwitcher({
               key={locale.code}
               value={locale.code}
               aria-label={`${locale.name}${locale.is_default ? ` (${t("default")})` : ""}: ${description}${issues > 0 ? `, ${t("issues", { count: issues })}` : ""}`}
-              className="h-9 gap-1.5 px-3"
+              className="h-9 flex-none gap-1.5 px-3"
             >
               <span>{locale.short_label || locale.code.toUpperCase()}</span>
               {locale.is_default && (

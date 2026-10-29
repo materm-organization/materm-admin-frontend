@@ -24,6 +24,7 @@ import {
   type Params,
 } from "@/mocks/mock-core";
 import { findRoot, isTrashed, working } from "@/mocks/mock-pages";
+import { canUpdatePost, findPost, postIsTrashed, postPreviewPath, postWorking, roleOf } from "@/mocks/mock-posts";
 import type { ApiFieldError } from "@/types/api";
 import type { UserRef } from "@/types/media";
 import type { PreviewLinkCreated, PreviewLinkItem, PreviewLinkRevoked, PreviewLinkState } from "@/types/preview-links";
@@ -37,8 +38,17 @@ const SOMCHAI: UserRef = { id: 4, name: "Somchai Vongsa" };
 const isObject = (v: unknown): v is Record<string, unknown> => typeof v === "object" && v !== null && !Array.isArray(v);
 const iso = (ms: number) => new Date(ms).toISOString();
 
+type Kind = "pages" | "posts";
+
 // Does the translate-only model (no `update`, no `review` on the page) apply?
 const translatorOnly = (db: MockDb) => db.translateOnly.includes("pages");
+// What the signed-in user may do with the links of an entity: a post follows PT-2 (`update`, or `update_own` of my own post),
+// a page needs `update`. `holder` = the user can create links and sees every user's links of it.
+function holdsUpdate(db: MockDb, kind: Kind, id: number): boolean {
+  if (kind === "pages") return !translatorOnly(db);
+  const root = db.posts.find((p) => p.id === id);
+  return root ? canUpdatePost(db, root) : roleOf(db) === "editor";
+}
 
 function stateOf(link: MockPreviewLink, now = Date.now()): PreviewLinkState {
   if (link.revoked_at !== null) return "revoked";
@@ -57,10 +67,14 @@ export function newPreviewToken(): string {
 // ---------------------------------------------------------------------------------------------------------------
 // POST
 // ---------------------------------------------------------------------------------------------------------------
-export function createPreviewLink(db: MockDb, id: string, body: unknown): PreviewLinkCreated {
-  // The route policy comes first: `read` + (`update` | `review`) - a translator has neither.
-  if (translatorOnly(db)) throw fail(403, "FORBIDDEN", "You do not have permission to perform this action.", { details: { summary: "cms.pages:read & (cms.pages:update | cms.pages:review) POST preview-links" } });
-  const root = findRoot(db, id);
+export function createPreviewLink(db: MockDb, id: string, body: unknown, kind: Kind = "pages"): PreviewLinkCreated {
+  // The route policy comes first: `read` + (`update` | `review`) - a translator has neither. For a post the owner counts
+  // with `update_own` (05 13.3.8, Q-A34), so the post is looked up first.
+  const key = kind === "pages" ? "cms.pages" : "cms.blog";
+  const denied = () => fail(403, "FORBIDDEN", "You do not have permission to perform this action.", { details: { summary: `${key}:read & (${key}:update | ${key}:review) POST preview-links` } });
+  if (kind === "pages" && translatorOnly(db)) throw denied();
+  const root = kind === "pages" ? findRoot(db, id) : findPost(db, id);
+  if (!holdsUpdate(db, kind, root.id)) throw denied();
 
   if (body !== undefined && body !== null && !isObject(body)) throw validationFailed([{ in: "body", path: "", code: "invalid_type" }]);
   const input = (body ?? {}) as Record<string, unknown>;
@@ -96,16 +110,17 @@ export function createPreviewLink(db: MockDb, id: string, body: unknown): Previe
   }
   db.previewIssued.push(now);
 
-  if (isTrashed(root)) throw invalidState("trashed");
-  const live = db.previewLinks.filter((l) => l.page_id === root.id && l.created_by?.id === MOCK_USER.id && stateOf(l, now) === "active").length;
+  if (kind === "pages" ? isTrashed(root as ReturnType<typeof findRoot>) : postIsTrashed(root as ReturnType<typeof findPost>)) throw invalidState("trashed");
+  const live = db.previewLinks.filter((l) => l.entity === kind && l.page_id === root.id && l.created_by?.id === MOCK_USER.id && stateOf(l, now) === "active").length;
   if (live >= PREVIEW_MAX_LIVE) throw validationFailed([{ in: "body", path: "", code: "limit_exceeded", params: { max: PREVIEW_MAX_LIVE } }]);
 
   // Freeze the working copy (a page that was never published has no draft row: the real rows are used).
-  const snapshot = working(db, root);
+  const snapshot = kind === "pages" ? working(db, root as ReturnType<typeof findRoot>) : postWorking(db, root as ReturnType<typeof findPost>);
   const frozenAt = iso(now);
-  const revision = pushRevision(db, "pages", root.id, "cms.pages", "history", structuredClone(snapshot) as unknown as Record<string, unknown>, "preview", frozenAt, MOCK_USER);
+  const revision = pushRevision(db, kind, root.id, `cms.${kind}`, "history", structuredClone(snapshot) as unknown as Record<string, unknown>, "preview", frozenAt, MOCK_USER);
   const link: MockPreviewLink = {
     id: db.nextPreviewLinkId++,
+    entity: kind,
     page_id: root.id,
     locale,
     created_by: MOCK_USER,
@@ -120,13 +135,14 @@ export function createPreviewLink(db: MockDb, id: string, body: unknown): Previe
   db.previewLinks.push(link);
 
   const token = newPreviewToken();
-  const url = `${PREVIEW_PORTAL_URL}/api/preview?token=${token}&path=${encodeURIComponent(snapshot.page.path)}&locale=${encodeURIComponent(locale)}`;
+  const path = kind === "pages" ? (snapshot as ReturnType<typeof working>).page.path : postPreviewPath(db, root as ReturnType<typeof findPost>, locale);
+  const url = `${PREVIEW_PORTAL_URL}/api/preview?token=${token}&path=${encodeURIComponent(path)}&locale=${encodeURIComponent(locale)}`;
   return {
     id: link.id,
     url,
     expires_at: iso(link.expires_at),
     locale,
-    entity: { type: "cms.pages", id: root.id },
+    entity: { type: `cms.${kind}`, id: root.id },
     revision: link.revision,
   };
 }
@@ -138,7 +154,7 @@ const STATES = ["active", "expired", "revoked", "all"] as const;
 const SORTS = ["-created_at", "created_at", "expires_at", "-expires_at"] as const;
 
 function toItem(db: MockDb, link: MockPreviewLink, now: number): PreviewLinkItem {
-  const root = db.pages.find((p) => p.id === link.page_id);
+  const root = link.entity === "pages" ? db.pages.find((p) => p.id === link.page_id) : db.posts.find((p) => p.id === link.page_id);
   return {
     id: link.id,
     locale: link.locale,
@@ -154,8 +170,8 @@ function toItem(db: MockDb, link: MockPreviewLink, now: number): PreviewLinkItem
   };
 }
 
-export function listPreviewLinks(db: MockDb, id: string, params: Params) {
-  const root = findRoot(db, id);
+export function listPreviewLinks(db: MockDb, id: string, params: Params, kind: Kind = "pages") {
+  const root = kind === "pages" ? findRoot(db, id) : findPost(db, id);
   const errors: ApiFieldError[] = [];
   for (const key of new Set(params.keys())) if (!["state", "sort", "page", "limit"].includes(key)) errors.push({ in: "query", path: `/${key}`, code: "unknown_field" });
   const state = params.get("state") ?? "active";
@@ -169,9 +185,9 @@ export function listPreviewLinks(db: MockDb, id: string, params: Params) {
   if (errors.length) throw validationFailed(errors);
 
   const now = Date.now();
-  let rows = db.previewLinks.filter((l) => l.page_id === root.id);
+  let rows = db.previewLinks.filter((l) => l.entity === kind && l.page_id === root.id);
   // A holder of `read` alone sees only their own links.
-  if (translatorOnly(db)) rows = rows.filter((l) => l.created_by?.id === MOCK_USER.id);
+  if (!holdsUpdate(db, kind, root.id)) rows = rows.filter((l) => l.created_by?.id === MOCK_USER.id);
   if (state !== "all") rows = rows.filter((l) => stateOf(l, now) === state);
   const field = sort.replace(/^-/, "") as "created_at" | "expires_at";
   const dir = sort.startsWith("-") ? -1 : 1;
@@ -189,7 +205,7 @@ export function revokePreviewLink(db: MockDb, id: string): PreviewLinkRevoked {
   if (!link) throw notFound();
   // The owner, or a holder of `update` on the entity the link is frozen on.
   const mine = link.created_by?.id === MOCK_USER.id;
-  if (!mine && translatorOnly(db)) throw fail(403, "FORBIDDEN", "You do not have permission to perform this action.");
+  if (!mine && !holdsUpdate(db, link.entity, link.page_id)) throw fail(403, "FORBIDDEN", "You do not have permission to perform this action.");
   if (link.revoked_at === null) link.revoked_at = Date.now();
   return { id: link.id, state: "revoked", revoked_at: iso(link.revoked_at) };
 }
@@ -204,6 +220,7 @@ function issueRaw(db: MockDb, pageId: number, who: UserRef, ageMs: number, ttlMi
   const revision = reuseRevision ?? pushRevision(db, "pages", root.id, "cms.pages", "history", structuredClone(working(db, root)) as unknown as Record<string, unknown>, "preview", iso(createdAt), who);
   const link: MockPreviewLink = {
     id: db.nextPreviewLinkId++,
+    entity: "pages",
     page_id: pageId,
     locale: DEFAULT_LOCALE_CODE,
     created_by: who,
@@ -248,5 +265,5 @@ export function exhaustPreviewRate(db: MockDb) {
 
 // A summary without any url (for a click-through script).
 export const previewLinkSummary = (db: MockDb) =>
-  db.previewLinks.map((l) => ({ id: l.id, page_id: l.page_id, state: stateOf(l), created_by: l.created_by?.id ?? null }));
+  db.previewLinks.map((l) => ({ id: l.id, entity: l.entity, page_id: l.page_id, state: stateOf(l), created_by: l.created_by?.id ?? null }));
 

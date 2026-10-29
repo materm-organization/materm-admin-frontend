@@ -41,6 +41,8 @@ export type PublishableState = Pick<PublishableMeta, "status" | "has_unpublished
   // The home page can not be unpublished (BR-16); a system page can not be deleted (BR-18).
   is_home?: boolean;
   is_system?: boolean;
+  // Who created it (`created_by.id`): a kind with `update_own` (posts) lets the creator save / discard / preview.
+  owner_id?: number | null;
 };
 
 // A blocker (`errors[]` of a 422 PUBLISH_BLOCKED, has `in: "entity"`) or a warning (`details.warnings[]`, no `in`).

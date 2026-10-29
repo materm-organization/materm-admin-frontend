@@ -121,6 +121,9 @@ Screens and building blocks built so far (phase P1 milestone M1; contract `../do
 - **T1.4.8 page editor + section editor (SCR-20 / SCR-21, M4)** - built against the mock API (no section routes in the backend yet).
   See "Page editor (T1.4.8)" below.
 
+- **T1.5.5 posts (SCR-24 / SCR-25, M5)** - built against the mock API (the posts backend T1.5.1 was written in parallel). See
+  "Posts (T1.5.5)" below.
+
 To add a module, follow the feature-vertical pattern:
 `src/app/(protected)/(routes)/admin/<feature>/page.tsx` + `src/services/<feature>.api.ts` +
 `src/hooks/use-<feature>.ts` + `src/types/<feature>.d.ts` + `src/components/protected/<feature>/`,
@@ -405,6 +408,42 @@ command with the old ETag is a 409, the model is per tab so a second tab cannot 
   `mocks/mock-sections.test.ts`; `page-host.test.tsx` was updated (the "editor is coming" text and the `field-target` notice are gone on
   purpose: Go to field now opens the field).
 
+## Posts (T1.5.5)
+
+Contract: `doc/05` section 13.3, `doc/api/openapi-admin.yaml` (Post*), backend `materm-admin-backend/modules/cms/posts`. `/admin/blog/posts` (SCR-24, sidebar
+`nav.posts` in the Content group, key `cms.blog`; `/admin/blog` itself is NOT a page) and `/admin/blog/posts/[id]` (SCR-25). There is no `new` route: a post is created
+from the list's dialog (title in the default language, optional category, the author shown as "you"; the server makes the slug), then the editor opens.
+
+- **Code**: `components/protected/posts/` (`posts-list`, `post-create-dialog`, `post-host`, `post-editor`, tabs `post-content-tab` / `post-details-tab` /
+  `post-seo-tab`, `post-gallery`, `slug-field`, `post-media-field`, `post-tags-field`, `post-field`, `post-draft.ts` = the pure form model), `services/posts.api.ts`,
+  `hooks/use-posts.ts` (`usePosts`, `usePost`, `writeThroughPost`, `usePostWrites`), `types/posts.d.ts`, `lib/posts.ts` (limits, `slugify`; shared with the mock, so
+  app code never imports `@/mocks`). `lib/publishable-resources.ts` has `posts` (`previewLinks: true`, `ownActions: true`), `lib/revision-resources.ts` has `posts`
+  (publishable). `TranslationBadges` takes `fields` / `noun` (posts count title, excerpt, SEO title). `publishing.*` texts that said "page" take `{noun}`.
+- **Rights (05 13.3.2 / 13.3.3)**: `mode` = `full` (`update`, or `update_own` of MY post: `useCan(..., {ownerId: created_by.id})`), `translate` (only the texts of
+  non-default languages, the alt / caption of the gallery in them, may add a language row; not delete one), `none` (read only, the trash). `PublishBar` takes
+  `entity.owner_id` and, for a resource with `ownActions`, counts `update_own` of the owner for save / discard / preview - never for publish / unpublish.
+  The list offers Edit / Preview / Delete per row by the same rules (delete_own only on a never-published own post; restore needs `delete`).
+- **One draft, one write queue**: `PostDraft` holds Content + Details + SEO + the gallery; `edit === null` = untouched (the baseline is derived from the post in the
+  cache). One save = PATCH of what changed (`buildPostPatch`), then, only if the order / set / pictures of the gallery changed, `PUT /posts/{id}/media` with EVERY
+  row and ALL its languages' texts (an omitted `translations` may clear them). Both go through `usePostWrites` (one at a time, ETag read from the cache). The PUT
+  answers `{media, aggregate}` (not the post): merged into the cache. Text-only alt / caption edits of existing rows ride on the PATCH as `media_translations`
+  (the only path for a translator). New gallery rows have keys `new-<n>` and no id.
+- **Display date (`published_at`)** is NOT in the draft: its own control (Details tab, "Save date"), saved by a PATCH that carries nothing else (the server answers
+  422 `not_applicable` `send_alone` otherwise); on a published post it goes live at once and cannot be cleared; the future is refused (client and 422 `out_of_range`).
+- **Slug** per language (`SlugField`): `GET /posts/slug-check` 500 ms after typing (only real rows of other posts; the same slug in a pending draft of another post is
+  caught at publish as `duplicate` at `/translations/<l>/slug`); taken -> "Taken by ..." + "Use <suggestion>" and the save is held back; a 409 from the server at the field.
+- **Go to field**: PublishBar pointer -> `?field=` + `?tab=` + `?locale=` (Content) / `?seoLocale=` (SEO has its own language, as the page editor) in one `router.replace`;
+  an effect focuses `post-field-<name>[-<l>]` (`postPointerFieldId`). `post_referenced` is a non-blocking notice (PublishBar notice on unpublish, toast on delete).
+- **Mock** (`mocks/mock-posts.ts`, `mock-posts.test.ts`): the whole model strict like `mock-pages.ts`; seeded: post 1 = the real seeded post (title shortened to the
+  name the older mocks use, `created_by` null), INVENTED posts 2 - 8 and the authors Somchai Vongsa (4) and Dara Phommachan (7) (Noy Keomany = me, 6): 4 = published with
+  a pending draft whose English slug equals the REAL slug of post 5 (the slug blocker), 6 = trashed, 7 = every kind of blocker, 8 = ready to publish by another author.
+  `db.postRole` ("editor" | "author" | "translator") and `translateOnly` containing `"posts"` drive the 403 rules; the taxonomy counts and the post picker read this model.
+  Browser (`NEXT_PUBLIC_API_MOCKING=true`): `window.__MATERM_MOCK__.setPostRole("author"|"translator"|"editor")` (also rewrites the cached `/auth/me` permissions and id 6),
+  `setTranslateOnly(true)` covers `cms.blog`, `touchPost(id)` (-> 409), `posts()`, `post(id)`.
+- **Tests**: `post-draft.test.ts`, `posts-list.test.tsx`, `post-editor.test.tsx` (whole editor over the mock API), `mocks/mock-posts.test.ts`, owner cases in `publish-bar.test.tsx`.
+- **Not built / assumptions**: no "language complete" filter and no published-date range filter (the API has neither / not built); posts have no noindex / in_sitemap;
+  `author_id` is never sent (422 `not_applicable`), the author is `created_by`; the author filter offers "Mine" and, with `iam.users:read`, the users.
+
 ## Preview links (T1.4.4 UI)
 
 Contract: `doc/05` section 12.9, `doc/api/openapi-admin.yaml` (CreatePreviewLinkRequest, PreviewLinkCreated, PreviewLinkItem, PreviewLinkRevoked); the
@@ -414,7 +453,7 @@ published gets one too); it works for anyone who has it until it expires; the ra
 - **Code**: `services/preview-links.api.ts` (`PreviewLinksAPI.Create/List/Revoke`), `hooks/use-preview-links.ts` (`usePreviewLinks`, `useMutationCreatePreviewLink`,
   `useMutationRevokePreviewLink`), `types/preview-links.d.ts` (the row field is `use_count`, not `uses`), `API_ENDPOINTS.PREVIEW_LINKS`,
   `components/global/publishing/preview-link-dialog.tsx` (`PreviewLinkDialog`) + `preview-link-errors.ts` (pure: `classifyPreviewCreateError`, `parseTtlMinutes`,
-  `safeHttpUrl`). `PUBLISHABLE_RESOURCES[x].previewLinks` says whether the kind has links (pages yes; posts M5; albums / FAQ / forms never, PT-18); `PublishBar` hides
+  `safeHttpUrl`). `PUBLISHABLE_RESOURCES[x].previewLinks` says whether the kind has links (pages and posts yes; albums / FAQ / forms never, PT-18); `PublishBar` hides
   the button without it and shows it needing `read` + `update | review`. **Wiring**: `PageEditor` passes `onCreatePreviewLink={() => setPreviewOpen(true)}` and renders
   `<PreviewLinkDialog resource entityId open onOpenChange isDirty flush isSaving />` with the same `isDirty` / `flush` it gives `PublishBar`.
 - **Dialog**: language (active locales, default selected; without `cms.locales:read` the list is unavailable and no `locale` is sent), expiry (toggle 30 min / 1 h / 4 h /

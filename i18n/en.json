@@ -214,7 +214,8 @@
     "settings": "Site settings",
     "seo": "SEO",
     "uiStrings": "UI strings",
-    "pages": "Pages"
+    "pages": "Pages",
+    "posts": "Blog posts"
   },
   "breadcrumb": {
     "admin": "Dashboard",
@@ -231,7 +232,8 @@
     "categories": "Categories",
     "tags": "Tags",
     "uiStrings": "UI strings",
-    "pages": "Pages"
+    "pages": "Pages",
+    "posts": "Blog posts"
   },
   "dashboard": {
     "title": "Dashboard",
@@ -1699,7 +1701,22 @@
       "shared_section_id": "Shared section",
       "sections": "Sections",
       "page": "Page",
-      "locale_code": "Language"
+      "locale_code": "Language",
+      "post": "Post",
+      "excerpt": "Excerpt",
+      "location_label": "Place line",
+      "body": "Article",
+      "gallery_heading": "Gallery heading",
+      "gallery_description": "Gallery description",
+      "hero_alt": "Cover image alt text",
+      "category_id": "Category",
+      "hero_media_id": "Cover image",
+      "teaser_media_id": "Card image",
+      "tag_ids": "Tags",
+      "is_featured": "Featured",
+      "published_at": "Display date",
+      "media": "Gallery",
+      "media_id": "Picture"
     },
     "publishable": {
       "explain": "The working draft, every published version and the versions kept before an edit or a restore. Restoring a version makes it the working draft: it does not reach the website until you publish.",
@@ -2177,13 +2194,15 @@
       "label": "Languages",
       "complete": "{locale}: complete",
       "missing": "{locale}: {count, plural, one {# text} other {# texts}} missing",
-      "off": "{locale}: switched off for this page"
+      "off": "{locale}: switched off for this {noun}",
+      "nounPage": "page"
     }
   },
   "publishing": {
     "barLabel": "Publishing",
     "noun": {
-      "pages": "page"
+      "pages": "page",
+      "posts": "post"
     },
     "actions": {
       "saveDraft": "Save draft",
@@ -2228,7 +2247,9 @@
       "page": "Page details",
       "structure": "Page structure",
       "section": "Section {n}: {name}",
-      "sectionUnknown": "A section"
+      "sectionUnknown": "A section",
+      "post": "Post details",
+      "gallery": "Gallery"
     },
     "fields": {
       "whole": "Whole value",
@@ -2260,7 +2281,22 @@
       "form_slug": "Form",
       "accessible_heading": "Accessible heading",
       "og_image_id": "Share image",
-      "canonical_path": "Canonical address"
+      "canonical_path": "Canonical address",
+      "category_id": "Category",
+      "hero_media_id": "Cover image",
+      "teaser_media_id": "Card image",
+      "tag_ids": "Tags",
+      "excerpt": "Excerpt",
+      "slug": "Slug",
+      "body": "Article",
+      "location_label": "Place line",
+      "hero_alt": "Cover image alt text",
+      "gallery_heading": "Gallery heading",
+      "gallery_description": "Gallery description",
+      "media": "Gallery",
+      "is_enabled": "Language switched on",
+      "published_at": "Display date",
+      "translations": "Language"
     },
     "issues": {
       "unknown": "Not accepted ({code}).",
@@ -2294,7 +2330,12 @@
       "serp_description_long": "The SEO description is longer than {recommended} characters; search engines may cut it.",
       "section_hidden_unchecked": "This hidden section would block publishing if it were visible.",
       "album_item_not_in_album": "The photo does not belong to the chosen album.",
-      "too_many_issues": "There are more problems in this section than are listed."
+      "too_many_issues": "There are more problems in this section than are listed.",
+      "duplicate_slug": "This slug is already used by another post in this language.",
+      "category_inactive": "The category is switched off. The post is published, but the category does not show on the website.",
+      "body_empty": "The article has no text in the default language.",
+      "label_long": "The label is longer than {recommended} characters; the blog strip may cut it.",
+      "limit_exceeded": "There are too many."
     },
     "sectionTypes": {
       "hero_brand": "Hero (brand)",
@@ -2350,6 +2391,14 @@
       "path_changed_published": {
         "title": "The address of a published page changed",
         "body": "Links to the old address no longer work."
+      },
+      "post_referenced": {
+        "title": "Pages that show this post skip it now",
+        "body": "Blog strips and post lists that name this post leave it out on the website."
+      },
+      "slug_changed_published": {
+        "title": "The slug of a published post changed",
+        "body": "Links to the old address no longer work."
       }
     },
     "toast": {
@@ -2363,17 +2412,17 @@
     },
     "invalidState": {
       "nothing_to_publish": "There is nothing to publish: no changes since the last publish.",
-      "not_published": "This page is not published.",
+      "not_published": "This {noun} is not published.",
       "is_home": "The home page cannot be unpublished.",
       "no_draft": "There are no unpublished changes to discard.",
-      "trashed": "This page is in the trash.",
+      "trashed": "This {noun} is in the trash.",
       "system_page": "A system page cannot be deleted.",
       "section_required": "A section the template requires cannot be removed.",
-      "other": "The page is not in the state this screen showed. It was reloaded."
+      "other": "The {noun} is not in the state this screen showed. It was reloaded."
     },
     "previewLinks": {
       "title": "Preview link",
-      "description": "Create a link that lets anyone who has it see this page as it is now, before it is published.",
+      "description": "Create a link that lets anyone who has it see this {noun} as it is now, before it is published.",
       "language": {
         "label": "Language",
         "default": "default",
@@ -2417,21 +2466,21 @@
       "errors": {
         "notConfigured": "Preview links are not configured on the server. Ask an administrator to set the address of the website.",
         "unavailable": "Preview links are not available right now. Try again in a moment.",
-        "limit": "You already have {max} active links for this page: revoke one below, then try again.",
+        "limit": "You already have {max} active links for this {noun}: revoke one below, then try again.",
         "locale": "This language is not active any more. Choose another language.",
         "ttl": "The time must be from {min} to {max} minutes.",
         "rateMinutes": "You have created too many links. Try again in {minutes, plural, one {# minute} other {# minutes}}.",
         "rateSeconds": "You have created too many links. Try again in {seconds, plural, one {# second} other {# seconds}}.",
-        "trashed": "This page is in the trash. Restore it to create preview links.",
-        "invalidState": "The page is not in a state that allows preview links. Reload the page and try again.",
-        "notFound": "This page no longer exists.",
-        "forbidden": "You do not have permission to create preview links for this page.",
+        "trashed": "This {noun} is in the trash. Restore it to create preview links.",
+        "invalidState": "The {noun} is not in a state that allows preview links. Reload the page and try again.",
+        "notFound": "This {noun} no longer exists.",
+        "forbidden": "You do not have permission to create preview links for this {noun}.",
         "network": "The server could not be reached. Check your connection and try again.",
         "other": "The link could not be created."
       },
       "list": {
         "title": "Active links",
-        "empty": "There are no active links for this page.",
+        "empty": "There are no active links for this {noun}.",
         "error": "The links could not be loaded.",
         "forbidden": "You do not have permission to see the links.",
         "retry": "Try again",
@@ -2776,5 +2825,245 @@
         "serpNoDescription": "No description yet."
       }
     }
+  },
+  "posts": {
+    "title": "Blog posts",
+    "description": "The articles of the blog. A post goes live when it is published; until then it is a draft only you and your team see.",
+    "searchPlaceholder": "Search by title or slug",
+    "untitled": "Untitled post",
+    "readOnly": "Read only",
+    "noun": "post",
+    "status": {
+      "draft": "Draft",
+      "published": "Published",
+      "archived": "Archived"
+    },
+    "filters": {
+      "status": "Status",
+      "category": "Category",
+      "tag": "Tag",
+      "author": "Author",
+      "language": "Language of the texts",
+      "pendingOnly": "With unpublished changes",
+      "mine": "Mine ({name})"
+    },
+    "trash": "Show trash",
+    "columns": {
+      "title": "Title",
+      "status": "Status",
+      "category": "Category",
+      "author": "Author",
+      "translations": "Languages",
+      "updated": "Updated",
+      "deleted": "Deleted",
+      "actions": "Actions"
+    },
+    "purgeOn": "Removed for good on {when}",
+    "empty": "There are no posts yet.",
+    "emptyHint": "Create the first post with the button above.",
+    "emptyTrash": "The trash is empty.",
+    "stale": "Somebody else changed this post. The list was reloaded.",
+    "actions": {
+      "menu": "Actions for {name}",
+      "open": "Edit",
+      "view": "View",
+      "preview": "Create preview link",
+      "delete": "Move to the trash",
+      "restore": "Restore {name}",
+      "restoreShort": "Restore"
+    },
+    "delete": {
+      "title": "Move \"{title}\" to the trash?",
+      "description": "It goes to the trash for 30 days and can be restored from there.",
+      "publishedNote": "It is published, so it disappears from the website now.",
+      "confirm": "Move to the trash",
+      "done": "\"{title}\" is in the trash for 30 days.",
+      "referenced": "{count, plural, one {# place shows} other {# places show}} this post, for example a blog strip. {count, plural, one {It skips} other {They skip}} it from now on.",
+      "draftKept": "Its unpublished changes were kept in the History tab.",
+      "failed": "It could not be moved to the trash."
+    },
+    "restore": {
+      "done": "\"{title}\" was restored as a draft.",
+      "duplicate": "It cannot be restored: its slug ({languages}) is used by another post now.",
+      "failed": "It could not be restored."
+    },
+    "create": {
+      "open": "New post",
+      "title": "New post",
+      "description": "Start with a title. The post begins as a draft; you write the text, choose the pictures and publish it in the editor.",
+      "titleLabel": "Title ({locale})",
+      "titleHint": "The slug is made from the title. Other languages are added in the editor.",
+      "category": "Category",
+      "categoryNone": "No category yet",
+      "categoryHint": "Needed to publish. You can choose it later.",
+      "author": "Author",
+      "you": "you",
+      "authorHint": "The person who creates a post is its author.",
+      "cancel": "Cancel",
+      "submit": "Create post",
+      "created": "The post was created.",
+      "failed": "The post could not be created.",
+      "errors": {
+        "title": {
+          "required": "Enter a title.",
+          "too_long": "The title can have up to {max} characters."
+        }
+      }
+    },
+    "host": {
+      "backToList": "All posts",
+      "untitled": "Untitled post",
+      "notFoundTitle": "Post not found",
+      "notFoundDescription": "This post does not exist or was removed for good.",
+      "trashedTitle": "This post is in the trash",
+      "trashedBody": "It is not on the website. Restore it from the trash of the post list to work on it."
+    },
+    "editor": {
+      "tabs": {
+        "content": "Content",
+        "details": "Details",
+        "seo": "SEO",
+        "revisions": "History"
+      },
+      "autosave": "Autosave (every 30 seconds)",
+      "autosaving": "Saving...",
+      "fixFirst": "Fix the problems shown in the form first.",
+      "saveRefused": "The server did not accept some values. They are marked in the form.",
+      "saveFailed": "The changes could not be saved.",
+      "noOwner": "nobody (a seeded post)",
+      "translateOnlyNote": "You can translate this post: the texts of the languages other than the default one. The rest is read only.",
+      "translateNote": "This post belongs to {owner}. You can translate it: the texts of the languages other than the default one. The rest is read only.",
+      "readOnlyNote": "This post belongs to {owner}. You can read it, not change it.",
+      "dateSaved": "The display date was saved.",
+      "dateSavedLive": "The display date was saved and is on the website now."
+    },
+    "problems": {
+      "required": "This is required.",
+      "too_long": "Too long: at most {max} characters.",
+      "title_required": "Add a title for this language first, or empty its other texts.",
+      "format": "Use lower-case letters, numbers and single hyphens, for example my-first-post.",
+      "future": "A date in the future is not accepted: a post cannot be scheduled yet.",
+      "too_many": "Too many: at most {max}.",
+      "taken": "This slug is used by another post in this language.",
+      "dateRequired": "A published post must keep its display date."
+    },
+    "content": {
+      "default": "Default language",
+      "translateDefaultNote": "The default language is read only for you. Pick another language above to translate.",
+      "texts": "Texts ({locale})",
+      "title": "Title",
+      "slug": "Slug",
+      "label": "Label",
+      "labelHint": "The vertical label of the blog strip. Best up to {recommended} characters.",
+      "labelLong": "Longer than {recommended} characters: the label of the blog strip may overflow.",
+      "location": "Place line",
+      "locationHint": "A line under the title, for example the place and the section of the blog.",
+      "excerpt": "Excerpt",
+      "excerptHint": "Shown on the post cards and in search results. Needed to publish.",
+      "body": "Article",
+      "bodyFallbackHint": "Empty = the website shows the {locale} article.",
+      "pictures": "Pictures",
+      "hero": "Cover image",
+      "heroHint": "Needed to publish. It must have alt text.",
+      "heroPicker": "Choose the cover image",
+      "heroAlt": "Cover image alt text",
+      "heroAltHint": "Empty = the alt text of the picture in the media library.",
+      "teaser": "Card image",
+      "teaserHint": "Optional. Empty = the cover image is used on the cards.",
+      "teaserPicker": "Choose the card image",
+      "galleryTexts": "Gallery texts ({locale})",
+      "galleryHeading": "Gallery heading",
+      "galleryDescription": "Gallery description"
+    },
+    "slug": {
+      "hint": "Lower-case letters, numbers and hyphens. Part of the address of the post.",
+      "checking": "Checking...",
+      "available": "Available",
+      "tooLong": "Too long: at most {max} characters.",
+      "format": "Use lower-case letters, numbers and single hyphens.",
+      "takenBy": "Taken by \"{title}\".",
+      "taken": "Taken by another post.",
+      "use": "Use {slug}",
+      "changedPublished": "This post was published with the slug {slug}. After you publish the new one, links to the old address stop working until redirects exist (planned for a later version)."
+    },
+    "media": {
+      "none": "No image",
+      "missing": "Image #{id} was not found",
+      "mediaAlt": "Alt text in the library: {alt}",
+      "mediaNoAlt": "The picture has no alt text in the library.",
+      "choose": "Choose image",
+      "change": "Change image",
+      "remove": "Remove"
+    },
+    "gallery": {
+      "title": "Gallery",
+      "count": "{count} of {max} pictures",
+      "add": "Add pictures",
+      "tooMany": "A gallery can have up to {max} pictures.",
+      "full": "The gallery is full ({max} pictures).",
+      "empty": "No pictures yet. The gallery shows at the end of the article.",
+      "itemLabel": "Picture {n}",
+      "alt": "Alt text ({locale})",
+      "altPlaceholder": "Empty = the alt text of the picture in the library",
+      "caption": "Caption ({locale})",
+      "tooLong": "Too long.",
+      "remove": "Remove picture {n}",
+      "pickerTitle": "Add pictures to the gallery",
+      "pickerDescription": "You can add {count, plural, one {# more picture} other {# more pictures}}."
+    },
+    "details": {
+      "taxonomy": "Category and tags",
+      "category": "Category",
+      "categoryHint": "One category. Needed to publish.",
+      "categoryNone": "No category",
+      "categoryInactive": "switched off",
+      "tags": "Tags",
+      "tagsHint": "Up to 10 tags.",
+      "tagsPlaceholder": "Choose tags",
+      "tagsCount": "{count} of {max} tags",
+      "tagsSearch": "Search tags",
+      "tagsLoading": "Loading...",
+      "tagsNone": "No tag found.",
+      "tagsFull": "10 tags is the most a post can have.",
+      "tagRemove": "Remove the tag {name}",
+      "publishing": "Author and date",
+      "author": "Author",
+      "authorHint": "The person who created the post.",
+      "authorNone": "Nobody (a seeded post)",
+      "publishedAt": "Display date",
+      "publishedAtHint": "Empty = the day it is published. A date in the future is not accepted yet. Saved on its own, not with the draft.",
+      "featured": "Featured",
+      "featuredHint": "Marks the post as a featured one.",
+      "languages": "Languages",
+      "languageOn": "Show the {locale} version on the website",
+      "languageDefault": "Default",
+      "languageNoText": "No texts yet",
+      "languagesHint": "Switching a language off makes the website use the fallback language for this post.",
+      "facts": "History of the post",
+      "createdAt": "Created",
+      "updatedAt": "Last changed",
+      "firstPublished": "First published",
+      "lastPublished": "Published version from",
+      "saveDate": "Save date",
+      "publishedAtHintLive": "This post is published: a new date is saved on its own and shows on the website at once. It cannot be cleared."
+    },
+    "seo": {
+      "defaultMissing": "The {locale} SEO title is still empty. Publishing needs it.",
+      "showDefault": "Show {locale}",
+      "needsTitle": "Add the title of the {locale} version on the Content tab before filling in its SEO texts.",
+      "seoTitle": "SEO title ({locale})",
+      "seoTitleHint": "Best up to {recommended} characters. Needed to publish.",
+      "titleLong": "Longer than {recommended} characters: search engines may cut it.",
+      "ogImage": "Share image ({locale})",
+      "ogImageHint": "Shown when the post is shared on social networks.",
+      "ogPickerTitle": "Choose the share image",
+      "seoDescription": "SEO description ({locale})",
+      "seoDescriptionHint": "Best up to {recommended} characters.",
+      "descriptionLong": "Longer than {recommended} characters: search engines may cut it.",
+      "serp": "Search result preview ({locale})",
+      "serpNoTitle": "No title yet.",
+      "serpNoDescription": "No description yet."
+    },
+    "publishedOn": "Published {date}"
   }
 }

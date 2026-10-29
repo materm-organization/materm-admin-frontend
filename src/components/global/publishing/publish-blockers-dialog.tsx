@@ -8,6 +8,7 @@ import { fieldSegments, issueTarget } from "@/components/global/publishing/issue
 import { humanizeSegment } from "@/components/global/revisions/snapshot-diff";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import type { PublishableResource } from "@/lib/publishable-resources";
 import { cn } from "@/lib/utils";
 import type { PublishIssue, PublishIssueTarget } from "@/types/publishing";
 
@@ -28,7 +29,8 @@ export function issueMessage(t: Translator, issue: PublishIssue): string {
   const rule = typeof issue.params?.rule === "string" ? issue.params.rule : undefined;
   const sectionKey = typeof issue.params?.section_key === "string" ? issue.params.section_key : "";
   const section = sectionKey ? (t.has(`sectionTypes.${sectionKey}`) ? t(`sectionTypes.${sectionKey}`) : humanizeSegment(sectionKey)) : "";
-  const keys = [rule ? `issues.${issue.code}_${rule}` : "", `issues.${issue.code}`].filter(Boolean);
+  // A slug that is taken says "slug", not "address" (posts: `/translations/<l>/slug`).
+  const keys = [rule ? `issues.${issue.code}_${rule}` : "", issue.path.endsWith("/slug") ? `issues.${issue.code}_slug` : "", `issues.${issue.code}`].filter(Boolean);
   for (const key of keys) {
     if (t.has(key)) {
       try {
@@ -49,7 +51,7 @@ type Group = { id: string; title: string; items: PublishIssue[] };
 
 // Blockers grouped as the reader thinks of them: the page itself, the structure of the page, then one group per section
 // (the engine's order is kept: root, translations, sections by position, template rules).
-export function groupIssues(t: Translator, issues: PublishIssue[]): Group[] {
+export function groupIssues(t: Translator, issues: PublishIssue[], resource: PublishableResource = "pages"): Group[] {
   const groups: Group[] = [];
   const add = (id: string, title: string, issue: PublishIssue) => {
     let group = groups.find((g) => g.id === id);
@@ -63,7 +65,8 @@ export function groupIssues(t: Translator, issues: PublishIssue[]): Group[] {
       const name = key ? (t.has(`sectionTypes.${key}`) ? t(`sectionTypes.${key}`) : humanizeSegment(key)) : t("groups.sectionUnknown");
       const position = target.sectionIndex !== undefined ? target.sectionIndex + 1 : "?";
       add(`s:${target.sectionPublicId}`, t("groups.section", { n: position, name }), issue);
-    } else if (issue.path === "/sections" || issue.path.startsWith("/sections/")) add("structure", t("groups.structure"), issue);
+    } else if (resource === "posts") add(issue.path.startsWith("/media") ? "gallery" : "post", issue.path.startsWith("/media") ? t("groups.gallery") : t("groups.post"), issue);
+    else if (issue.path === "/sections" || issue.path.startsWith("/sections/")) add("structure", t("groups.structure"), issue);
     else add("page", t("groups.page"), issue);
   }
   return groups;
@@ -80,6 +83,7 @@ export function PublishBlockersDialog({
   blockerCount,
   truncated = false,
   noun,
+  resource = "pages",
   onGoToField,
 }: {
   open: boolean;
@@ -90,11 +94,13 @@ export function PublishBlockersDialog({
   blockerCount?: number;
   truncated?: boolean;
   noun: string;
+  // Which kind of entity (the groups of the list are named after it).
+  resource?: PublishableResource;
   onGoToField?: (target: PublishIssueTarget) => void;
 }) {
   const t = useTranslations("publishing.blockers");
   const tp = useTranslations("publishing");
-  const groups = useMemo(() => groupIssues(tp, blockers), [tp, blockers]);
+  const groups = useMemo(() => groupIssues(tp, blockers, resource), [tp, blockers, resource]);
   const count = blockerCount ?? blockers.length;
 
   return (

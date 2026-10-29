@@ -25,9 +25,9 @@ import {
   tick,
   validationFailed,
   type MockDb,
-  type MockPost,
   type Params,
 } from "@/mocks/mock-core";
+import { postsUsing } from "@/mocks/mock-posts";
 import type { ApiFieldError } from "@/types/api";
 import type { SaveLiveWarning } from "@/types/media";
 import type { Category, CategoryTranslation, Tag, TagTranslation, TaxonomyKind } from "@/types/taxonomy";
@@ -37,15 +37,6 @@ const CATEGORY_KEY = /^[a-z][a-z0-9_-]{0,39}$/;
 const TAG_KEY = /^[a-z0-9][a-z0-9_-]{0,59}$/;
 const SLUG = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 const TRASH_DAYS = 30;
-
-export function seedPosts(): MockPost[] {
-  return [
-    { id: 1, title: "Music night under the stars", status: "published", category_id: 1, tag_ids: [2], is_trashed: false },
-    // INVENTED
-    { id: 2, title: "Sunrise paddle on the Mekong", status: "published", category_id: 3, tag_ids: [], is_trashed: false },
-    { id: 3, title: "Unfinished trail notes", status: "draft", category_id: 5, tag_ids: [1], is_trashed: false },
-  ];
-}
 
 export function seedTaxonomy(db: MockDb) {
   const names: Array<[string, string]> = [["music", "Music"], ["camping", "Camping"], ["outdoor", "Outdoor"], ["avenger", "Avenger"], ["hiking", "Hiking"]];
@@ -97,12 +88,10 @@ export function seedTaxonomy(db: MockDb) {
 // ---------------------------------------------------------------------------------------------------------------
 // Derived counts
 // ---------------------------------------------------------------------------------------------------------------
-const live = (p: MockPost) => !p.is_trashed;
-const publishing = (p: MockPost) => p.status === "published" || p.status === "scheduled";
-
+// The posts model (`mock-posts.ts`) is the source: a post in the trash counts for nothing.
 function counts(db: MockDb, kind: TaxonomyKind, id: number) {
-  const posts = db.posts.filter((p) => live(p) && (kind === "categories" ? p.category_id === id : p.tag_ids.includes(id)));
-  return { post_count: posts.length, published_post_count: posts.filter(publishing).length };
+  const posts = postsUsing(db, kind, id);
+  return { post_count: posts.length, published_post_count: posts.filter((p) => p.published).length };
 }
 
 function viewCategory(db: MockDb, c: Category, warnings?: SaveLiveWarning[]): Category {
@@ -395,8 +384,8 @@ export function deleteTaxonomy(db: MockDb, kind: TaxonomyKind, id: string, ifMat
   requireIfMatch(ifMatch, etagOf(row.updated_at));
   if (db.translateOnly.includes("categories")) throw forbidden("delete");
   if (row.deleted_at) return;
-  const refs = db.posts
-    .filter((p) => live(p) && publishing(p) && (kind === "categories" ? p.category_id === row.id : p.tag_ids.includes(row.id)))
+  const refs = postsUsing(db, kind, row.id)
+    .filter((p) => p.published)
     .map((p) => ({ entity_type: "cms.post", id: p.id, title: p.title, field: kind === "categories" ? "/category_id" : "/tag_ids" }));
   if (refs.length) {
     throw fail(409, "ENTITY_REFERENCED", `Cannot delete: ${refs.length} published post(s) use it.`, {

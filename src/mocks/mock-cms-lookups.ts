@@ -51,10 +51,10 @@ function filtered(rows: Row[], params: Params, fields: string[]) {
   return rows.filter((r) => !keyword || fields.some((f) => String(r[f] ?? "").toLowerCase().includes(keyword)));
 }
 
-export function listLookup(db: MockDb, kind: "posts" | "albums" | "faq-groups" | "forms", params: Params) {
+// The post picker reads the real `GET /posts` (mock-posts.ts).
+export function listLookup(db: MockDb, kind: "albums" | "faq-groups" | "forms", params: Params) {
   let rows: Row[];
-  if (kind === "posts") rows = db.posts.filter((p) => !p.is_trashed).map((p) => ({ id: p.id, title: p.title, slug: `post-${p.id}`, status: p.status }));
-  else if (kind === "albums") rows = db.albums.map((a) => ({ id: a.id, title: a.title, slug: `album-${a.id}`, status: a.status }));
+  if (kind === "albums") rows = db.albums.map((a) => ({ id: a.id, title: a.title, slug: `album-${a.id}`, status: a.status }));
   else if (kind === "faq-groups") rows = FAQ_GROUP_FIXTURES.map((o) => ({ key: o.value, name: o.label, status: o.status }));
   else rows = FORM_FIXTURES.map((o) => ({ slug: o.value, name: o.label, status: o.status }));
   return paginate(filtered(rows, params, ["title", "name", "slug", "key"]), params, 20);

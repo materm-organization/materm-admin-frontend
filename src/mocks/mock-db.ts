@@ -33,7 +33,8 @@ import { MENU_NEXT_ITEM_ID, restoreMenu, seedMenuRevisions, seedMenus } from "@/
 import { seedAlbums, seedPageRevisions, seedPages } from "@/mocks/mock-pages";
 import { seedPreviewLinks } from "@/mocks/mock-preview";
 import { SEED_SETTINGS_UPDATED, restoreSettings, seedSettings, seedSettingsRevisions } from "@/mocks/mock-settings";
-import { restoreTaxonomy, seedPosts, seedTaxonomy, seedTaxonomyRevisions } from "@/mocks/mock-taxonomy";
+import { seedPostRevisions, seedPosts } from "@/mocks/mock-posts";
+import { restoreTaxonomy, seedTaxonomy, seedTaxonomyRevisions } from "@/mocks/mock-taxonomy";
 import { restoreUiString, seedUiStringRevisions, seedUiStrings, uiStringKnown } from "@/mocks/mock-ui-strings";
 import { SEED_MEDIA } from "@/mocks/media-seed";
 import type { ApiFieldError } from "@/types/api";
@@ -174,7 +175,10 @@ export function createMockDb(): MockDb {
     nextSectionId: 301,
     albums: seedAlbums(),
     idempotency: {},
-    posts: seedPosts(),
+    posts: [],
+    nextPostId: 9,
+    nextPostMediaId: 1,
+    postRole: "editor",
     menus: seedMenus(),
     nextMenuItemId: MENU_NEXT_ITEM_ID,
     translateOnly: [],
@@ -213,10 +217,12 @@ export function createMockDb(): MockDb {
   }));
   recomputeFolders(db);
   db.pages = seedPages(db);
+  db.posts = seedPosts(db);
   seedUiStrings(db);
   seedTaxonomy(db);
   seedRevisions(db);
   seedPageRevisions(db);
+  seedPostRevisions(db);
   seedMenuRevisions(db);
   seedSettingsRevisions(db);
   seedUiStringRevisions(db);

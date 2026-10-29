@@ -2,11 +2,11 @@
 // (components/global/revisions/) takes `{ resource, id }`; this table turns it into the URL base, the key a user
 // needs to restore and the URL of the entity itself (whose ETag is the `If-Match` of a restore).
 //
-// The publishable resources (`pages` now, `posts`, `albums`... in M5: kinds `draft` / `published`, a restore becomes
+// The publishable resources (`pages`, `posts`, then `albums`... in M5: kinds `draft` / `published`, a restore becomes
 // the working draft - doc/05 section 12.8) carry `publishable: true`.
 import { PERMISSION_KEYS } from "@/lib/constants/permissions";
 
-export type RevisionResource = "menus" | "settings" | "ui-strings" | "categories" | "tags" | "media/assets" | "pages";
+export type RevisionResource = "menus" | "settings" | "ui-strings" | "categories" | "tags" | "media/assets" | "pages" | "posts";
 
 export type RevisionEntityId = string | number;
 
@@ -71,6 +71,15 @@ export const REVISION_RESOURCES: Record<RevisionResource, ResourceConfig> = {
     restoreKey: () => PERMISSION_KEYS.CMS_PAGES,
     restoreActions: ["update"],
     entityPath: (id) => `/pages/${seg(id)}`,
+    publishable: true,
+  },
+  posts: {
+    base: (id) => `/posts/${seg(id)}`,
+    readKey: () => PERMISSION_KEYS.CMS_BLOG,
+    restoreKey: () => PERMISSION_KEYS.CMS_BLOG,
+    // `update`, or `update_own` of my own post: the host passes `canRestore` (it knows the owner).
+    restoreActions: ["update", "update_own"],
+    entityPath: (id) => `/posts/${seg(id)}`,
     publishable: true,
   },
   "media/assets": {

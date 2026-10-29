@@ -4,19 +4,32 @@ import { AlertTriangleIcon, CheckIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 import { cn } from "@/lib/utils";
-import type { PageTranslationStatus } from "@/types/pages";
 
-// `la ✓  en ⚠2` (doc/07 section 5.2): per active language, whether the page-level texts (title, SEO title, SEO
-// description) are there. A language switched off for the page shows "off". Section texts are counted in the editor.
-export function TranslationBadges({ status, className }: { status: Record<string, PageTranslationStatus>; className?: string }) {
+// `la ✓  en ⚠2` (doc/07 section 5.2): per active language, whether the texts of the entity are there. A page counts its title,
+// SEO title and SEO description (section texts are counted in the editor); a post counts its title, excerpt and SEO title
+// (`fields`). A language switched off shows "off".
+export type TranslationFlags = { enabled: boolean } & Record<string, boolean>;
+
+export function TranslationBadges({
+  status,
+  fields = ["title", "seo_title", "seo_description"],
+  noun,
+  className,
+}: {
+  status: Record<string, TranslationFlags>;
+  fields?: readonly string[];
+  // "post": the word in the tooltip of a language that is switched off ("switched off for this post"); default "page".
+  noun?: string;
+  className?: string;
+}) {
   const t = useTranslations("status.translation");
   const entries = Object.entries(status);
   if (entries.length === 0) return null;
   return (
     <ul className={cn("flex flex-wrap items-center gap-x-3 gap-y-1 text-xs", className)} aria-label={t("label")}>
       {entries.map(([code, s]) => {
-        const missing = [s.title, s.seo_title, s.seo_description].filter((v) => !v).length;
-        const label = !s.enabled ? t("off", { locale: code }) : missing === 0 ? t("complete", { locale: code }) : t("missing", { locale: code, count: missing });
+        const missing = fields.filter((f) => !s[f]).length;
+        const label = !s.enabled ? t("off", { locale: code, noun: noun ?? t("nounPage") }) : missing === 0 ? t("complete", { locale: code }) : t("missing", { locale: code, count: missing });
         return (
           <li
             key={code}

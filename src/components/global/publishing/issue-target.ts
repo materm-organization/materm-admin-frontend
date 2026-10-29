@@ -38,7 +38,9 @@ export function fieldSegments(issue: PublishIssue, labelOf: (segment: string) =>
   if (rest[0] === "translations") rest = rest.slice(1);
   // drop the language (a map key) wherever it stands
   const kept = rest.filter((s, i) => !(target.locale && s === target.locale && (i === rest.length - 1 || rest[i - 1] === undefined)));
+  // `/media/<row id>/media_id` (a post's gallery): the row id is not a position, so it is not shown.
   const words = kept
+    .filter((s, i) => !(/^\d+$/.test(s) && kept[i - 1] === "media"))
     .map((s) => (/^\d+$/.test(s) ? `#${Number(s) + 1}` : (labelOf(s) ?? humanizeSegment(s))))
     .filter(Boolean);
   return { field: words.join(" › "), locale: target.locale };

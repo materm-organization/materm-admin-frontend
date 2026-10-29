@@ -64,6 +64,7 @@ export function PreviewLinkDialog(props: PreviewLinkDialogProps) {
 
 function PreviewLinkDialogBody({ resource, entityId, onOpenChange, isDirty = false, flush, isSaving = false }: PreviewLinkDialogProps) {
   const t = useTranslations("publishing.previewLinks");
+  const noun = useTranslations("publishing")(`noun.${resource}`);
   const format = useFormatter();
   const config = PUBLISHABLE_RESOURCES[resource];
   const ids = { language: useId(), custom: useId(), url: useId() };
@@ -181,7 +182,7 @@ function PreviewLinkDialogBody({ resource, entityId, onOpenChange, isDirty = fal
               <EyeIcon className="size-4" />
               {t("title")}
             </DialogTitle>
-            <DialogDescription>{t("description")}</DialogDescription>
+            <DialogDescription>{t("description", { noun })}</DialogDescription>
           </DialogHeader>
 
           {issued ? (
@@ -275,7 +276,7 @@ function PreviewLinkDialogBody({ resource, entityId, onOpenChange, isDirty = fal
 
               <p className="text-sm text-muted-foreground">{t("frozen")}</p>
 
-              {problem ? <ProblemAlert problem={problem} /> : null}
+              {problem ? <ProblemAlert problem={problem} noun={noun} /> : null}
 
               <div className="flex justify-end">
                 <Button type="button" onClick={() => void create()} disabled={!canCreate} data-testid="preview-create">
@@ -306,7 +307,7 @@ function PreviewLinkDialogBody({ resource, entityId, onOpenChange, isDirty = fal
               </div>
             ) : links.data.data.length === 0 ? (
               <p className="text-sm text-muted-foreground" data-testid="preview-links-empty">
-                {t("list.empty")}
+                {t("list.empty", { noun })}
               </p>
             ) : (
               <>
@@ -478,12 +479,12 @@ function IssuedLink({
   );
 }
 
-function ProblemAlert({ problem }: { problem: PreviewCreateProblem }) {
+function ProblemAlert({ problem, noun }: { problem: PreviewCreateProblem; noun: string }) {
   const t = useTranslations("publishing.previewLinks.errors");
   let text: string;
   switch (problem.kind) {
     case "limit":
-      text = t("limit", { max: problem.max });
+      text = t("limit", { max: problem.max, noun });
       break;
     case "ttl":
       text = t("ttl", { min: problem.min, max: problem.max });
@@ -494,7 +495,7 @@ function ProblemAlert({ problem }: { problem: PreviewCreateProblem }) {
       break;
     }
     default:
-      text = t(problem.kind);
+      text = t(problem.kind, { noun });
   }
   return (
     <Alert variant="destructive" role="alert" data-testid="preview-problem" data-problem={problem.kind}>

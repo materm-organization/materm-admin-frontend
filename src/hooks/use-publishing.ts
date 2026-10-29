@@ -11,7 +11,7 @@ function useRefresh(resource: PublishableResource, id: number | string) {
   const queryClient = useQueryClient();
   return () => {
     void queryClient.invalidateQueries({ queryKey: [PUBLISHABLE_RESOURCES[resource].listPath] });
-    if (resource === "pages") void queryClient.invalidateQueries({ queryKey: revisionsQueryKey("pages", id) });
+    void queryClient.invalidateQueries({ queryKey: revisionsQueryKey(resource, id) });
   };
 }
 

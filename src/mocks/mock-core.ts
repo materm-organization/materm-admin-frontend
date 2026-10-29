@@ -117,8 +117,55 @@ export type MockPageRoot = {
 export type MockAlbum = { id: number; title: string; status: "published" | "draft" };
 // A stored answer of a request that carried an `Idempotency-Key` (create page, set-home, publish, unpublish).
 export type MockIdempotent = { fingerprint: string; status: number; data: unknown; etag?: string };
-// Posts only exist for the "category / tag in use" rules.
-export type MockPost = { id: number; title: string; status: "published" | "draft" | "scheduled" | "archived"; category_id: number | null; tag_ids: number[]; is_trashed: boolean };
+// A post of the mock (doc/05 section 13.3), stored like a page: the REAL rows (`live`, written directly while the post is not
+// published) and, for a published post with pending edits, a `kind = "draft"` row in `db.revisions["posts/<id>"]` holding the
+// working copy. Both use the snapshot shape of doc/04 section 5.2.
+export type MockPostMedia = { id: number; media_id: number; sort_order: number; translations: Record<string, { alt?: string | null; caption?: string | null }> };
+export type MockPostTranslation = {
+  locale_code: string;
+  slug: string;
+  title: string;
+  excerpt: string | null;
+  label: string | null;
+  location_label: string | null;
+  body: Record<string, unknown> | null;
+  gallery_heading: string | null;
+  gallery_description: string | null;
+  hero_alt: string | null;
+  seo_title: string | null;
+  seo_description: string | null;
+  og_image_id: number | null;
+  is_enabled: boolean;
+};
+export type MockPostSnapshot = {
+  post: {
+    category_id: number | null;
+    hero_media_id: number | null;
+    teaser_media_id: number | null;
+    is_featured: boolean;
+  };
+  tag_ids: number[];
+  translations: MockPostTranslation[];
+  media: MockPostMedia[];
+};
+export type MockPostRoot = {
+  id: number;
+  public_id: string;
+  status: PublishableStatus;
+  lock_version: number;
+  published_at: string | null;
+  first_published_at: string | null;
+  unpublished_at: string | null;
+  created_by: UserRef;
+  updated_by: UserRef;
+  created_at: string;
+  updated_at: string;
+  deleted_at: string | null;
+  live: MockPostSnapshot;
+};
+// Who the signed-in user is for the posts model (05 13.3.2): an editor (every action), an author (`create`, `update_own`,
+// `delete_own`, `translate`: only their own posts, and no publish) or a translator (`read` + `translate`).
+export type MockPostRole = "editor" | "author" | "translator";
 
 export type MockMenu = Omit<MenuDetail, "items" | "limits" | "options"> & {
   items: MenuDetail["items"];
@@ -162,6 +209,8 @@ export type MockManifest = {
 // the rest of the model whose clock is synthetic. The raw token is NOT kept: only the creation answer ever has it.
 export type MockPreviewLink = {
   id: number;
+  // The kind of entity the link is frozen on (pages, posts: PT-18) and its id (`page_id` is the historic name).
+  entity: "pages" | "posts";
   page_id: number;
   locale: string;
   created_by: UserRef;
@@ -192,7 +241,10 @@ export type MockDb = {
   nextSectionId: number;
   albums: MockAlbum[];
   idempotency: Record<string, MockIdempotent>;
-  posts: MockPost[];
+  posts: MockPostRoot[];
+  nextPostId: number;
+  nextPostMediaId: number;
+  postRole: MockPostRole;
   menus: MockMenu[];
   nextMenuItemId: number;
   // Resources whose writer holds ONLY `translate` (no `update`): the model then enforces 05 11.1.3 (403 on a value
