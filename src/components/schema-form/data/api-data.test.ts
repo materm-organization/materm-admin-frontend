@@ -91,3 +91,20 @@ describe("toEntityOption reads a picture of an album (05 13.4.1 AlbumItem) and a
     expect(toEntityOption("album", { id: 1, key: "forest", title: "Forest", status: "published" })).toMatchObject({ value: 1, label: "Forest", hint: "forest", status: "published" });
   });
 });
+
+describe("apiSchemaFormData.getEntity for key-referenced kinds", () => {
+  it("lists with limit 100, the largest page the real API accepts (200 was a 422 out_of_range)", async () => {
+    let q: URLSearchParams | undefined;
+    server.use(
+      http.get(`${API}/forms`, ({ request }) => {
+        q = new URL(request.url).searchParams;
+        const limit = Number(q.get("limit"));
+        if (limit > 100) return HttpResponse.json({ success: false, code: "VALIDATION_FAILED", errors: [{ in: "query", path: "/limit", code: "out_of_range", params: { min: 1, max: 100 } }] }, { status: 422 });
+        return HttpResponse.json({ success: true, data: [{ id: 1, slug: "contact", name: "Contact form" }], meta: { total: 1, page: 1, limit, total_page: 1 } });
+      })
+    );
+    const found = await apiSchemaFormData.getEntity("form", "contact");
+    expect(q?.get("limit")).toBe("100");
+    expect(found).toMatchObject({ value: "contact" });
+  });
+});

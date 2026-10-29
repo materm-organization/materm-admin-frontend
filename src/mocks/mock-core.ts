@@ -365,9 +365,27 @@ export function rejectUnknown(params: Params, allowed: readonly string[]) {
   if (errors.length) throw validationFailed(errors);
 }
 
+// Strict like the real list endpoints (found by the real-backend run): `limit` is 1..100 and `page` >= 1, an integer each;
+// anything else is a 422 (`out_of_range` / `invalid_type`), never silently clamped. `limit: 200` once went unnoticed because of that.
 export function pageOf(params: Params, defaultLimit = 20) {
-  const page = Math.max(1, Number(params.get("page") ?? 1) || 1);
-  const limit = Math.min(100, Math.max(1, Number(params.get("limit") ?? defaultLimit) || defaultLimit));
+  const errors: ApiFieldError[] = [];
+  const int = (name: string, fallback: number, min: number, max?: number) => {
+    const raw = params.get(name);
+    if (raw === null || raw === "") return fallback;
+    if (!/^-?\d+$/.test(raw)) {
+      errors.push({ in: "query", path: `/${name}`, code: "invalid_type", params: { expected: "integer" } });
+      return fallback;
+    }
+    const n = Number(raw);
+    if (n < min || (max !== undefined && n > max)) {
+      errors.push({ in: "query", path: `/${name}`, code: "out_of_range", params: max !== undefined ? { min, max } : { min } });
+      return fallback;
+    }
+    return n;
+  };
+  const page = int("page", 1, 1);
+  const limit = int("limit", defaultLimit, 1, 100);
+  if (errors.length) throw validationFailed(errors);
   return { page, limit };
 }
 

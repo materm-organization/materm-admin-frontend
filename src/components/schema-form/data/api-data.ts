@@ -144,7 +144,8 @@ export const apiSchemaFormData: SchemaFormData = {
         return undefined;
       }
     }
-    const all = await apiSchemaFormData.searchEntities(kind, { ...query, limit: 200 });
+    // 100 is the largest page the API accepts (`limit` 101+ is a 422 `out_of_range`).
+    const all = await apiSchemaFormData.searchEntities(kind, { ...query, limit: 100 });
     return all.find((option) => option.value === value);
   },
 

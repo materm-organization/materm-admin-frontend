@@ -347,7 +347,8 @@ function labelOf(t: Translator, group: string, field: SettingsFieldDef): string 
 }
 function helpOf(t: Translator, group: string, field: SettingsFieldDef): string | undefined {
   const key = `fields.${group}.${field.key}.help`;
-  return t.has(key) ? t(key) : undefined;
+  // "{year}" is literal text the editor types into the copyright line, not an ICU argument
+  return t.has(key) ? t(key, { year: "{year}" }) : undefined;
 }
 
 type FieldProps = {
@@ -441,7 +442,7 @@ function SettingField(props: FieldProps) {
       {group.group === "footer" && field.key === "copyright" ? (
         <div className="flex flex-wrap items-center gap-3 text-sm">
           <Button type="button" variant="outline" size="sm" disabled={disabled} onClick={() => set(`${text}${text && !text.endsWith(" ") ? " " : ""}{year}`)}>
-            {t("insertYear")}
+            {t("insertYear", { year: "{year}" })}
           </Button>
           <span className="text-muted-foreground">
             {t("preview")}: <span data-testid="copyright-preview">{previewCopyright(text)}</span>

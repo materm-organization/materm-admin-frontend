@@ -85,7 +85,22 @@ export const MediaAPI = {
   },
 };
 
-// The ETag of a list row (`"<updated_at>"`, microseconds UTC; doc/05 11.1.1 rule 1).
-export function etagOfRow(row: Pick<MediaAsset, "updated_at">): string {
-  return `"${row.updated_at}"`;
+// The ETag of a list row. The server sends it as `etag` on the rows that carry one (categories, tags, media, menus); use it
+// as is. Otherwise it is `"<updated_at>"` in UTC with the microseconds (doc/05 11.1.1 rule 1): a row's `updated_at` may be
+// written with the server's own offset (`2026-10-29T13:43:36.053927+07:00`), which is NOT the ETag, so the instant is
+// shifted to UTC here without touching the fraction (found by the real-backend run: DELETE /categories/{id} was a 409).
+export function etagOfRow(row: Pick<MediaAsset, "updated_at"> & { etag?: string | null }): string {
+  if (row.etag) return row.etag;
+  return `"${toUtcMicros(row.updated_at)}"`;
+}
+
+const ISO_WITH_OFFSET = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(\.\d+)?(Z|[+-]\d{2}:\d{2})$/;
+export function toUtcMicros(value: string): string {
+  const m = ISO_WITH_OFFSET.exec(value);
+  if (!m || m[8] === "Z") return value;
+  const [, y, mo, d, h, mi, sec, fraction = "", offset] = m;
+  const sign = offset.startsWith("-") ? -1 : 1;
+  const offsetMinutes = sign * (Number(offset.slice(1, 3)) * 60 + Number(offset.slice(4, 6)));
+  const utc = new Date(Date.UTC(Number(y), Number(mo) - 1, Number(d), Number(h), Number(mi), Number(sec)) - offsetMinutes * 60_000);
+  return `${utc.toISOString().slice(0, 19)}${fraction}Z`;
 }

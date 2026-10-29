@@ -1,6 +1,7 @@
 // Blog categories and tags (doc/05-api-spec.md section 11.5, doc/api/openapi-admin.yaml: Category, Tag,
 // CategoryTranslation, TagTranslation, Create/Update requests). Save-live + soft delete (30 days in the trash).
-// ETag = `"<updated_at>"` (microseconds); a list row has none, build it with `etagOfRow` (services/media.api.ts).
+// ETag = `"<updated_at>"` (microseconds, UTC). A list row carries it as `etag` (use `etagOfRow`, services/media.api.ts, which falls back
+// to `updated_at` shifted to UTC: the row's own `updated_at` may carry the server's offset).
 import type { ApiMeta } from "@/types/api";
 import type { SaveLiveWarning, UserRef } from "@/types/media";
 
@@ -19,6 +20,8 @@ type Common = {
   updated_by?: UserRef;
   created_at: string;
   updated_at: string;
+  // On list rows and single reads (the ETag of the row, quoted).
+  etag?: string;
   deleted_at?: string | null;
   purge_at?: string | null;
   // Only on the answer of a write.

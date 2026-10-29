@@ -34,6 +34,18 @@ const values = (group: string) => getSettingsGroup(getMockDb(), group).data.valu
 describe("SettingsEditor (SCR-15)", () => {
   useMockApi();
 
+  it("footer: the literal {year} token in the help text and the Insert button is shown as text (no ICU argument error)", async () => {
+    const err = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    try {
+      renderApp(<SettingsEditor group="footer" />);
+      expect(await screen.findByRole("button", { name: "Insert {year}" })).toBeInTheDocument();
+      expect(screen.getByText("{year} is replaced by the current year.")).toBeInTheDocument();
+      expect(err.mock.calls.filter((c) => String(c[0]).includes("FORMATTING_ERROR"))).toEqual([]);
+    } finally {
+      err.mockRestore();
+    }
+  });
+
   it("builds the form from the group's definitions and saves the whole group with If-Match; the new ETag is used by the next save", async () => {
     const user = userEvent.setup();
     const seen: Array<{ ifMatch: string | null; body: { values: Record<string, unknown>; change_note?: string } }> = [];

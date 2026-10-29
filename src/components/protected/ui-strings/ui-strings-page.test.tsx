@@ -277,6 +277,18 @@ describe("bundle sync dialog", () => {
     await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
   });
 
+  it("the file `cms:export --stamp` writes (it also has schema_version, expected_count, pending) is sent without those fields, so the strict API takes it", async () => {
+    const user = userEvent.setup();
+    renderApp(<UiStringsPage />);
+    await user.click(await screen.findByRole("button", { name: "Sync from bundle" }));
+    const dialog = await screen.findByRole("dialog");
+    const m = { generated_at: "2026-10-28T02:00:00Z", source_commit: "a81c7d0", schema_version: 1, expected_count: 39, pending: [], keys: getMockDb().manifests[0].keys.map((k) => structuredClone(k)) };
+    await user.upload(within(dialog).getByLabelText("Bundle file (JSON)"), new File([JSON.stringify(m)], "ui-strings.json", { type: "application/json" }));
+    expect(await within(dialog).findByTestId("sync-report")).toBeInTheDocument();
+    expect(within(dialog).queryByText("The file was rejected")).not.toBeInTheDocument();
+    expect(within(dialog).getByRole("button", { name: "Apply sync" })).toBeEnabled();
+  });
+
   it("a file that is not JSON, not a bundle, or rejected by the server is explained and can not be applied", async () => {
     const user = userEvent.setup();
     renderApp(<UiStringsPage />);

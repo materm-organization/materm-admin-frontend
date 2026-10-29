@@ -94,11 +94,26 @@ function counts(db: MockDb, kind: TaxonomyKind, id: number) {
   return { post_count: posts.length, published_post_count: posts.filter((p) => p.published).length };
 }
 
+// As the real server writes a row (found by the real-backend run): `created_at` / `updated_at` in the server's own offset
+// (+07:00 there), the ETag in UTC in `etag`. A client that built `If-Match` from `updated_at` got a 409 on every delete.
+const LOCAL_OFFSET_MS = 7 * 3600_000;
+export function withLocalOffset(utc: string | null | undefined): string | null | undefined {
+  const m = /^(.*T\d{2}:\d{2}:\d{2})(\.\d+)?Z$/.exec(utc ?? "");
+  if (!m) return utc;
+  const local = new Date(Date.parse(`${m[1]}Z`) + LOCAL_OFFSET_MS).toISOString().slice(0, 19);
+  return `${local}${m[2] ?? ""}+07:00`;
+}
+const stamped = <T extends Category | Tag>(row: T): T => ({
+  ...row,
+  created_at: withLocalOffset(row.created_at) as string,
+  updated_at: withLocalOffset(row.updated_at) as string,
+  etag: etagOf(row.updated_at),
+});
 function viewCategory(db: MockDb, c: Category, warnings?: SaveLiveWarning[]): Category {
-  return { ...structuredClone(c), ...counts(db, "categories", c.id), ...(warnings ? { warnings } : {}) };
+  return { ...stamped(structuredClone(c)), ...counts(db, "categories", c.id), ...(warnings ? { warnings } : {}) };
 }
 function viewTag(db: MockDb, t: Tag, warnings?: SaveLiveWarning[]): Tag {
-  return { ...structuredClone(t), ...counts(db, "tags", t.id), ...(warnings ? { warnings } : {}) };
+  return { ...stamped(structuredClone(t)), ...counts(db, "tags", t.id), ...(warnings ? { warnings } : {}) };
 }
 const viewOf = (db: MockDb, kind: TaxonomyKind, row: Category | Tag, warnings?: SaveLiveWarning[]) =>
   kind === "categories" ? viewCategory(db, row as Category, warnings) : viewTag(db, row as Tag, warnings);

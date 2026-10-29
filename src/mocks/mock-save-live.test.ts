@@ -438,7 +438,9 @@ describe("categories and tags (05 11.5)", () => {
     expect(errorsOf(slugClash)[0]).toMatchObject({ path: "/translations/la/slug", code: "duplicate" });
     const made = createTaxonomy(db, "categories", { key: "climbing", translations: t });
     expect(made.data).toMatchObject({ sort_order: 6, is_active: true, translations: { la: { slug: "climbing" } } });
-    expect(made.etag).toBe(`"${made.data.updated_at}"`);
+    // a row carries its ETag (UTC) and writes its timestamps in the server's offset, as the real server does
+    expect(made.etag).toBe(made.data.etag);
+    expect(made.data.updated_at).toMatch(/\+07:00$/);
   });
 
   it("patch: If-Match, key is immutable, translate-only cannot change the order / active flag / default slug, deleting the default language is refused", () => {

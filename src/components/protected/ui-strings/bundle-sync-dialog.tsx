@@ -29,6 +29,16 @@ export function BundleSyncDialog({ open, onOpenChange }: { open: boolean; onOpen
   );
 }
 
+// The body of POST /ui-strings/bundle-sync is STRICT (an unknown field is a 422 `unknown_field`, found by the real-backend run), while
+// the file `cms:export --stamp` writes also carries `schema_version`, `expected_count` and `pending`. Send only what the contract names.
+export function toManifest(parsed: UiStringsBundleManifest): UiStringsBundleManifest {
+  return {
+    generated_at: parsed.generated_at,
+    source_commit: parsed.source_commit,
+    keys: parsed.keys.map((k) => ({ key: k.key, namespace: k.namespace, values: k.values })),
+  };
+}
+
 function Content({ onClose }: { onClose: () => void }) {
   const t = useTranslations("uiStrings.sync");
   const { toastError } = useApiErrorHandler();
@@ -53,9 +63,10 @@ function Content({ onClose }: { onClose: () => void }) {
       if (!parsed || typeof parsed !== "object" || !Array.isArray(parsed.keys) || typeof parsed.source_commit !== "string") {
         return setFileError(t("badShape"));
       }
-      setManifest(parsed);
+      const clean = toManifest(parsed);
+      setManifest(clean);
       // The first thing a chosen file does is a dry run: nothing is written.
-      void run(parsed, true);
+      void run(clean, true);
     } catch {
       setFileError(t("notJson"));
     }
