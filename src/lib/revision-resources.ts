@@ -6,7 +6,7 @@
 // the working draft - doc/05 section 12.8) carry `publishable: true`.
 import { PERMISSION_KEYS } from "@/lib/constants/permissions";
 
-export type RevisionResource = "menus" | "settings" | "ui-strings" | "categories" | "tags" | "media/assets" | "pages" | "posts";
+export type RevisionResource = "menus" | "settings" | "ui-strings" | "categories" | "tags" | "media/assets" | "pages" | "posts" | "albums" | "faq-groups" | "forms";
 
 export type RevisionEntityId = string | number;
 
@@ -80,6 +80,30 @@ export const REVISION_RESOURCES: Record<RevisionResource, ResourceConfig> = {
     // `update`, or `update_own` of my own post: the host passes `canRestore` (it knows the owner).
     restoreActions: ["update", "update_own"],
     entityPath: (id) => `/posts/${seg(id)}`,
+    publishable: true,
+  },
+  albums: {
+    base: (id) => `/albums/${seg(id)}`,
+    readKey: () => PERMISSION_KEYS.CMS_GALLERIES,
+    restoreKey: () => PERMISSION_KEYS.CMS_GALLERIES,
+    restoreActions: ["update"],
+    entityPath: (id) => `/albums/${seg(id)}`,
+    publishable: true,
+  },
+  "faq-groups": {
+    base: (id) => `/faq-groups/${seg(id)}`,
+    readKey: () => PERMISSION_KEYS.CMS_FAQ,
+    restoreKey: () => PERMISSION_KEYS.CMS_FAQ,
+    restoreActions: ["update"],
+    entityPath: (id) => `/faq-groups/${seg(id)}`,
+    publishable: true,
+  },
+  forms: {
+    base: (id) => `/forms/${seg(id)}`,
+    readKey: () => PERMISSION_KEYS.FORMS_MANAGE,
+    restoreKey: () => PERMISSION_KEYS.FORMS_MANAGE,
+    restoreActions: ["update"],
+    entityPath: (id) => `/forms/${seg(id)}`,
     publishable: true,
   },
   "media/assets": {

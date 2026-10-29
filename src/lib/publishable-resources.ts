@@ -3,7 +3,7 @@
 // Pages are the first, posts the second (T1.5.5); albums, FAQ groups and forms are added in M5 (one entry each).
 import { PERMISSION_ACTIONS, PERMISSION_KEYS } from "@/lib/constants/permissions";
 
-export type PublishableResource = "pages" | "posts";
+export type PublishableResource = "pages" | "posts" | "albums" | "faq-groups" | "forms";
 
 export type PublishableConfig = {
   // `/pages/12`
@@ -42,6 +42,35 @@ export const PUBLISHABLE_RESOURCES: Record<PublishableResource, PublishableConfi
     previewActions: [PERMISSION_ACTIONS.UPDATE, PERMISSION_ACTIONS.REVIEW],
     previewLinks: true,
     ownActions: true,
+  },
+  // T1.5.6 (05 13.2): no preview links (PT-18), no `update_own`.
+  albums: {
+    base: (id) => `/albums/${id}`,
+    listPath: "/albums",
+    permissionKey: PERMISSION_KEYS.CMS_GALLERIES,
+    entityType: "cms.albums",
+    previewActions: [PERMISSION_ACTIONS.UPDATE, PERMISSION_ACTIONS.REVIEW],
+    previewLinks: false,
+    ownActions: false,
+  },
+  "faq-groups": {
+    base: (id) => `/faq-groups/${id}`,
+    listPath: "/faq-groups",
+    permissionKey: PERMISSION_KEYS.CMS_FAQ,
+    entityType: "cms.faq_groups",
+    previewActions: [PERMISSION_ACTIONS.UPDATE, PERMISSION_ACTIONS.REVIEW],
+    previewLinks: false,
+    ownActions: false,
+  },
+  // T1.5.7 (05 13.2 / 13.6.5): no preview links (PT-18), no `update_own`. The recipients are not part of the draft (13.6.4).
+  forms: {
+    base: (id) => `/forms/${id}`,
+    listPath: "/forms",
+    permissionKey: PERMISSION_KEYS.FORMS_MANAGE,
+    entityType: "forms.forms",
+    previewActions: [PERMISSION_ACTIONS.UPDATE, PERMISSION_ACTIONS.REVIEW],
+    previewLinks: false,
+    ownActions: false,
   },
 };
 

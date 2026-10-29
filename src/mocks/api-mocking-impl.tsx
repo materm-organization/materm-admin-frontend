@@ -5,7 +5,9 @@ import { useState, type ReactNode } from "react";
 
 import { createMockAdapter } from "@/mocks/axios-adapter";
 import { mockApiHandlers } from "@/mocks/handlers";
+import { albumsSummary, referenceAlbumItemFromPage, touchAlbumAsSomeoneElse } from "@/mocks/mock-albums";
 import { getMockDb, resetMockDb } from "@/mocks/mock-db";
+import { faqSummary, touchFaqGroupAsSomeoneElse } from "@/mocks/mock-faq";
 import { touchPageAsSomeoneElse } from "@/mocks/mock-pages";
 import { getPost, postsSummary, setPostRole, touchPostAsSomeoneElse } from "@/mocks/mock-posts";
 import { exhaustPreviewRate, fillPreviewLinks, previewLinkSummary, setPreviewUnconfigured } from "@/mocks/mock-preview";
@@ -50,8 +52,8 @@ export default function ApiMockingImpl({ children }: { children: ReactNode }) {
       // user keeps only `read` + `translate` on pages / sections / seo / blog, so the editors show their translator mode.
       // `setTranslateOnly(false)` gives every action back. The cached `/auth/me` is overwritten (the dev bypass user).
       setTranslateOnly: (on: boolean) => {
-        getMockDb().translateOnly = on ? ["pages", "sections", "seo", "posts"] : [];
-        rewriteMe(on ? { "cms.pages": ["read", "translate"], "cms.sections": ["read", "translate"], "cms.seo": ["read", "translate"], "cms.blog": ["read", "translate"] } : {}, undefined);
+        getMockDb().translateOnly = on ? ["pages", "sections", "seo", "posts", "albums", "faq-groups"] : [];
+        rewriteMe(on ? { "cms.pages": ["read", "translate"], "cms.sections": ["read", "translate"], "cms.seo": ["read", "translate"], "cms.blog": ["read", "translate"], "cms.galleries": ["read", "translate"], "cms.faq": ["read", "translate"] } : {}, undefined);
       },
       // The posts roles (T1.5.5): "editor" = every action; "author" = I am Noy Keomany (id 6, the owner of posts 2, 3 and 7) with
       // `create`, `update_own`, `delete_own`, `translate` and no publish; "translator" = `read` + `translate`. The model AND the
@@ -68,6 +70,14 @@ export default function ApiMockingImpl({ children }: { children: ReactNode }) {
         );
       },
       touchPost: (id: number) => touchPostAsSomeoneElse(getMockDb(), id),
+      // Galleries and FAQ (T1.5.6): `touchAlbum(id)` / `touchFaqGroup(id)` = somebody else saved it (the next command with the old ETag is a
+      // 409); `referenceAlbumItem(pageId, itemId)` makes a photo story of that page name the picture (its delete is then refused);
+      // `albums()` / `faqGroups()` summarise the model. `setTranslateOnly(true)` covers `cms.galleries` and `cms.faq` too.
+      touchAlbum: (id: number) => touchAlbumAsSomeoneElse(getMockDb(), id),
+      touchFaqGroup: (id: number) => touchFaqGroupAsSomeoneElse(getMockDb(), id),
+      referenceAlbumItem: (pageId: number, itemId: number) => referenceAlbumItemFromPage(getMockDb(), pageId, itemId),
+      albums: () => albumsSummary(getMockDb()),
+      faqGroups: () => faqSummary(getMockDb()),
       posts: () => postsSummary(getMockDb()),
       // One post as the editor reads it (the working copy): for a click-through script that checks what was saved.
       post: (id: number) => getPost(getMockDb(), String(id)).data,

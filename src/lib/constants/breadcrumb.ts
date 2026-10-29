@@ -11,11 +11,15 @@ export const BREADCRUMB_CONFIG: Record<string, string> = {
   "/admin/settings": "breadcrumb.settings",
   "/admin/seo": "breadcrumb.seo",
   "/admin/blog/posts": "breadcrumb.posts",
+  "/admin/galleries": "breadcrumb.galleries",
+  "/admin/faq": "breadcrumb.faq",
   "/admin/blog/categories": "breadcrumb.categories",
   "/admin/blog/tags": "breadcrumb.tags",
   "/admin/ui-strings": "breadcrumb.uiStrings",
   "/admin/locales": "breadcrumb.locales",
   "/admin/system": "breadcrumb.system",
+  "/admin/forms": "breadcrumb.forms",
+  "/admin/forms/submissions": "breadcrumb.submissions",
   "/admin/profile": "breadcrumb.profile",
 };
 

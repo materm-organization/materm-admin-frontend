@@ -7,6 +7,7 @@
 import { http, HttpResponse, type HttpHandler } from "msw";
 
 import { LOCALE_ROWS } from "@/components/schema-form/fixtures/lookup";
+import { formsApiHandlers } from "@/mocks/forms-handlers";
 import { createMenuItem, deleteMenuItem, getMenu, listMenus, patchMenuItem, reorderMenuItems } from "@/mocks/mock-menus";
 import { getSectionType, listAlbumItems, listLookup, listSectionTypes } from "@/mocks/mock-cms-lookups";
 import {
@@ -49,6 +50,44 @@ import {
   restorePostRevision,
   unpublishPost,
 } from "@/mocks/mock-posts";
+import {
+  createAlbum,
+  createAlbumItems,
+  deleteAlbum,
+  deleteAlbumItem,
+  discardAlbumDraft,
+  getAlbum,
+  getAlbumRevision,
+  listAlbumItems as listAlbumItemRows,
+  listAlbumRevisions,
+  listAlbums,
+  patchAlbum,
+  patchAlbumItem,
+  publishAlbum,
+  reorderAlbumItems,
+  restoreAlbum,
+  restoreAlbumRevision,
+  unpublishAlbum,
+} from "@/mocks/mock-albums";
+import {
+  createFaqGroup,
+  createFaqItem,
+  deleteFaqGroup,
+  deleteFaqItem,
+  discardFaqGroupDraft,
+  getFaqGroup,
+  getFaqRevision,
+  listFaqGroups,
+  listFaqItems,
+  listFaqRevisions,
+  patchFaqGroup,
+  patchFaqItem,
+  publishFaqGroup,
+  reorderFaqItems,
+  restoreFaqGroup,
+  restoreFaqRevision,
+  unpublishFaqGroup,
+} from "@/mocks/mock-faq";
 import { createPreviewLink, listPreviewLinks, revokePreviewLink } from "@/mocks/mock-preview";
 import { getSettingsGroup, listSettingsGroups, putSettingsGroup } from "@/mocks/mock-settings";
 import {
@@ -387,6 +426,143 @@ const postHandlers: HttpHandler[] = [
   })),
 ];
 
+// Albums and FAQ groups (T1.5.6; 05 sections 13.4, 13.5): CRUD, their items, the publish engine and the revisions. Registered BEFORE the
+// picker lookups below (`GET /albums`, `/faq-groups`, `/albums/:id/items` of the schema form), which they replace. `items/order` is a PUT,
+// `items/:itemId` a PATCH / DELETE: no clash. `Idempotency-Key` is honoured on create, add items, publish and unpublish.
+function itemCollectionHandlers(
+  base: string,
+  fns: {
+    list: (db: ReturnType<typeof getMockDb>, params: URLSearchParams) => { data: unknown; meta: unknown };
+    create: (db: ReturnType<typeof getMockDb>, body: unknown) => { data: unknown; etag: string };
+    get: (db: ReturnType<typeof getMockDb>, id: string) => { data: unknown; etag: string };
+    patch: (db: ReturnType<typeof getMockDb>, id: string, body: unknown, ifMatch: string | null) => { data: unknown; etag: string };
+    remove: (db: ReturnType<typeof getMockDb>, id: string, params: URLSearchParams, ifMatch: string | null) => { data: unknown; etag: string };
+    restore: (db: ReturnType<typeof getMockDb>, id: string, ifMatch: string | null) => { data: unknown; etag: string };
+    items: (db: ReturnType<typeof getMockDb>, id: string) => { data: unknown; etag: string };
+    createItem: (db: ReturnType<typeof getMockDb>, id: string, body: unknown, ifMatch: string | null) => { data: unknown; etag: string };
+    patchItem: (db: ReturnType<typeof getMockDb>, id: string, itemId: string, body: unknown, ifMatch: string | null) => { data: unknown; etag: string };
+    removeItem: (db: ReturnType<typeof getMockDb>, id: string, itemId: string, ifMatch: string | null) => { data: unknown; etag: string };
+    reorder: (db: ReturnType<typeof getMockDb>, id: string, body: unknown, ifMatch: string | null) => { data: unknown; etag: string };
+    publish: (db: ReturnType<typeof getMockDb>, id: string, params: URLSearchParams, body: unknown, ifMatch: string | null) => { data: unknown; etag: string | undefined };
+    unpublish: (db: ReturnType<typeof getMockDb>, id: string, params: URLSearchParams, ifMatch: string | null) => { data: unknown; etag: string | undefined };
+    discard: (db: ReturnType<typeof getMockDb>, id: string, ifMatch: string | null) => { data: unknown; etag: string };
+    revisions: (db: ReturnType<typeof getMockDb>, id: string, params: URLSearchParams) => { data: unknown; meta: unknown };
+    revision: (db: ReturnType<typeof getMockDb>, id: string, revId: string) => unknown;
+    restoreRevision: (db: ReturnType<typeof getMockDb>, id: string, revId: string, body: unknown, ifMatch: string | null) => { data: unknown; etag: string };
+  }
+): HttpHandler[] {
+  const db = getMockDb;
+  return [
+    http.get(P(base), guard(({ request }) => {
+      const { data, meta } = fns.list(db(), searchOf(request));
+      return ok(data, { meta });
+    })),
+    http.post(P(base), guard(async ({ request, params }) => {
+      const body = await jsonBody(request);
+      return idempotent(request, params, () => {
+        const done = fns.create(db(), body);
+        return { status: 201, ...done, location: `/api/v1${base}/${(done.data as { id: number }).id}` };
+      });
+    })),
+    http.get(P(`${base}/:id`), guard(({ params }) => {
+      const { data, etag } = fns.get(db(), param(params, "id"));
+      return ok(data, { etag });
+    })),
+    http.patch(P(`${base}/:id`), guard(async ({ request, params }) => {
+      const { data, etag } = fns.patch(db(), param(params, "id"), await jsonBody(request), request.headers.get("If-Match"));
+      return ok(data, { etag });
+    })),
+    http.delete(P(`${base}/:id`), guard(({ request, params }) => {
+      const { data, etag } = fns.remove(db(), param(params, "id"), searchOf(request), request.headers.get("If-Match"));
+      return ok(data, { etag });
+    })),
+    http.post(P(`${base}/:id/restore`), guard(({ request, params }) => {
+      const { data, etag } = fns.restore(db(), param(params, "id"), request.headers.get("If-Match"));
+      return ok(data, { etag });
+    })),
+    http.get(P(`${base}/:id/items`), guard(({ params }) => {
+      const { data, etag } = fns.items(db(), param(params, "id"));
+      return ok(data, { etag });
+    })),
+    http.post(P(`${base}/:id/items`), guard(async ({ request, params }) => {
+      const body = await jsonBody(request);
+      return idempotent(request, params, () => ({ status: 201, ...fns.createItem(db(), param(params, "id"), body, request.headers.get("If-Match")) }));
+    })),
+    http.put(P(`${base}/:id/items/order`), guard(async ({ request, params }) => {
+      const { data, etag } = fns.reorder(db(), param(params, "id"), await jsonBody(request), request.headers.get("If-Match"));
+      return ok(data, { etag });
+    })),
+    http.patch(P(`${base}/:id/items/:itemId`), guard(async ({ request, params }) => {
+      const { data, etag } = fns.patchItem(db(), param(params, "id"), param(params, "itemId"), await jsonBody(request), request.headers.get("If-Match"));
+      return ok(data, { etag });
+    })),
+    http.delete(P(`${base}/:id/items/:itemId`), guard(({ request, params }) => {
+      const { data, etag } = fns.removeItem(db(), param(params, "id"), param(params, "itemId"), request.headers.get("If-Match"));
+      return ok(data, { etag });
+    })),
+    http.post(P(`${base}/:id/publish`), guard(async ({ request, params }) => {
+      const body = await jsonBody(request);
+      return idempotent(request, params, () => ({ status: 200, ...fns.publish(db(), param(params, "id"), searchOf(request), body, request.headers.get("If-Match")) }));
+    })),
+    http.post(P(`${base}/:id/unpublish`), guard(({ request, params }) =>
+      idempotent(request, params, () => ({ status: 200, ...fns.unpublish(db(), param(params, "id"), searchOf(request), request.headers.get("If-Match")) }))
+    )),
+    http.post(P(`${base}/:id/discard-draft`), guard(({ request, params }) => {
+      const { data, etag } = fns.discard(db(), param(params, "id"), request.headers.get("If-Match"));
+      return ok(data, { etag });
+    })),
+    http.get(P(`${base}/:id/revisions`), guard(({ request, params }) => {
+      const { data, meta } = fns.revisions(db(), param(params, "id"), searchOf(request));
+      return ok(data, { meta });
+    })),
+    http.get(P(`${base}/:id/revisions/:revId`), guard(({ params }) => ok(fns.revision(db(), param(params, "id"), param(params, "revId"))))),
+    http.post(P(`${base}/:id/revisions/:revId/restore`), guard(async ({ request, params }) => {
+      const { data, etag } = fns.restoreRevision(db(), param(params, "id"), param(params, "revId"), await jsonBody(request), request.headers.get("If-Match"));
+      return ok(data, { etag });
+    })),
+  ];
+}
+
+const albumHandlers: HttpHandler[] = itemCollectionHandlers("/albums", {
+  list: listAlbums,
+  create: createAlbum,
+  get: getAlbum,
+  patch: patchAlbum,
+  remove: deleteAlbum,
+  restore: restoreAlbum,
+  items: listAlbumItemRows,
+  createItem: createAlbumItems,
+  patchItem: patchAlbumItem,
+  removeItem: deleteAlbumItem,
+  reorder: reorderAlbumItems,
+  publish: publishAlbum,
+  unpublish: unpublishAlbum,
+  discard: discardAlbumDraft,
+  revisions: listAlbumRevisions,
+  revision: getAlbumRevision,
+  restoreRevision: restoreAlbumRevision,
+});
+
+const faqHandlers: HttpHandler[] = itemCollectionHandlers("/faq-groups", {
+  list: listFaqGroups,
+  create: createFaqGroup,
+  get: getFaqGroup,
+  patch: patchFaqGroup,
+  remove: deleteFaqGroup,
+  restore: restoreFaqGroup,
+  items: listFaqItems,
+  createItem: createFaqItem,
+  patchItem: patchFaqItem,
+  removeItem: deleteFaqItem,
+  reorder: reorderFaqItems,
+  publish: publishFaqGroup,
+  unpublish: unpublishFaqGroup,
+  discard: discardFaqGroupDraft,
+  revisions: listFaqRevisions,
+  revision: getFaqRevision,
+  restoreRevision: restoreFaqRevision,
+});
+
 // Preview links (T1.4.4, doc/05 12.9; posts 13.3.8). The creation answer carries the raw token in `url` and must not be cached.
 const previewLinkHandlers: HttpHandler[] = [
   http.post(P("/pages/:id/preview-links"), guard(async ({ request, params }) => {
@@ -482,6 +658,8 @@ export const saveLiveApiHandlers: HttpHandler[] = [
   ...menuHandlers,
   ...pageHandlers,
   ...postHandlers,
+  ...albumHandlers,
+  ...faqHandlers,
   ...previewLinkHandlers,
   ...cmsLookupHandlers,
   ...settingsHandlers,
@@ -493,6 +671,8 @@ export const saveLiveApiHandlers: HttpHandler[] = [
 
 // Everything above, for the browser mock and for tests that want the whole set.
 export const mockApiHandlers: HttpHandler[] = [
+  // T1.5.7 forms / submissions / dashboard: FIRST, so the real `GET /forms` answers before the older picker lookup.
+  ...formsApiHandlers,
   ...mediaHandlers,
   ...saveLiveApiHandlers,
   ...revisionApiHandlers,

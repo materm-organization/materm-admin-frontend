@@ -28,6 +28,7 @@ export function ReferencedDialog({
   items,
   total,
   action = "unpublish",
+  variant = "link",
   isPending,
   onConfirm,
 }: {
@@ -37,6 +38,8 @@ export function ReferencedDialog({
   items: ReferencedItem[];
   total: number;
   action?: "unpublish" | "delete";
+  // "used": an album / FAQ group a section shows (T1.5.6) - the consequence is another one than for a link to a page.
+  variant?: "link" | "used";
   isPending: boolean;
   onConfirm: () => void | Promise<void>;
 }) {
@@ -49,7 +52,7 @@ export function ReferencedDialog({
             <LinkIcon className="size-5" aria-hidden />
             {t("title", { noun })}
           </DialogTitle>
-          <DialogDescription>{t(`description.${action}`, { noun, count: total })}</DialogDescription>
+          <DialogDescription>{t(variant === "used" ? `description.used.${action}` : `description.${action}`, { noun, count: total })}</DialogDescription>
         </DialogHeader>
         <ul className="max-h-60 list-disc space-y-1 overflow-y-auto ps-5 text-sm">
           {items.map((r, i) => (

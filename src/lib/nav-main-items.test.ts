@@ -115,11 +115,17 @@ describe("W1 iam/ops routes (T1.1.10)", () => {
       // T1.4.7 pages (first entry of the content group), T1.5.5 blog posts, then the T1.3.8 save-live screens
       "/admin/pages",
       "/admin/blog/posts",
+      // T1.5.6 galleries and FAQ
+      "/admin/galleries",
+      "/admin/faq",
       "/admin/menus",
       "/admin/blog/categories",
       "/admin/blog/tags",
       "/admin/settings",
       "/admin/seo",
+      // T1.5.7 the inbox and the forms
+      "/admin/forms/submissions",
+      "/admin/forms",
       "/admin/ui-strings",
       "/admin/locales",
       "/admin/users",
@@ -136,6 +142,15 @@ describe("blog posts routes (SCR-24/25, T1.5.5)", () => {
     expect(getPermissionsForPath("/admin/blog/posts")).toEqual(expected);
     expect(getPermissionsForPath("/admin/blog/posts/12")).toEqual(expected);
     expect(getPermissionsForPath("/admin/blog")).toEqual({ kind: "unknown" });
+  });
+});
+
+describe("galleries and FAQ routes (SCR-28/29/30, T1.5.6)", () => {
+  it("each list and editor needs read on its own key", () => {
+    expect(getPermissionsForPath("/admin/galleries")).toEqual({ kind: "requires", keys: [PERMISSION_KEYS.CMS_GALLERIES] });
+    expect(getPermissionsForPath("/admin/galleries/4")).toEqual({ kind: "requires", keys: [PERMISSION_KEYS.CMS_GALLERIES] });
+    expect(getPermissionsForPath("/admin/faq")).toEqual({ kind: "requires", keys: [PERMISSION_KEYS.CMS_FAQ] });
+    expect(getPermissionsForPath("/admin/faq/2")).toEqual({ kind: "requires", keys: [PERMISSION_KEYS.CMS_FAQ] });
   });
 });
 

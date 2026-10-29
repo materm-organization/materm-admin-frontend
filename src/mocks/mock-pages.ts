@@ -294,12 +294,7 @@ export function seedPages(db: Pick<MockDb, "nextSectionId">): MockPageRoot[] {
   return [...pages, spring, promo, summer, events, team];
 }
 
-export function seedAlbums(): MockDb["albums"] {
-  return [
-    { id: 1, title: "Forest photo story", status: "published" },
-    { id: 2, title: "Spring rivers (draft)", status: "draft" },
-  ];
-}
+// The albums moved to `mock-albums.ts` (T1.5.6): albums 1 (published) and 2 (draft) are still the two the pages here name.
 
 // The history the screens open. Page 9 has every kind of row (published, history, a hidden preview row, a draft).
 export function seedPageRevisions(db: MockDb) {
@@ -938,7 +933,7 @@ function propsErrors(db: MockDb, typeKey: string, props: Record<string, unknown>
     if (typeof v === "number" && (!target || isTrashed(target))) errors.push({ in: "body", path: pointer, code: "unknown_reference", params: { ref_type: "pages", ref_id: v } });
   });
   deepFind(props, "album_id", "/props", (v, pointer) => {
-    if (typeof v === "number" && !db.albums.some((a) => a.id === v)) errors.push({ in: "body", path: pointer, code: "unknown_reference", params: { ref_type: "albums", ref_id: v } });
+    if (typeof v === "number" && !db.albums.some((a) => a.id === v && !a.deleted_at)) errors.push({ in: "body", path: pointer, code: "unknown_reference", params: { ref_type: "albums", ref_id: v } });
   });
   return errors.slice(0, MAX_ISSUES);
 }
@@ -1391,7 +1386,7 @@ export function validateForPublish(db: MockDb, root: MockPageRoot): { blockers: 
     const hiddenBlockers: PublishIssue[] = [];
     deepFind(s.props, "album_id", `${base}/props`, (v, pointer) => {
       if (typeof v !== "number") return;
-      const album = db.albums.find((a) => a.id === v);
+      const album = db.albums.find((a) => a.id === v && !a.deleted_at);
       if (!album) refs.push(issue(pointer, "unknown_reference", { ...params, ref_type: "albums", ref_id: v }));
       else if (album.status !== "published") hiddenBlockers.push(issue(pointer, "reference_not_published", { ...params, ref_type: "albums", ref_id: v }));
     });

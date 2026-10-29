@@ -31,8 +31,11 @@ import {
   SidebarMenuSubItem,
   useSidebar,
 } from "@/components/ui/sidebar";
+import { useCan } from "@/hooks/use-permission";
+import { useSubmissionsSummary } from "@/hooks/use-submissions";
+import { PERMISSION_ACTIONS, PERMISSION_KEYS } from "@/lib/constants/permissions";
 import { cn } from "@/lib/utils";
-import type { NavMainGroupConfig } from "@/lib/nav-main-items";
+import type { NavMainGroupConfig, NavMainSubConfig } from "@/lib/nav-main-items";
 
 // Pure rendering of the already-filtered `items` array — all permission
 // filtering happens upstream in AppSidebar via `buildNavMainItemsForUser`.
@@ -51,6 +54,21 @@ export function isNavActive(pathname: string, url: string): boolean {
   return pathname === url || pathname.startsWith(`${url}/`);
 }
 
+// The count next to the "Messages" entry (doc/07 section 2.1): `GET /submissions/summary` every minute, only for a person who may read
+// the inbox; hidden at 0 and while the number is unknown (loading, error), `99+` over 99.
+function NavBadge({ query }: { query: NonNullable<NavMainSubConfig["badgeQuery"]> }) {
+  const t = useTranslations("nav");
+  const allowed = useCan(PERMISSION_KEYS.FORMS_SUBMISSIONS, PERMISSION_ACTIONS.READ);
+  const summary = useSubmissionsSummary(allowed);
+  const count = summary.data?.new ?? 0;
+  if (!allowed || count <= 0) return null;
+  return (
+    <Badge variant="default" className="ms-auto px-1.5 py-0 text-[10px] font-semibold tabular-nums" data-testid="nav-badge" data-query={query} aria-label={t("newMessages", { count })}>
+      {count > 99 ? "99+" : count}
+    </Badge>
+  );
+}
+
 export function NavMain({ items }: { items: NavMainGroupConfig[] }) {
   const t = useTranslations();
   const pathname = usePathname();
@@ -60,7 +78,9 @@ export function NavMain({ items }: { items: NavMainGroupConfig[] }) {
   // `group-data-[collapsible=icon]`, so a parent item's children would be
   // unreachable; those parents render as a flyout DropdownMenu instead.
   const isRail = state === "collapsed" && !isMobile;
-  const isActivePath = (url: string) => isNavActive(pathname, url);
+  // The longest matching entry wins: `/admin/forms/submissions/5` marks "Messages", not also its URL prefix "Forms".
+  const allUrls = items.flatMap((group) => [group.url, ...(group.items ?? []).map((sub) => sub.url)]);
+  const isActivePath = (url: string) => isNavActive(pathname, url) && !allUrls.some((other) => other.length > url.length && isNavActive(pathname, other));
   // Hand-made open/closed state per group, dropped for the groups that hold the active page whenever the
   // pathname changes (so navigating INTO a group always opens it).
   const [manual, setManual] = useState<{ path: string; open: Record<string, boolean> }>({
@@ -111,6 +131,7 @@ export function NavMain({ items }: { items: NavMainGroupConfig[] }) {
                       >
                         <Link href={sub.url} aria-current={isActivePath(sub.url) ? "page" : undefined}>
                           <span>{t(sub.title)}</span>
+                          {sub.badgeQuery ? <NavBadge query={sub.badgeQuery} /> : null}
                           {sub.comingSoon && (
                             <Badge variant="secondary" className="px-1.5 py-0 text-[10px] font-medium">
                               {t("common.comingSoon")}
@@ -169,6 +190,7 @@ export function NavMain({ items }: { items: NavMainGroupConfig[] }) {
                             >
                               <Link href={sub.url} aria-current={isActivePath(sub.url) ? "page" : undefined}>
                                 <span>{t(sub.title)}</span>
+                                {sub.badgeQuery ? <NavBadge query={sub.badgeQuery} /> : null}
                                 {sub.comingSoon && (
                                   <Badge variant="secondary" className="px-1.5 py-0 text-[10px] font-medium">
                                     {t("common.comingSoon")}

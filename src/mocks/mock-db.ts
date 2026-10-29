@@ -30,7 +30,9 @@ import {
   type StoredRevision,
 } from "@/mocks/mock-core";
 import { MENU_NEXT_ITEM_ID, restoreMenu, seedMenuRevisions, seedMenus } from "@/mocks/mock-menus";
-import { seedAlbums, seedPageRevisions, seedPages } from "@/mocks/mock-pages";
+import { seedAlbumRevisions, seedAlbums } from "@/mocks/mock-albums";
+import { seedFaqGroups, seedFaqRevisions } from "@/mocks/mock-faq";
+import { seedPageRevisions, seedPages } from "@/mocks/mock-pages";
 import { seedPreviewLinks } from "@/mocks/mock-preview";
 import { SEED_SETTINGS_UPDATED, restoreSettings, seedSettings, seedSettingsRevisions } from "@/mocks/mock-settings";
 import { seedPostRevisions, seedPosts } from "@/mocks/mock-posts";
@@ -173,7 +175,13 @@ export function createMockDb(): MockDb {
     pages: [],
     nextPageId: 11,
     nextSectionId: 301,
-    albums: seedAlbums(),
+    albums: [],
+    // T1.5.6: seeded below (after the pages); the ids continue after the seeds.
+    nextAlbumId: 6,
+    nextAlbumItemId: 16,
+    faqGroups: [],
+    nextFaqGroupId: 5,
+    nextFaqItemId: 11,
     idempotency: {},
     posts: [],
     nextPostId: 9,
@@ -218,11 +226,15 @@ export function createMockDb(): MockDb {
   recomputeFolders(db);
   db.pages = seedPages(db);
   db.posts = seedPosts(db);
+  db.albums = seedAlbums();
+  db.faqGroups = seedFaqGroups();
   seedUiStrings(db);
   seedTaxonomy(db);
   seedRevisions(db);
   seedPageRevisions(db);
   seedPostRevisions(db);
+  seedAlbumRevisions(db);
+  seedFaqRevisions(db);
   seedMenuRevisions(db);
   seedSettingsRevisions(db);
   seedUiStringRevisions(db);

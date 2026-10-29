@@ -124,6 +124,11 @@ Screens and building blocks built so far (phase P1 milestone M1; contract `../do
 - **T1.5.5 posts (SCR-24 / SCR-25, M5)** - built against the mock API (the posts backend T1.5.1 was written in parallel). See
   "Posts (T1.5.5)" below.
 
+- **T1.5.6 galleries and FAQ (SCR-28 / SCR-29 / SCR-30, M5)** - built against the mock API (the backend modules `cms/albums` and `cms/faq` are not wired yet).
+  See "Galleries and FAQ (T1.5.6)" below.
+- **T1.5.7 forms, messages inbox, dashboard (SCR-31 / SCR-32 / SCR-05, M5)** - built against the mock API (the forms module of the backend is done but not wired; the
+  dashboard endpoint T1.5.4 does not exist). See "Forms, inbox, dashboard (T1.5.7)" below.
+
 To add a module, follow the feature-vertical pattern:
 `src/app/(protected)/(routes)/admin/<feature>/page.tsx` + `src/services/<feature>.api.ts` +
 `src/hooks/use-<feature>.ts` + `src/types/<feature>.d.ts` + `src/components/protected/<feature>/`,
@@ -443,6 +448,113 @@ from the list's dialog (title in the default language, optional category, the au
 - **Tests**: `post-draft.test.ts`, `posts-list.test.tsx`, `post-editor.test.tsx` (whole editor over the mock API), `mocks/mock-posts.test.ts`, owner cases in `publish-bar.test.tsx`.
 - **Not built / assumptions**: no "language complete" filter and no published-date range filter (the API has neither / not built); posts have no noindex / in_sitemap;
   `author_id` is never sent (422 `not_applicable`), the author is `created_by`; the author filter offers "Mine" and, with `iam.users:read`, the users.
+
+## Galleries and FAQ (T1.5.6)
+
+Contract: `doc/05` sections 13.4 (albums) and 13.5 (FAQ groups), `doc/api/openapi-admin.yaml` (Album*, Faq*), backend `materm-admin-backend/modules/cms/{albums,faq}` (17 routes
+each; rights per route in their `rbac_matrix.rows.yaml`). Screens: `/admin/galleries` + `/admin/galleries/[id]` (SCR-28 / 29, key `cms.galleries`) and `/admin/faq` + `/admin/faq/[id]`
+(SCR-30, key `cms.faq`), both entries of the Content group; there is no `new` route, the list's dialog creates (album: title in the default language + key; group: internal name + key;
+the key is a letter first, `^[a-z][a-z0-9_-]{0,59}$`, immutable, suggested from the title/name until typed by hand) and opens the editor.
+
+- **Code**: `components/protected/albums/` (`albums-list`, `album-create-dialog`, `album-host`, `album-editor`, `album-details-tab`, `album-items-tab`, `album-item-sheet`, `album-draft.ts`,
+  `references-blocked-dialog` = shared with FAQ), `components/protected/faq/` (`faq-list`, `faq-create-dialog`, `faq-host`, `faq-editor`, `faq-items`, `faq-row-fields`, `faq-add-dialog`,
+  `faq-draft.ts`), `services/{albums,faq}.api.ts`, `hooks/use-{albums,faq}.ts` (`useAlbumWrites` / `useFaqWrites` = the write queue), `types/{albums,faq}.d.ts`, `lib/{albums,faq}.ts` (limits, key
+  pattern; shared with the mock). `lib/publishable-resources.ts` / `lib/revision-resources.ts` have `albums` and `faq-groups` (`previewLinks: false`, `ownActions: false`, entity types
+  `cms.albums` / `cms.faq_groups`); `PublishBar` shows no Preview button for them (PT-18). Shared pieces touched: `groupIssues` (blockers of a picture/question are grouped as "Picture n" /
+  "Question n"), `fieldSegments` (the uuid after `/items/` is not a field name), `PublishIssueTarget.itemId/itemIndex/itemPublicId`, `NOTICE_CODES` (+ `album_referenced`,
+  `faq_group_referenced`), `ReferencedDialog variant="used"` (the unpublish of a used album/group: "those sections show nothing", not "links are hidden"), `schema-form/data/api-data.ts`
+  (a picture picker shows the caption title or the file name, an album its key).
+- **Two ways of writing, both with `If-Match` = the ETag of the ROOT and one queue per editor** (`useAlbumWrites` / `useFaqWrites`: a promise chain that reads the ETag from the cache at each
+  turn, writes the answer's new ETag + stamp + `item_count` into the cache, no refetch). Every item command bumps the root's ETag, so a reorder followed by a caption save must not race.
+  (1) **Written at once**: add pictures / question, delete, `PUT .../items/order` with EVERY id (shown at once, the old order comes back if the server refuses), the question switch
+  (`PATCH {is_visible}`), the picture sheet's Save. (2) **A draft saved with "Save draft"**: the album's Details (title + description per language, cover) in `AlbumDraft`; the FAQ group's name and one
+  `FaqItemDraft` per edited question, all kept in the EDITOR (`edit === null` / absent = untouched, re-based on the cache after a save). "Save draft" of the bar saves the name and every
+  edited question one after the other (`saveAll`); `isDirty` disables Publish until saved; `useUnsavedChangesGuard`. No autosave (unlike posts/pages).
+- **Rights (05 13.4.2 / 13.5.2)**: `mode` = `full` (`update`), `translate` (`translate` only), `none`. Unlike posts there is NO "non-default languages only" rule: a translator edits the texts of EVERY
+  language, but adding/removing a language row of an album (title), the cover, a picture's `layout_hint` / picture, adding/deleting/reordering, a question's `is_visible`, the FAQ name are `update`,
+  create/delete are `create`/`delete` (the controls are not shown). A translator may add a language row to a FAQ question or a picture's caption (those are texts). Trash and restore need `delete`.
+- **Albums**: tabs Pictures (default) / Details / History (`?tab=`, `?locale=`, `?item=<id>` opens the picture sheet). Pictures: a drag/keyboard grid (`SortableList layout="grid"`), "Add pictures"
+  (`MediaPicker` multiple, `max = min(50, 200 - count)`, a picture may be added twice, `Idempotency-Key` per open), a card has the number, caption in the chosen language, the "Used in a
+  photo story" badge (`in_use`), edit (sheet) and delete (disabled with the reason while `in_use`; a stale page still gets the 409). The sheet (`album-item-sheet.tsx`): caption title (120),
+  caption text (400), alt (250, empty = the alt text of the library picture) per language, layout hint (`^[a-z0-9_-]{1,40}$`), replace picture; only changed fields are sent, a cleared text is `null`;
+  closing with edits asks. A language row of a picture is never removed from the UI.
+- **FAQ**: tabs Questions / Settings (internal name, read only key, usage) / History. An accordion (`SortableList`, `aria-expanded` buttons) of questions; open one to edit question (200) + answer
+  (`RichTextEditor` profile `lite`, <= 50 nodes) in the chosen language (`FaqRowFields`). A language row needs BOTH texts (`validateItemDraft`); the default language always has both; emptying
+  another language removes its row (`null`, `update`). "Add question" dialog (`faq-add-dialog.tsx`, own language switcher, default language required, optional "show on the website"). The group is
+  limited to 100 questions ([proposal] in 05 13.5.4).
+- **Reference-blocked delete (BR-19, PT-8)**: `DELETE /albums/{id}`, `DELETE /albums/{id}/items/{itemId}` and `DELETE /faq-groups/{id}` answer 409 `ENTITY_REFERENCED`
+  `details.references[]` (`entity_type`, `id`, `title`, `field`, `kind` section_props|draft_props, `in_draft`) with NO `confirm_references`: `ReferencesBlockedDialog` is read only (a link to the
+  page editor per row via `usageHref`, "only in unpublished changes" chip) - it has no "go on anyway". `unpublish` of a used album/group is different: 409 until `?confirm_references=true`
+  (PublishBar's `ReferencedDialog variant="used"`), then the warning `album_referenced` / `faq_group_referenced` is shown as a notice.
+- **Publish blockers (05 13.4.7 / 13.5.5)**: pointers `/items/<public_id>/media_id` (album) and `/items/<public_id>/translations/<l>/{question|answer}` (FAQ) with `params.item_id` / `item_index`;
+  "Go to field" opens the picture's sheet (`?item=`) or expands the question in that language. Warnings `album_empty`, `faq_group_empty`, `translation_incomplete`.
+- **Mock** (`mocks/mock-albums.ts`, `mock-faq.ts`, shared publish engine `mock-faq-album-engine.ts`; tests `mock-albums.test.ts`, `mock-faq.test.ts`): strict like posts (unknown field/param 422,
+  428 without `If-Match`, 409 lock, `INVALID_STATE` reasons, `limit_exceeded` 50 per request / 200 / 100, reorder rules `duplicate` / `unknown_reference` / `required` + `params.missing`, nothing
+  changed = same ETag, the draft snapshot of a published thing, revisions incl. a restore that would drop a picture a photo story uses = 409). `db.albums` is the full model (`MockAlbum`; the pages
+  model reads `id` / `status` / `deleted_at` of it), `db.faqGroups` the FAQ one; the references are SCANNED in the sections of the pages (live rows AND draft snapshots: `album_id`,
+  `album_item_id` (photo_story slots), `group_key`). Seeds: albums 1 (published, 5 pictures = the ones the gallery page of the examples uses, so they are `in_use`) and 2 (draft, the "spring" page
+  names it, picture 1 has no alt text anywhere = the blocker) are the two the pages model always had; INVENTED: 3 (ready to publish), 4 (trash), 5 (published + pending draft); FAQ `contact`
+  (published; the contact page names it), `booking` (draft, one question without an answer), `trips` (published + pending draft), `old-faq` (trash). `db.translateOnly` containing
+  `"albums"` / `"faq-groups"` = a translate-only writer. Browser (`NEXT_PUBLIC_API_MOCKING=true`): `window.__MATERM_MOCK__.touchAlbum(id)` / `touchFaqGroup(id)` (-> 409),
+  `referenceAlbumItem(pageId, itemId)`, `albums()`, `faqGroups()`; `setTranslateOnly(true)` covers `cms.galleries` and `cms.faq` too. The lookups `GET /albums`, `/faq-groups`,
+  `/albums/:id/items` of the schema form pickers are now these handlers (registered before the old lookup handlers).
+- **Tests**: `albums-list.test.tsx`, `album-editor.test.tsx`, `faq-list.test.tsx`, `faq-editor.test.tsx` (whole screens over the mock API), the two mock tests, `nav-main-items.test.ts`,
+  `api-data.test.ts` (picker labels).
+- **Not built / assumptions**: no preview links (PT-18), no "language complete" filter, no per-picture "remove language", no autosave, no bulk delete of pictures, FAQ answers are not previewed as HTML;
+  the picture sheet and the FAQ question are not pointed at by a published-page "where used" link (only the list/blocked dialogs show usage); the Lao strings are placeholders for native review.
+
+## Forms, inbox, dashboard (T1.5.7)
+
+Contract: `doc/05` sections 13.6 - 13.8, backend `materm-admin-backend/modules/forms` (`models/*.go` are the exact shapes). Routes: `/admin/forms` (SCR-31 list),
+`/admin/forms/[id]` (editor), `/admin/forms/submissions` (SCR-32 inbox), `/admin/forms/submissions/[id]?created_at=` (message), `/admin` (SCR-05). Sidebar: group
+`nav.formsGroup` with `nav.submissions` (key `forms.submissions`, carries the new-messages badge) and `nav.forms` (`forms.manage`); the longest URL prefix guards
+`/admin/forms/submissions/**` with `forms.submissions` and `/admin/forms/<id>` with `forms.manage`; `NavMain` marks only the longest matching entry (so "Forms" is not also
+lit on the inbox). Code: `components/protected/{forms,submissions,dashboard}/`, `services|hooks/{forms,submissions,dashboard}`, `types/{forms,submissions,dashboard}.d.ts`,
+`lib/{forms,submissions,blob-error}.ts` (limits, the status table, window rules; shared with the mock so app code never imports `@/mocks`).
+
+- **Forms list**: no create / delete in P1 (the `contact` form is a system form). Columns: name + slug, status chip, active recipients (amber "No recipients"), new messages
+  (link to the inbox filtered by the form; the number is absent for a caller without `forms.submissions:read`), updated.
+- **Form editor** (`form-editor.tsx`): `PublishBar` (resource `forms`: no preview links, no `update_own`; `lib/publishable-resources.ts` + `lib/revision-resources.ts` have the
+  `forms` entries) + tabs Texts, Fields, Recipients, Settings, History (`?tab=`, `?locale=`). Texts, field texts and settings are ONE `FormDraft` (`form-draft.ts`: `draftFromForm`,
+  `validateDraft`, `buildFormPatch`, `problemKeyOf`, `formPointerTarget`); a published form keeps its live copy and holds the edit as a draft, so the user must Publish.
+  **Patch rules (from the backend service)**: only changed members are sent; a cleared nullable text is `null`; `messages` and `option_labels` REPLACE the whole map of their
+  language (sent whole, only when changed; a blank entry is dropped = deleted); a new language needs `title` + `submit_label` (a field text needs `label`); a language row is
+  removed with `{"en": null}`, never the default; `If-Match` = `"<lock_version>"`. Rights: `update` = everything; `translate` = texts and labels in EVERY language, default
+  included (different from posts), settings/recipients read-only; `read` = nothing editable. The field schema is read-only (table) and its texts are edited per language.
+  The labels of the topics are the `option_labels` of the `topic` field (Fields tab); the addresses of a topic are recipients with `topic_value` (Recipients tab).
+- **Recipients are NOT part of the draft** (13.6.4): own state in `form-recipients-tab.tsx` (kept mounted with `forceMount` so edits survive a tab switch), own validator
+  `recipients_etag` (already quoted; `If-Match` of `PUT /forms/{id}/recipients`), applied at once, the form's ETag and `lock_version` do not move (`useFormWrites.replaceRecipients`
+  only updates `recipients`, `recipients_etag`, `recipient_count` in the cache). Client checks mirror the server (`recipients-draft.ts`: email regex, <= 254, duplicates by
+  address + type + topic, <= 20, BR-34 active catch-all `to` when the form is published or does not store submissions). 409 -> `ConflictDialog`; 422 rows are mapped to the row.
+  Publish blockers (`/recipients`, `/translations/<l>/title`, `/field_translations/<key>/<l>/label|option_labels/<v>`, `/settings/honeypot_field`) land on the right tab through
+  `formPointerTarget` ("Go to field"); `groupIssues` has a "Form" group and `fieldSegments` reads `/field_translations/<key>/<l>/<member>` as "key > member".
+- **Inbox** (`submissions-list.tsx`): URL state `status` (multi; absent = every status except spam, the Spam chip sends `status=spam`), `form_id`, `topic` (only offered for a
+  form the user can read), `from` / `to` (RFC 3339, `DateRangeFilter`), keyword, sort `created_at` only (`assigned_to` / `mine` are never sent: 422 `not_applicable` in P1). A keyword
+  with no dates searches the last 90 days (the page says so); a keyword window over 366 days or `from > to` is stopped BEFORE a request (`windowProblem`). Chips: All, New (n from
+  `GET /submissions/summary`), Read, Replied, Archived, Spam. Bulk (needs `update`): one `POST /submissions/bulk-status` (<= 100 ids; the selection is derived per query so a new
+  filter / page clears it); result = "n changed" + info toast for the skipped. Export (needs `export`): `submissions-export-dialog.tsx` (rows, filters worded, the audit notice,
+  what is left out) -> `SubmissionsAPI.Export` fetches a Blob with the session; **an error body of a Blob request is read back into JSON by `unwrapBlobError`** so
+  `EXPORT_TOO_LARGE` (+ `details.matched/max`), 429 (+ `Retry-After` -> minutes) and 503 are explained in the dialog (the global toast of 429/503 is the only toast).
+- **Message** (`submission-detail.tsx`): all values are rendered as TEXT (`whitespace-pre-wrap`, JSON in `<pre>`, never HTML); the list links carry `?created_at=` and every call
+  passes it; GET has no side effect, a NEW message is PATCHed to `read` after 1 s once per message (user with `update`; no `If-Match`; 409 is silent); PATCH answers a LIST ITEM
+  (merged into the cached detail, fields / notes kept); only the moves of the status table are offered (none for an anonymised row); Reply = `mailto:` with the address and subject
+  encoded (an address with a line break gets no link) and then "mark as replied?"; notes are append-only, `Idempotency-Key` kept for a retry of the same note, the ETag is untouched.
+  PII: `gcTime: 60_000` on the submission queries, nothing in storage, nothing logged, breadcrumb shows `#id` not the name.
+- **Dashboard** (`dashboard-view.tsx`, `GET /dashboard/summary`, ONE request): shows exactly the cards the server sent (documented: `my_drafts`, `submissions_new`, `failed_jobs`,
+  `translation`, `media_missing_alt`; PROPOSED extras: `content_counts`, `recent_activity`, `relay`, see `types/dashboard.d.ts`); a link is shown only when `getPermissionsForPath` knows
+  the route and the user may open it; no card = welcome + the first page after the dashboard. All the stand-in lives in `mocks/mock-dashboard.ts` (+ `hooks/use-dashboard.ts`,
+  `services/dashboard.api.ts`, the type file); align with T1.5.4 there.
+- **Mock** (`mocks/mock-forms.ts`, `mock-submissions.ts`, `mock-dashboard.ts`, handlers in `mocks/forms-handlers.ts`, spread FIRST in `mockApiHandlers` so the real `GET /forms` shadows
+  the older picker lookup of `mock-cms-lookups.ts`, which is dead code to remove at merge): state in a `WeakMap<MockDb, ...>` seeded on first use (nothing added to `MockDb`). Seeds: form 1 =
+  the real `contact` seed (published, recipients EMPTY, so the first recipients save needs a catch-all `to`; the page `contact` references it, so unpublish is a 409 `ENTITY_REFERENCED`),
+  INVENTED forms 2 (draft newsletter, Lao only) and 3 (published trek booking, topic-bound recipients, a pending draft); INVENTED 16 messages (HTML payload, `=HYPERLINK` cell, a key the
+  schema no longer has, an anonymised row, a retention-overdue row, one older than 90 days, spam). Knobs: `setFormsRole(db, "editor"|"translator"|"reader")` (or `db.translateOnly`
+  with `"forms"`), `setSubmissionsRights`, `exhaustExportRate`, `setExportUnavailable`, `setExportMax`, `setDashboardCards`, `touchFormAsSomeoneElse`, `changeRecipientsAsSomeoneElse`,
+  `touchSubmissionAsSomeoneElse`. No `window.__MATERM_MOCK__` entries were added.
+- **Tests**: `form-draft.test.ts`, `recipients-draft.test.ts`, `form-editor.test.tsx`, `forms-list.test.tsx`, `submissions-list.test.tsx`, `submission-detail.test.tsx`,
+  `dashboard-view.test.tsx`, `components/navbar/nav-badge.test.tsx`, `lib/{nav-forms,blob-error}.test.ts`, `mocks/mock-{forms,submissions}.test.ts` (the dashboard mock is in the second).
+- **Not built / assumptions**: no autosave in the form editor; no "preview" tab and no field builder (P2); no assignee / data-requests (P2); the `/admin/forms/submissions/data-requests`
+  route does not exist; the topic filter needs `forms.manage:read`; the dashboard shape beyond 05 13.8 is a proposal.
 
 ## Preview links (T1.4.4 UI)
 

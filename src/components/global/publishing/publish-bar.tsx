@@ -71,7 +71,7 @@ export type PublishBarProps = {
 };
 
 // Warnings of a success the user should read (not only a toast): the draft kept in the History, links that are hidden.
-const NOTICE_CODES = new Set(["draft_kept_as_history", "page_referenced", "post_referenced", "path_changed_published", "slug_changed_published"]);
+const NOTICE_CODES = new Set(["draft_kept_as_history", "page_referenced", "post_referenced", "album_referenced", "faq_group_referenced", "form_referenced", "path_changed_published", "slug_changed_published"]);
 
 // ICU arguments of a notice from its `params` (primitives only).
 function noticeValues(notice: CommandWarning): Record<string, string | number> {
@@ -406,6 +406,7 @@ export function PublishBar({
         open={referenced !== null}
         onOpenChange={(open) => !open && setReferenced(null)}
         noun={noun}
+        variant={resource === "albums" || resource === "faq-groups" ? "used" : "link"}
         items={referenced?.items ?? []}
         total={referenced?.total ?? 0}
         isPending={busy === "unpublishing"}

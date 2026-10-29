@@ -197,6 +197,10 @@
     }
   },
   "nav": {
+    "formsGroup": "Forms and messages",
+    "submissions": "Messages",
+    "forms": "Forms",
+    "newMessages": "{count, plural, one {# new message} other {# new messages}}",
     "dashboard": "Dashboard",
     "users": "Users",
     "locales": "Languages",
@@ -215,9 +219,13 @@
     "seo": "SEO",
     "uiStrings": "UI strings",
     "pages": "Pages",
-    "posts": "Blog posts"
+    "posts": "Blog posts",
+    "galleries": "Galleries",
+    "faq": "FAQ"
   },
   "breadcrumb": {
+    "forms": "Forms",
+    "submissions": "Messages",
     "admin": "Dashboard",
     "users": "Users",
     "profile": "Profile",
@@ -233,11 +241,446 @@
     "tags": "Tags",
     "uiStrings": "UI strings",
     "pages": "Pages",
-    "posts": "Blog posts"
+    "posts": "Blog posts",
+    "galleries": "Galleries",
+    "faq": "FAQ"
   },
   "dashboard": {
     "title": "Dashboard",
-    "description": "Overview of the admin panel."
+    "description": "What needs your attention today.",
+    "welcome": {
+      "title": "Welcome",
+      "body": "There are no cards for your role yet. Start from the first page you can open.",
+      "nothing": "Your role cannot open any page yet. Ask an administrator for access.",
+      "open": "Open the first page"
+    },
+    "drafts": {
+      "title": "My drafts",
+      "description": "{count, plural, =0 {Nothing you started is waiting} one {# thing you started is waiting} other {# things you started are waiting}}",
+      "none": "You have no drafts.",
+      "pending": "Changes pending",
+      "draft": "Draft"
+    },
+    "entities": {
+      "pages": "Page",
+      "posts": "Blog post",
+      "albums": "Album",
+      "faqGroups": "FAQ group",
+      "forms": "Form"
+    },
+    "messages": {
+      "title": "New messages",
+      "label": "{count, plural, one {new message} other {new messages}}",
+      "open": "Open the inbox"
+    },
+    "jobs": {
+      "title": "Failed jobs",
+      "label": "{count, plural, one {job failed in the last 7 days} other {jobs failed in the last 7 days}}",
+      "open": "Open system status"
+    },
+    "translation": {
+      "title": "Translations",
+      "description": "Published pages and posts that have their texts in each language.",
+      "none": "There is no other active language.",
+      "aria": "{locale}: {percent}% translated"
+    },
+    "alt": {
+      "title": "Pictures without alt text",
+      "label": "{count, plural, one {picture has no alt text} other {pictures have no alt text}}",
+      "open": "Open the media library"
+    },
+    "content": {
+      "title": "Content",
+      "proposal": "Drafts and published items per kind.",
+      "kind": "Kind",
+      "draft": "Not published",
+      "published": "Published"
+    },
+    "activity": {
+      "title": "Recent activity",
+      "proposal": "The latest changes by your team.",
+      "open": "Open the audit log",
+      "none": "Nothing happened yet.",
+      "system": "System"
+    },
+    "relay": {
+      "title": "Website updates",
+      "proposal": "Changes waiting to reach the website.",
+      "open": "Open system status",
+      "pending": "Waiting",
+      "failed": "Failed",
+      "lastSuccess": "Last delivered {when}",
+      "neverSucceeded": "Nothing has been delivered yet.",
+      "attention": "Some updates failed to reach the website."
+    },
+    "updated": "Updated {when}"
+  },
+  "forms": {
+    "list": {
+      "title": "Forms",
+      "description": "The forms on the website, their texts and who is told when a message arrives.",
+      "searchPlaceholder": "Search by name or slug",
+      "system": "system form",
+      "status": {
+        "draft": "Draft only",
+        "published": "Published",
+        "archived": "Archived"
+      },
+      "columns": {
+        "name": "Form",
+        "status": "Status",
+        "recipients": "Recipients",
+        "messages": "New messages",
+        "updated": "Updated"
+      },
+      "noRecipients": "No recipients",
+      "newMessages": "{count} new",
+      "filters": {
+        "status": "Status",
+        "pendingOnly": "With unpublished changes"
+      },
+      "empty": "There are no forms.",
+      "emptyHint": "Forms come with the website. Creating new forms is not available yet."
+    },
+    "host": {
+      "notFoundTitle": "Form not found",
+      "notFoundDescription": "This form does not exist or was removed.",
+      "backToList": "Back to forms",
+      "system": "system form",
+      "messages": "{count, plural, =0 {no new messages} one {# new message} other {# new messages}}"
+    },
+    "editor": {
+      "fixFirst": "Fix the marked fields first.",
+      "saveRefused": "The form was not saved. Check the marked fields.",
+      "saveFailed": "The form could not be saved.",
+      "translateNote": "You can change the texts and labels in every language. The settings and recipients are read-only for you.",
+      "readOnlyNote": "You can read this form but not change it.",
+      "tabs": {
+        "texts": "Texts",
+        "fields": "Fields",
+        "recipients": "Recipients",
+        "settings": "Settings",
+        "history": "History"
+      },
+      "tabProblems": "{count, plural, one {# problem} other {# problems}}"
+    },
+    "problems": {
+      "required": "This is required.",
+      "too_long": "Too long.",
+      "out_of_range": "Outside the allowed range.",
+      "invalid_format": "Not a valid value.",
+      "pattern_mismatch": "This does not have the right format.",
+      "duplicate": "Already used.",
+      "too_many": "Too many entries.",
+      "invalid_email": "Not a valid e-mail address."
+    },
+    "texts": {
+      "missingTitle": "There is no text in {locale} yet.",
+      "missingBody": "Until you add one, the website shows the form in its fallback language.",
+      "addLanguage": "Add texts in {locale}",
+      "default": "default language",
+      "fields": {
+        "title": "Title",
+        "submit_label": "Send button",
+        "description": "Introduction",
+        "sending_label": "Button while sending",
+        "success_title": "Thank-you title",
+        "success_description": "Thank-you text",
+        "success_again_label": "Send another button"
+      },
+      "hints": {
+        "title": "The heading above the form.",
+        "submit_label": "The text on the button that sends the form.",
+        "description": "A line of text under the title.",
+        "sending_label": "Shown on the button while the message is on its way.",
+        "success_title": "The heading after a message was sent.",
+        "success_description": "The text after a message was sent.",
+        "success_again_label": "The button that shows the empty form again."
+      },
+      "messages": {
+        "title": "Error messages",
+        "description": "The text of each error the form can show. A message you leave out uses the website's own wording.",
+        "code": "Message {n}: code",
+        "codePlaceholder": "code, for example required",
+        "text": "Message {n}: text",
+        "counter": "{length} / {max}",
+        "remove": "Remove message {code}",
+        "add": "Add a message"
+      },
+      "removeLanguage": "Remove the texts in {locale}",
+      "remove": {
+        "title": "Remove the texts in {locale}?",
+        "description": "The website shows the form in its fallback language instead. The change is saved with the other changes and goes live when you publish.",
+        "confirm": "Remove"
+      }
+    },
+    "fields": {
+      "schema": {
+        "title": "Fields of the form",
+        "description": "Schema version {version}. The fields cannot be changed here yet; you can change what they say.",
+        "key": "Key",
+        "type": "Type",
+        "required": "Required",
+        "limits": "Limits",
+        "options": "Options",
+        "pii": "personal data",
+        "yes": "Yes",
+        "no": "No",
+        "requiredBadge": "required"
+      },
+      "types": {
+        "text": "Text",
+        "email": "E-mail",
+        "tel": "Phone",
+        "textarea": "Long text",
+        "select": "Choice list",
+        "radio": "Radio buttons",
+        "checkbox": "Checkbox",
+        "consent": "Consent"
+      },
+      "limits": {
+        "length": "{min} to {max} characters",
+        "pattern": "fixed format"
+      },
+      "texts": {
+        "title": "What the fields say",
+        "description": "The label, hint and help text of each field, and the label of each choice, in the language chosen above. The labels of the topics are the choices of the topic field.",
+        "label": "Label",
+        "placeholder": "Hint inside the field",
+        "help": "Help text",
+        "options": "Choices",
+        "optionLabel": "Label of {option} in {locale}",
+        "fallback": "Nothing is set in {locale}: the website uses the fallback language."
+      }
+    },
+    "settings": {
+      "readOnly": "Only people who can update forms can change the settings.",
+      "name": "Name",
+      "nameHint": "Only shown here and in the inbox.",
+      "retention_days": {
+        "label": "Keep messages for (days)",
+        "hint": "From {min} to {max}."
+      },
+      "rate_limit_max": {
+        "label": "Messages per visitor",
+        "hint": "In one time window. From {min} to {max}."
+      },
+      "rate_limit_window_s": {
+        "label": "Time window (seconds)",
+        "hint": "From {min} to {max}."
+      },
+      "rate_limit_daily_max": {
+        "label": "Messages per day",
+        "hint": "For the whole form. From {min} to {max}."
+      },
+      "min_fill_seconds": {
+        "label": "Shortest time to fill in (seconds)",
+        "hint": "Faster than this is treated as a robot. From {min} to {max}."
+      },
+      "honeypot_field": {
+        "label": "Trap field",
+        "hint": "A hidden field that only robots fill in. It may not be the key of a real field. Leave empty for none."
+      },
+      "success_redirect_url": {
+        "label": "Go to this address after sending",
+        "hint": "A path such as /thank-you or an address that starts with https://. Leave empty to show the thank-you text."
+      },
+      "store_submissions": {
+        "label": "Keep the messages in the inbox",
+        "hint": "When off, messages are only sent by e-mail and need at least one active recipient.",
+        "needsRecipient": "Add an active recipient on the Recipients tab before you save this."
+      },
+      "notify_enabled": {
+        "label": "Send an e-mail for each new message",
+        "hint": "To the recipients on the Recipients tab."
+      },
+      "system": {
+        "title": "System values",
+        "slug": "Slug",
+        "retention_mode": "When the time is up",
+        "max_payload_bytes": "Largest message (bytes)"
+      }
+    },
+    "recipients": {
+      "fixFirst": "Fix the marked rows first.",
+      "saved": "The recipients were saved. They apply now.",
+      "refused": "The recipients were not saved. Check the marked rows.",
+      "failed": "The recipients could not be saved.",
+      "immediate": "Recipients are saved on their own and apply at once. They do not wait for Publish.",
+      "explain": "A recipient with a topic only gets the messages about that topic. A recipient for all topics gets every message. Cc and Bcc copies follow the same rule.",
+      "empty": "There are no recipients yet. Add them before the form is published.",
+      "emptyPublished": "This form is published but has no recipients. Nobody is told about new messages. Add an active To recipient for all topics.",
+      "email": "E-mail address of recipient {n}",
+      "kind": "Type of recipient {n}",
+      "topic": "Topic of recipient {n}",
+      "active": "Recipient {n} is active",
+      "on": "Active",
+      "off": "Paused",
+      "remove": "Remove recipient {n}",
+      "problems": {
+        "required": "Enter an e-mail address.",
+        "invalid_format": "Not a valid e-mail address.",
+        "too_long": "Too long.",
+        "duplicate": "Listed twice with the same type and topic."
+      },
+      "kinds": {
+        "to": "To",
+        "cc": "Cc",
+        "bcc": "Bcc"
+      },
+      "allTopics": "All topics",
+      "needsCatchAll": "Keep at least one active To recipient for all topics.",
+      "needsCatchAllPublished": "A published form needs at least one active To recipient for all topics.",
+      "tooMany": "At most {max} recipients.",
+      "add": "Add a recipient",
+      "reset": "Undo changes",
+      "save": "Save recipients",
+      "readOnly": "Only people who can update forms can change the recipients."
+    }
+  },
+  "submissions": {
+    "status": {
+      "new": "New",
+      "read": "Read",
+      "replied": "Replied",
+      "archived": "Archived",
+      "spam": "Spam"
+    },
+    "list": {
+      "title": "Messages",
+      "description": "Messages sent through the forms on the website. They contain personal data.",
+      "searchPlaceholder": "Search name, e-mail or message",
+      "columns": {
+        "received": "Received",
+        "sender": "From",
+        "topic": "Topic",
+        "form": "Form",
+        "message": "Message",
+        "status": "Status",
+        "notes": "Notes"
+      },
+      "anonymised": "Anonymised",
+      "noName": "No name",
+      "notes": "{count, plural, one {# note} other {# notes}}",
+      "bulk": {
+        "done": "{updated, plural, =0 {No message changed} one {# message changed} other {# messages changed}}.",
+        "skipped": "{count, plural, one {# message could not make that move and was left as it is.} other {# messages could not make that move and were left as they are.}}",
+        "failed": "The messages could not be changed.",
+        "tooMany": "Select at most {max} messages at a time.",
+        "to": {
+          "new": "Not spam",
+          "read": "Mark as read",
+          "replied": "Mark as replied",
+          "archived": "Archive",
+          "spam": "Mark as spam"
+        }
+      },
+      "chips": {
+        "label": "Show messages by status",
+        "all": "All",
+        "newWithCount": "New ({count})"
+      },
+      "filters": {
+        "form": "Form",
+        "formWithNew": "{name} ({count} new)",
+        "topic": "Topic",
+        "dates": "Received"
+      },
+      "export": {
+        "open": "Export CSV",
+        "status": "Status: {value}",
+        "statusDefault": "Status: all except spam",
+        "form": "Form: {value}",
+        "topic": "Topic: {value}",
+        "dates": "Received: {from} to {to}",
+        "keyword": "Search text of {count, plural, one {# character} other {# characters}}"
+      },
+      "emptySpam": "No spam.",
+      "empty": "No messages.",
+      "emptyHint": "Messages sent through the website appear here.",
+      "keywordWindow": "A search without dates looks at the last {days} days. Pick dates to search further back.",
+      "windowFromAfterTo": "The start date is after the end date.",
+      "windowTooLarge": "A search with text can cover at most {days} days. Pick a shorter period."
+    },
+    "export": {
+      "title": "Export messages as CSV",
+      "description": "The file has the messages that match the filters you have set now.",
+      "rows": "Messages in the file",
+      "filters": "Filters",
+      "auditTitle": "This export is recorded",
+      "audit": "The export is written to the audit log with your name, the time and the filters, because the messages contain personal data. The file itself is not kept.",
+      "excluded": "The file leaves out the IP fingerprint, the browser, the notes and the consent details. Spam is left out unless you filtered for it.",
+      "tooLarge": "{matched} messages match, but a file can have at most {max}. Narrow the filters.",
+      "rateLimitedIn": "You have exported too often. Try again in about {minutes} minutes.",
+      "rateLimited": "You have exported too often. Try again later.",
+      "unavailable": "Export is not available right now. Try again in a moment.",
+      "failed": "The file could not be created.",
+      "cancel": "Cancel",
+      "confirm": "Export",
+      "done": "The file was downloaded."
+    },
+    "detail": {
+      "empty": "(empty)",
+      "yes": "Yes",
+      "no": "No",
+      "notFoundTitle": "Message not found",
+      "notFoundDescription": "This message does not exist or was removed.",
+      "backToList": "Back to messages",
+      "noName": "No name",
+      "anonymisedTitle": "Message #{id}",
+      "retentionOverdue": "Past its retention date",
+      "anonymisedNoteTitle": "This message was anonymised",
+      "anonymisedNote": "Its personal data was removed on {date}. Only the form, topic, status and dates remain.",
+      "actions": "Actions for this message",
+      "reply": "Reply by e-mail",
+      "moves": {
+        "new": "Back to new",
+        "read": "Mark as read",
+        "replied": "Mark as replied",
+        "archived": "Archive",
+        "spam": "Mark as spam",
+        "notSpam": "Not spam",
+        "reopen": "Reopen"
+      },
+      "askReplied": {
+        "title": "Did you reply?",
+        "body": "Mark this message as replied so your team knows it is handled.",
+        "yes": "Mark as replied",
+        "no": "Not now"
+      },
+      "moved": "Marked as {status}.",
+      "stale": "Somebody else changed this message. It was reloaded.",
+      "moveFailed": "The message could not be changed.",
+      "fields": "What was sent",
+      "extraNote": "The grey names are fields the form does not have any more.",
+      "notes": {
+        "title": "Internal notes",
+        "none": "No notes yet.",
+        "unknownAuthor": "Someone",
+        "add": "Add a note",
+        "hint": "Only your team sees notes. They cannot be changed or deleted.",
+        "submit": "Add note",
+        "required": "Write the note first.",
+        "tooLong": "A note can have at most {max} characters.",
+        "added": "Note added.",
+        "anonymised": "This message was anonymised: notes can no longer be added.",
+        "failed": "The note could not be added."
+      },
+      "meta": {
+        "title": "Details",
+        "received": "Received",
+        "form": "Form",
+        "topic": "Topic",
+        "language": "Language of the visitor",
+        "sourcePath": "Sent from page",
+        "userAgent": "Browser",
+        "ip": "IP fingerprint",
+        "consent": "Consent",
+        "spamScore": "Spam score",
+        "handled": "Handled by",
+        "retention": "Keep until"
+      }
+    }
   },
   "errors": {
     "withRequestId": "{message} (reference: {requestId})",
@@ -283,6 +726,7 @@
       "PUBLISH_BLOCKED": "It cannot be published yet: some things need to be fixed first."
     },
     "fields": {
+      "recipients_required": "At least one active To recipient for all topics is needed.",
       "required": "This field is required.",
       "invalid_type": "The value has the wrong type.",
       "invalid_format": "The value has an invalid format.",
@@ -1716,7 +2160,15 @@
       "is_featured": "Featured",
       "published_at": "Display date",
       "media": "Gallery",
-      "media_id": "Picture"
+      "media_id": "Picture",
+      "cover_media_id": "Cover picture",
+      "layout_hint": "Layout hint",
+      "caption_title": "Caption title",
+      "caption_description": "Caption text",
+      "question": "Question",
+      "answer": "Answer",
+      "album": "Album",
+      "group": "Group"
     },
     "publishable": {
       "explain": "The working draft, every published version and the versions kept before an edit or a restore. Restoring a version makes it the working draft: it does not reach the website until you publish.",
@@ -2201,8 +2653,11 @@
   "publishing": {
     "barLabel": "Publishing",
     "noun": {
+      "forms": "form",
       "pages": "page",
-      "posts": "post"
+      "posts": "post",
+      "albums": "album",
+      "faq-groups": "FAQ group"
     },
     "actions": {
       "saveDraft": "Save draft",
@@ -2244,14 +2699,26 @@
       "close": "Close"
     },
     "groups": {
+      "form": "Form",
       "page": "Page details",
       "structure": "Page structure",
       "section": "Section {n}: {name}",
       "sectionUnknown": "A section",
       "post": "Post details",
-      "gallery": "Gallery"
+      "gallery": "Gallery",
+      "album": "Album details",
+      "faqGroup": "Group details",
+      "items": "Pictures and questions",
+      "picture": "Picture {n}",
+      "question": "Question {n}"
     },
     "fields": {
+      "recipients": "Recipients",
+      "submit_label": "Send button",
+      "honeypot_field": "Trap field",
+      "option_labels": "Choice labels",
+      "settings": "Settings",
+      "field_translations": "Field texts",
       "whole": "Whole value",
       "title": "Title",
       "seo_title": "SEO title",
@@ -2296,9 +2763,16 @@
       "media": "Gallery",
       "is_enabled": "Language switched on",
       "published_at": "Display date",
-      "translations": "Language"
+      "translations": "Language",
+      "cover_media_id": "Cover picture",
+      "question": "Question",
+      "answer": "Answer",
+      "layout_hint": "Layout hint",
+      "caption_title": "Caption title",
+      "caption_description": "Caption text"
     },
     "issues": {
+      "recipients_required": "Add at least one active To recipient who gets every topic (Recipients tab).",
       "unknown": "Not accepted ({code}).",
       "empty_default_locale": "Required in the default language ({locale}).",
       "required": "This is required.",
@@ -2335,7 +2809,9 @@
       "category_inactive": "The category is switched off. The post is published, but the category does not show on the website.",
       "body_empty": "The article has no text in the default language.",
       "label_long": "The label is longer than {recommended} characters; the blog strip may cut it.",
-      "limit_exceeded": "There are too many."
+      "limit_exceeded": "There are too many.",
+      "album_empty": "The album has no pictures. The gallery would be empty.",
+      "faq_group_empty": "The group has no visible question. The FAQ section would be empty."
     },
     "sectionTypes": {
       "hero_brand": "Hero (brand)",
@@ -2361,7 +2837,11 @@
       "title": "This {noun} is linked from other places",
       "description": {
         "unpublish": "{count, plural, one {# place links} other {# places link}} to it. If you go on, menu items that point to it are hidden and links in sections are hidden on the website.",
-        "delete": "{count, plural, one {# place links} other {# places link}} to it. If you go on, menu items that point to it are hidden and links in sections are hidden on the website."
+        "delete": "{count, plural, one {# place links} other {# places link}} to it. If you go on, menu items that point to it are hidden and links in sections are hidden on the website.",
+        "used": {
+          "unpublish": "{count, plural, one {# place uses} other {# places use}} this {noun}. If you go on, those sections show nothing on the website until it is published again.",
+          "delete": "{count, plural, one {# place uses} other {# places use}} this {noun}. If you go on, those sections show nothing on the website."
+        }
       },
       "menuItem": "Menu item \"{title}\" ({menu} menu)",
       "sectionProps": "A link in a section of \"{title}\"",
@@ -2379,6 +2859,10 @@
       "confirm": "Discard changes"
     },
     "notices": {
+      "form_referenced": {
+        "title": "The contact page no longer shows this form",
+        "body": "Pages that show the form leave it out. Messages that were already sent stay in the inbox."
+      },
       "dismiss": "Dismiss",
       "draft_kept_as_history": {
         "title": "Your unpublished changes were kept",
@@ -2399,6 +2883,14 @@
       "slug_changed_published": {
         "title": "The slug of a published post changed",
         "body": "Links to the old address no longer work."
+      },
+      "album_referenced": {
+        "title": "Sections that show this album now show nothing",
+        "body": "{total_references, plural, one {# place names} other {# places name}} this album. It is not on the website while it is unpublished."
+      },
+      "faq_group_referenced": {
+        "title": "Sections that show this group now show nothing",
+        "body": "{total_references, plural, one {# place names} other {# places name}} this group. It is not on the website while it is unpublished."
       }
     },
     "toast": {
@@ -3065,5 +3557,354 @@
       "serpNoDescription": "No description yet."
     },
     "publishedOn": "Published {date}"
+  },
+  "albums": {
+    "title": "Galleries",
+    "description": "The albums of pictures that photo stories and gallery sections show.",
+    "searchPlaceholder": "Search by key or title",
+    "noun": "album",
+    "empty": "No albums yet",
+    "emptyHint": "Create an album, then add pictures from the media library.",
+    "emptyTrash": "The trash is empty",
+    "trash": "Trash",
+    "readOnly": "Read only",
+    "stale": "The album was changed by someone else. The list was reloaded.",
+    "purgeOn": "Removed for good on {when}",
+    "usedIn": "{count, plural, one {# section} other {# sections}}",
+    "unused": "Not used",
+    "status": {
+      "draft": "Draft only",
+      "published": "Published",
+      "archived": "Archived"
+    },
+    "columns": {
+      "title": "Album",
+      "status": "Status",
+      "items": "Pictures",
+      "usage": "Used in",
+      "translations": "Languages",
+      "updated": "Updated",
+      "deleted": "Deleted",
+      "actions": "Actions"
+    },
+    "filters": {
+      "status": "Status",
+      "language": "Language",
+      "pendingOnly": "Only with unpublished changes"
+    },
+    "actions": {
+      "menu": "Actions for {name}",
+      "open": "Open",
+      "view": "View",
+      "delete": "Move to the trash",
+      "restore": "Restore {name}",
+      "restoreShort": "Restore"
+    },
+    "create": {
+      "open": "New album",
+      "title": "New album",
+      "description": "Give it a title and a key. The pictures are added in the editor. The key can not be changed later.",
+      "titleLabel": "Title ({locale})",
+      "keyLabel": "Key",
+      "keyHint": "Lower case letters, numbers, - and _. It starts with a letter. Up to 60 characters.",
+      "cancel": "Cancel",
+      "submit": "Create album",
+      "created": "The album was created.",
+      "failed": "The album could not be created.",
+      "errors": {
+        "title": {
+          "required": "Enter a title.",
+          "too_long": "The title can have up to {max} characters."
+        },
+        "key": {
+          "required": "Enter a key.",
+          "format": "Use lower case letters, numbers, - and _, starting with a letter.",
+          "too_long": "The key can have up to {max} characters.",
+          "taken": "This key is used by another album."
+        }
+      }
+    },
+    "delete": {
+      "title": "Move \"{title}\" to the trash?",
+      "description": "It stays in the trash for 30 days and can be restored. Sections that name it must be changed first.",
+      "publishedNote": "It is published: it leaves the website now.",
+      "confirm": "Move to the trash",
+      "done": "\"{title}\" is in the trash.",
+      "failed": "The album could not be deleted."
+    },
+    "restore": {
+      "done": "\"{title}\" was restored as a draft.",
+      "duplicate": "The key \"{key}\" is used by another album now. Rename or delete that one first.",
+      "failed": "The album could not be restored."
+    },
+    "blocked": {
+      "title": {
+        "album": "\"{name}\" cannot be deleted",
+        "item": "{name} cannot be deleted",
+        "faqGroup": "\"{name}\" cannot be deleted"
+      },
+      "description": {
+        "album": "{count, plural, one {# place uses} other {# places use}} this album. Remove it from those sections first, then delete it.",
+        "item": "{count, plural, one {# photo story uses} other {# photo stories use}} this picture. Choose another picture there first, then delete it.",
+        "faqGroup": "{count, plural, one {# FAQ section names} other {# FAQ sections name}} this group. Change those sections first, then delete it."
+      },
+      "listLabel": "Where it is used",
+      "more": "and {count} more",
+      "close": "Close"
+    },
+    "host": {
+      "backToList": "All albums",
+      "untitled": "Untitled album",
+      "notFoundTitle": "Album not found",
+      "notFoundDescription": "This album does not exist or was removed for good.",
+      "trashedTitle": "This album is in the trash",
+      "trashedBody": "It is not on the website. Restore it from the trash of the album list to work on it."
+    },
+    "editor": {
+      "tabs": {
+        "items": "Pictures",
+        "details": "Details",
+        "revisions": "History"
+      },
+      "fixFirst": "Fix the problems shown in the form first.",
+      "saveRefused": "The server did not accept some values. They are marked in the form.",
+      "saveFailed": "The changes could not be saved.",
+      "translateNote": "You can translate this album: the texts of the languages that already have a title, and the captions and alt texts of the pictures. The rest is read only.",
+      "readOnlyNote": "You can read this album, not change it."
+    },
+    "problems": {
+      "required": "Required.",
+      "too_long": "Too long (up to {max} characters).",
+      "titleRequired": "A language with a text needs a title."
+    },
+    "details": {
+      "titleLabel": "Title ({language})",
+      "descriptionLabel": "Description ({language})",
+      "newLanguageNeedsUpdate": "{language} has no texts yet. Adding a language needs the right to edit the album, not only to translate it.",
+      "cover": "Cover picture",
+      "noCover": "No cover picture",
+      "chooseCover": "Choose a cover picture",
+      "changeCover": "Change the cover picture",
+      "removeCover": "Remove",
+      "coverHint": "Shown in the list and by gallery sections that use the album cover.",
+      "coverPickerTitle": "Cover picture",
+      "coverPickerDescription": "Choose one picture from the media library.",
+      "key": "Key",
+      "usage": "Used in",
+      "usedIn": "{count, plural, one {# section} other {# sections}}",
+      "unused": "No section uses it yet"
+    },
+    "items": {
+      "title": "Pictures",
+      "count": "{count} of {max} pictures",
+      "add": "Add pictures",
+      "full": "The album is full ({max} pictures).",
+      "empty": "No pictures yet. Add some from the media library; the same picture may be added twice.",
+      "emptyReadOnly": "No pictures yet.",
+      "itemLabel": "Picture {n}",
+      "noCaption": "No caption in {language}",
+      "inUse": "Used in a photo story",
+      "edit": "Edit picture {n}",
+      "editShort": "Edit",
+      "viewShort": "View",
+      "delete": "Delete picture {n}",
+      "deleteInUse": "A photo story uses this picture. Choose another picture there first.",
+      "deleteNoRight": "You may not delete pictures.",
+      "added": "{count, plural, one {# picture was added} other {# pictures were added}}.",
+      "addFailed": "The pictures could not be added.",
+      "reorderFailed": "The new order could not be saved. The old order is back.",
+      "deleted": "Picture {n} was deleted.",
+      "deleteFailed": "The picture could not be deleted.",
+      "pickerTitle": "Add pictures to the album",
+      "pickerDescription": "You can add {count, plural, one {# more picture} other {# more pictures}} at once.",
+      "deleteDialog": {
+        "title": "Delete picture {n}?",
+        "description": "It is removed from the album. The picture stays in the media library. This is part of the unpublished changes until you publish.",
+        "confirm": "Delete"
+      }
+    },
+    "item": {
+      "title": "Picture {n}",
+      "description": "Caption and alt text in each language, and how the picture is laid out.",
+      "tooLong": "Too long (up to {max} characters).",
+      "hintFormat": "Use lower case letters, numbers, - and _ (up to 40 characters).",
+      "saved": "The picture was saved.",
+      "gone": "This picture does not exist any more. The album was reloaded.",
+      "saveFailed": "The picture could not be saved.",
+      "replace": "Replace the picture",
+      "inUse": "{count, plural, one {# photo story uses} other {# photo stories use}} this picture.",
+      "translateNote": "You can edit the texts. The picture and the layout hint are read only.",
+      "captionTitle": "Caption title ({language})",
+      "captionDescription": "Caption text ({language})",
+      "alt": "Alt text ({language})",
+      "altPlaceholder": "Empty = the alt text of the picture in the library",
+      "altHint": "Describes the picture for people who can not see it.",
+      "layoutHint": "Layout hint",
+      "layoutHintHint": "Optional word that tells the website how to show this picture.",
+      "cancel": "Cancel",
+      "save": "Save picture",
+      "pickerTitle": "Replace the picture",
+      "pickerDescription": "Choose one picture from the media library.",
+      "discard": {
+        "title": "Discard your changes?",
+        "description": "The texts you typed in this picture were not saved.",
+        "confirm": "Discard"
+      }
+    }
+  },
+  "faq": {
+    "title": "FAQ",
+    "description": "The groups of questions and answers that FAQ sections show.",
+    "searchPlaceholder": "Search by key or name",
+    "noun": "FAQ group",
+    "empty": "No FAQ groups yet",
+    "emptyHint": "Create a group, then add questions to it.",
+    "emptyTrash": "The trash is empty",
+    "trash": "Trash",
+    "readOnly": "Read only",
+    "stale": "The group was changed by someone else. The list was reloaded.",
+    "purgeOn": "Removed for good on {when}",
+    "usedIn": "{count, plural, one {# section} other {# sections}}",
+    "unused": "Not used",
+    "visibleShort": "{visible} of {count}",
+    "visibleOf": "{visible} of {count} questions are visible",
+    "status": {
+      "draft": "Draft only",
+      "published": "Published",
+      "archived": "Archived"
+    },
+    "columns": {
+      "name": "Group",
+      "status": "Status",
+      "items": "Questions",
+      "usage": "Used in",
+      "updated": "Updated",
+      "deleted": "Deleted",
+      "actions": "Actions"
+    },
+    "filters": {
+      "status": "Status",
+      "pendingOnly": "Only with unpublished changes"
+    },
+    "actions": {
+      "menu": "Actions for {name}",
+      "open": "Open",
+      "view": "View",
+      "delete": "Move to the trash",
+      "restore": "Restore {name}",
+      "restoreShort": "Restore"
+    },
+    "create": {
+      "open": "New group",
+      "title": "New FAQ group",
+      "description": "A group holds the questions of one FAQ section. The questions are added in the editor.",
+      "nameLabel": "Name",
+      "nameHint": "Only you see it. It is not shown on the website and not translated.",
+      "keyLabel": "Key",
+      "keyHint": "A FAQ section names the group by this key. Lower case letters, numbers, - and _, starting with a letter. It can not be changed later.",
+      "cancel": "Cancel",
+      "submit": "Create group",
+      "created": "The group was created.",
+      "failed": "The group could not be created.",
+      "errors": {
+        "name": {
+          "required": "Enter a name.",
+          "too_long": "The name can have up to {max} characters."
+        },
+        "key": {
+          "required": "Enter a key.",
+          "format": "Use lower case letters, numbers, - and _, starting with a letter.",
+          "too_long": "The key can have up to {max} characters.",
+          "taken": "This key is used by another group."
+        }
+      }
+    },
+    "delete": {
+      "title": "Move \"{title}\" to the trash?",
+      "description": "It stays in the trash for 30 days and can be restored. FAQ sections that name it must be changed first.",
+      "publishedNote": "It is published: it leaves the website now.",
+      "confirm": "Move to the trash",
+      "done": "\"{title}\" is in the trash.",
+      "failed": "The group could not be deleted."
+    },
+    "restore": {
+      "done": "\"{title}\" was restored as a draft.",
+      "duplicate": "The key \"{key}\" is used by another group now. Rename or delete that one first.",
+      "failed": "The group could not be restored."
+    },
+    "host": {
+      "backToList": "All FAQ groups",
+      "notFoundTitle": "FAQ group not found",
+      "notFoundDescription": "This group does not exist or was removed for good.",
+      "trashedTitle": "This group is in the trash",
+      "trashedBody": "It is not on the website. Restore it from the trash of the group list to work on it."
+    },
+    "editor": {
+      "tabs": {
+        "items": "Questions",
+        "settings": "Settings",
+        "revisions": "History"
+      },
+      "fixFirst": "Fix the problems shown in the form first.",
+      "saveRefused": "The server did not accept some values. They are marked in the form.",
+      "saveFailed": "The changes could not be saved.",
+      "gone": "This question does not exist any more. The group was reloaded.",
+      "reorderFailed": "The new order could not be saved. The old order is back.",
+      "deleted": "Question {n} was deleted.",
+      "deleteFailed": "The question could not be deleted.",
+      "translateNote": "You can translate the questions and the answers. Hiding, adding, deleting and ordering questions, and the name, are read only.",
+      "readOnlyNote": "You can read this group, not change it.",
+      "deleteDialog": {
+        "title": "Delete question {n}?",
+        "description": "This is part of the unpublished changes until you publish. It can be recovered from the History.",
+        "confirm": "Delete"
+      },
+      "settings": {
+        "name": "Name",
+        "nameHint": "Only you see it. It is not shown on the website and not translated.",
+        "key": "Key",
+        "keyHint": "The key can not be changed. A FAQ section names the group by it.",
+        "usage": "Used in",
+        "usedIn": "{count, plural, one {# FAQ section} other {# FAQ sections}}",
+        "unused": "No FAQ section names it yet"
+      }
+    },
+    "problems": {
+      "required": "Required.",
+      "too_long": "Too long (up to {max} characters).",
+      "bothRequired": "A language needs both the question and the answer.",
+      "nameRequired": "Enter a name."
+    },
+    "items": {
+      "title": "Questions",
+      "count": "{count} of {max} questions",
+      "add": "Add question",
+      "full": "The group is full ({max} questions).",
+      "empty": "No questions yet. Add the first one.",
+      "emptyReadOnly": "No questions yet.",
+      "itemLabel": "Question {n}",
+      "noQuestion": "No question in this language",
+      "unsaved": "Unsaved",
+      "hidden": "Hidden",
+      "visibleSwitch": "Show question {n} on the website",
+      "delete": "Delete question {n}",
+      "translateAddsRow": "{language} has no texts for this question yet. Type both the question and the answer.",
+      "discard": "Discard changes",
+      "save": "Save question"
+    },
+    "row": {
+      "question": "Question ({language})",
+      "answer": "Answer ({language})"
+    },
+    "add": {
+      "title": "Add a question",
+      "description": "The default language needs the question and the answer. Another language is optional, but needs both texts.",
+      "visible": "Show it on the website",
+      "cancel": "Cancel",
+      "submit": "Add question",
+      "added": "The question was added.",
+      "failed": "The question could not be added.",
+      "full": "The group is full."
+    }
   }
 }

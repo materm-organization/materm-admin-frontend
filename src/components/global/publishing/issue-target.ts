@@ -24,6 +24,10 @@ export function issueTarget(issue: PublishIssue): PublishIssueTarget {
     sectionKey: typeof params.section_key === "string" ? params.section_key : undefined,
     sectionIndex: typeof params.section_index === "number" ? params.section_index : undefined,
     sectionPublicId,
+    // T1.5.6: a blocker inside a picture of an album / a question of a FAQ group (`/items/<public_id>/...`).
+    itemId: typeof params.item_id === "number" ? params.item_id : undefined,
+    itemIndex: typeof params.item_index === "number" ? params.item_index : undefined,
+    itemPublicId: segments[0] === "items" && segments[1] && UUID.test(segments[1]) ? segments[1] : undefined,
   };
 }
 
@@ -35,7 +39,11 @@ export function fieldSegments(issue: PublishIssue, labelOf: (segment: string) =>
   let rest = all;
   if (all[0] === "sections" && all[1]) rest = all.slice(2);
   if (rest[0] === "props") rest = rest.slice(1);
+  // `/items/<public_id>/media_id` (album) and `/items/<public_id>/translations/la/answer` (FAQ): the uuid is not a field name.
+  if (rest[0] === "items" && rest[1] && UUID.test(rest[1])) rest = rest.slice(2);
   if (rest[0] === "translations") rest = rest.slice(1);
+  // Forms: `/field_translations/<field key>/<language>/<member>` reads "<field key> > <member>" (the language is shown next to it).
+  if (rest[0] === "field_translations" && rest.length >= 4) rest = [rest[1], ...rest.slice(3)];
   // drop the language (a map key) wherever it stands
   const kept = rest.filter((s, i) => !(target.locale && s === target.locale && (i === rest.length - 1 || rest[i - 1] === undefined)));
   // `/media/<row id>/media_id` (a post's gallery): the row id is not a position, so it is not shown.

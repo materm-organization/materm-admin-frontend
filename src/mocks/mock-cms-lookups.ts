@@ -3,8 +3,9 @@
 // registry is the 12 fixtures of `doc/content-schemas`; the rest are the picker fixtures, plus the model's own albums
 // and posts. INVENTED: nothing but the usage counts (not shown by the editor).
 import { SECTION_TYPE_FIXTURES } from "@/components/schema-form/fixtures";
-import { ALBUM_ITEM_FIXTURES, FAQ_GROUP_FIXTURES, FORM_FIXTURES } from "@/components/schema-form/fixtures/lookup";
+import { FORM_FIXTURES } from "@/components/schema-form/fixtures/lookup";
 import { MockHttpError, fail, notFound, paginate, rejectUnknown, validationFailed, type MockDb, type Params } from "@/mocks/mock-core";
+import { albumTitle } from "@/mocks/mock-albums";
 import { listTemplates } from "@/mocks/mock-pages";
 import type { SectionType } from "@/types/cms";
 
@@ -54,15 +55,13 @@ function filtered(rows: Row[], params: Params, fields: string[]) {
 // The post picker reads the real `GET /posts` (mock-posts.ts).
 export function listLookup(db: MockDb, kind: "albums" | "faq-groups" | "forms", params: Params) {
   let rows: Row[];
-  if (kind === "albums") rows = db.albums.map((a) => ({ id: a.id, title: a.title, slug: `album-${a.id}`, status: a.status }));
-  else if (kind === "faq-groups") rows = FAQ_GROUP_FIXTURES.map((o) => ({ key: o.value, name: o.label, status: o.status }));
+  if (kind === "albums") rows = db.albums.filter((a) => !a.deleted_at).map((a) => ({ id: a.id, title: albumTitle(a), slug: a.key, status: a.status }));
+  else if (kind === "faq-groups") rows = db.faqGroups.filter((g) => !g.deleted_at).map((g) => ({ key: g.key, name: g.live.group.name, status: g.status }));
   else rows = FORM_FIXTURES.map((o) => ({ slug: o.value, name: o.label, status: o.status }));
   return paginate(filtered(rows, params, ["title", "name", "slug", "key"]), params, 20);
 }
 
-export function listAlbumItems(db: MockDb, albumId: string) {
-  if (!db.albums.some((a) => String(a.id) === albumId)) throw notFound();
-  return (ALBUM_ITEM_FIXTURES[Number(albumId)] ?? []).map((o) => ({ id: o.value, title: o.label }));
-}
+// `GET /albums/:id/items` is served by the albums model now (`mock-albums.ts`, T1.5.6); kept for the old import sites.
+export { listAlbumItems } from "@/mocks/mock-albums";
 
 export const unknownLookup = (): MockHttpError => fail(404, "NOT_FOUND", "The requested resource was not found.");

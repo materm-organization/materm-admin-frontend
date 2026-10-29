@@ -1,7 +1,7 @@
 import { http, HttpResponse } from "msw";
 import { describe, expect, it } from "vitest";
 
-import { apiSchemaFormData, toMediaOption } from "@/components/schema-form/data/api-data";
+import { apiSchemaFormData, toEntityOption, toMediaOption } from "@/components/schema-form/data/api-data";
 import { server } from "@/test/msw-server";
 
 const API = "http://localhost:3000/api/v1";
@@ -78,5 +78,16 @@ describe("apiSchemaFormData.listMedia / listMediaFolders", () => {
       )
     );
     expect(await apiSchemaFormData.listMediaFolders()).toEqual([{ id: 6, name: "Logos", path: "Brand/Logos", depth: 2, parentId: 5, assetCount: 2 }]);
+  });
+});
+
+describe("toEntityOption reads a picture of an album (05 13.4.1 AlbumItem) and an album with its key", () => {
+  it("the label of a picture is its caption title in the first language that has one, else the file name", () => {
+    expect(toEntityOption("albumItem", { id: 4, media: { original_filename: "a.jpg" }, translations: { la: { caption_title: null }, en: { caption_title: "Canopy" } } })).toMatchObject({ value: 4, label: "Canopy" });
+    expect(toEntityOption("albumItem", { id: 5, media: { original_filename: "b.jpg" }, translations: {} })).toMatchObject({ value: 5, label: "b.jpg" });
+    expect(toEntityOption("albumItem", { id: 6 })).toMatchObject({ value: 6, label: "6" });
+  });
+  it("an album shows its key as the hint", () => {
+    expect(toEntityOption("album", { id: 1, key: "forest", title: "Forest", status: "published" })).toMatchObject({ value: 1, label: "Forest", hint: "forest", status: "published" });
   });
 });

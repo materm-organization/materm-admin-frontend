@@ -65,7 +65,13 @@ export function groupIssues(t: Translator, issues: PublishIssue[], resource: Pub
       const name = key ? (t.has(`sectionTypes.${key}`) ? t(`sectionTypes.${key}`) : humanizeSegment(key)) : t("groups.sectionUnknown");
       const position = target.sectionIndex !== undefined ? target.sectionIndex + 1 : "?";
       add(`s:${target.sectionPublicId}`, t("groups.section", { n: position, name }), issue);
-    } else if (resource === "posts") add(issue.path.startsWith("/media") ? "gallery" : "post", issue.path.startsWith("/media") ? t("groups.gallery") : t("groups.post"), issue);
+    } else if ((resource === "albums" || resource === "faq-groups") && target.itemPublicId) {
+      const position = target.itemIndex !== undefined ? target.itemIndex + 1 : "?";
+      add(`i:${target.itemPublicId}`, t(resource === "albums" ? "groups.picture" : "groups.question", { n: position }), issue);
+    } else if (resource === "albums" || resource === "faq-groups") {
+      add(resource === "albums" ? "album" : "faqGroup", issue.path.startsWith("/items") ? t("groups.items") : t(resource === "albums" ? "groups.album" : "groups.faqGroup"), issue);
+    } else if (resource === "forms") add("form", t("groups.form"), issue);
+    else if (resource === "posts") add(issue.path.startsWith("/media") ? "gallery" : "post", issue.path.startsWith("/media") ? t("groups.gallery") : t("groups.post"), issue);
     else if (issue.path === "/sections" || issue.path.startsWith("/sections/")) add("structure", t("groups.structure"), issue);
     else add("page", t("groups.page"), issue);
   }

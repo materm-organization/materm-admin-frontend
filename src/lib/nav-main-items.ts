@@ -1,4 +1,4 @@
-import { Activity, Globe, Images, Languages, LayoutDashboard, Newspaper, Type, Users, type LucideIcon } from "lucide-react";
+import { Activity, Globe, Images, Inbox, Languages, LayoutDashboard, Newspaper, Type, Users, type LucideIcon } from "lucide-react";
 
 import { PERMISSION_KEYS } from "@/lib/constants/permissions";
 
@@ -18,6 +18,8 @@ export type NavMainSubConfig = {
   anyPermission?: string[];
   // Renders a small "Coming Soon" badge next to the label (nav-main.tsx).
   comingSoon?: boolean;
+  // A live count shown as a badge (nav-main.tsx `NavBadge`): `submissions.new` = `GET /submissions/summary` `.new`.
+  badgeQuery?: "submissions.new";
 };
 
 export type NavMainGroupConfig = {
@@ -48,6 +50,8 @@ export const NAV_MAIN_CONFIG: NavMainGroupConfig[] = [
     items: [
       { title: "nav.pages", url: "/admin/pages", anyPermission: [PERMISSION_KEYS.CMS_PAGES] },
       { title: "nav.posts", url: "/admin/blog/posts", anyPermission: [PERMISSION_KEYS.CMS_BLOG] },
+      { title: "nav.galleries", url: "/admin/galleries", anyPermission: [PERMISSION_KEYS.CMS_GALLERIES] },
+      { title: "nav.faq", url: "/admin/faq", anyPermission: [PERMISSION_KEYS.CMS_FAQ] },
       { title: "nav.menus", url: "/admin/menus", anyPermission: [PERMISSION_KEYS.CMS_MENUS] },
       { title: "nav.categories", url: "/admin/blog/categories", anyPermission: [PERMISSION_KEYS.CMS_CATEGORIES] },
       { title: "nav.tags", url: "/admin/blog/tags", anyPermission: [PERMISSION_KEYS.CMS_CATEGORIES] },
@@ -61,6 +65,18 @@ export const NAV_MAIN_CONFIG: NavMainGroupConfig[] = [
     items: [
       { title: "nav.settings", url: "/admin/settings", anyPermission: [PERMISSION_KEYS.CMS_SETTINGS] },
       { title: "nav.seo", url: "/admin/seo", anyPermission: [PERMISSION_KEYS.CMS_SEO] },
+    ],
+  },
+  // Forms (SCR-31) and the messages they receive (SCR-32, doc/07 section 2.1): two keys, `forms.submissions` and `forms.manage`. The
+  // inbox entry carries the badge with the number of new messages (`badgeQuery`, nav-main.tsx). `/admin/forms/submissions` is a
+  // sub-page of the Forms URL: the longest prefix wins, so it is guarded by `forms.submissions` and `/admin/forms/<id>` by `forms.manage`.
+  {
+    title: "nav.formsGroup",
+    url: "#",
+    icon: Inbox,
+    items: [
+      { title: "nav.submissions", url: "/admin/forms/submissions", anyPermission: [PERMISSION_KEYS.FORMS_SUBMISSIONS], badgeQuery: "submissions.new" },
+      { title: "nav.forms", url: "/admin/forms", anyPermission: [PERMISSION_KEYS.FORMS_MANAGE] },
     ],
   },
   // UI strings (SCR-34): the texts of the website's shell, per language.

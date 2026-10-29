@@ -21,7 +21,7 @@ type Config = {
 const CONFIG: Record<LookupKind, Config> = {
   page: { endpoint: () => API_ENDPOINTS.PAGES.LIST, value: "id", label: ["title", "name"], hint: ["path"] },
   post: { endpoint: () => API_ENDPOINTS.POSTS.LIST, value: "id", label: ["title", "name"], hint: ["slug"] },
-  album: { endpoint: () => API_ENDPOINTS.ALBUMS.LIST, value: "id", label: ["title", "name"], hint: ["slug"] },
+  album: { endpoint: () => API_ENDPOINTS.ALBUMS.LIST, value: "id", label: ["title", "name"], hint: ["key", "slug"] },
   albumItem: {
     endpoint: (q) => API_ENDPOINTS.ALBUMS.ITEMS(q.albumId ?? 0),
     value: "id",
@@ -51,11 +51,25 @@ function textOf(value: unknown): string | undefined {
   return undefined;
 }
 
+// A picture of an album (doc/05 13.4.1 `AlbumItem`) has no title of its own: its caption title in the first language that has one, else
+// the file name of the picture.
+function albumItemLabel(row: Row): string | undefined {
+  const translations = row.translations;
+  if (translations && typeof translations === "object" && !Array.isArray(translations)) {
+    for (const t of Object.values(translations as Record<string, Row>)) {
+      const caption = t?.caption_title;
+      if (typeof caption === "string" && caption.trim()) return caption;
+    }
+  }
+  const media = row.media as Row | undefined;
+  return typeof media?.original_filename === "string" ? media.original_filename : undefined;
+}
+
 export function toEntityOption(kind: LookupKind, row: Row): EntityOption | undefined {
   const config = CONFIG[kind];
   const rawValue = row[config.value];
   if (typeof rawValue !== "number" && typeof rawValue !== "string") return undefined;
-  const label = firstString(row, config.label) ?? textOf(row[config.label[0]]) ?? String(rawValue);
+  const label = firstString(row, config.label) ?? (kind === "albumItem" ? albumItemLabel(row) : undefined) ?? textOf(row[config.label[0]]) ?? String(rawValue);
   const hint = firstString(row, config.hint);
   const status = typeof row.status === "string" ? row.status : undefined;
   return { value: rawValue, label, hint, status };

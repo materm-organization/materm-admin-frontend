@@ -93,4 +93,8 @@ export type PublishIssueTarget = {
   sectionIndex?: number;
   // `public_id` of the section when the pointer is inside `/sections/<public_id>/...`.
   sectionPublicId?: string;
+  // A picture of an album / a question of a FAQ group (T1.5.6): its numeric id, its 0-based position, its `public_id` in the pointer.
+  itemId?: number;
+  itemIndex?: number;
+  itemPublicId?: string;
 };

@@ -114,6 +114,10 @@ export const API_ENDPOINTS = {
     LIST: "/albums",
     DETAIL: (id: number | string) => `/albums/${id}`,
     ITEMS: (id: number | string) => `/albums/${id}/items`,
+    // T1.5.6 (doc/05 section 13.4): `ITEMS_ORDER` is a fixed segment next to `.../items/{itemId}`.
+    RESTORE: (id: number | string) => `/albums/${id}/restore`,
+    ITEM: (id: number | string, itemId: number | string) => `/albums/${id}/items/${itemId}`,
+    ITEMS_ORDER: (id: number | string) => `/albums/${id}/items/order`,
   },
   // Save-live (doc/05 sections 11.2 - 11.5). Revisions of these are in `REVISIONS` above.
   MENUS: {
@@ -145,9 +149,30 @@ export const API_ENDPOINTS = {
   },
   FAQ_GROUPS: {
     LIST: "/faq-groups",
+    // T1.5.6 (doc/05 section 13.5).
+    DETAIL: (id: number | string) => `/faq-groups/${id}`,
+    RESTORE: (id: number | string) => `/faq-groups/${id}/restore`,
+    ITEMS: (id: number | string) => `/faq-groups/${id}/items`,
+    ITEM: (id: number | string, itemId: number | string) => `/faq-groups/${id}/items/${itemId}`,
+    ITEMS_ORDER: (id: number | string) => `/faq-groups/${id}/items/order`,
   },
   FORMS: {
     LIST: "/forms",
     DETAIL: (id: number | string) => `/forms/${id}`,
+    // PUT (05 13.6.4): the whole recipient set; `If-Match` = `recipients_etag`.
+    RECIPIENTS: (id: number | string) => `/forms/${id}/recipients`,
+  },
+  // Submissions inbox (05 13.7). `SUMMARY`, `EXPORT` and `BULK_STATUS` are fixed segments next to `/submissions/{id}`.
+  SUBMISSIONS: {
+    LIST: "/submissions",
+    SUMMARY: "/submissions/summary",
+    EXPORT: "/submissions/export",
+    BULK_STATUS: "/submissions/bulk-status",
+    DETAIL: (id: number | string) => `/submissions/${id}`,
+    NOTES: (id: number | string) => `/submissions/${id}/notes`,
+  },
+  // Dashboard (05 13.8).
+  DASHBOARD: {
+    SUMMARY: "/dashboard/summary",
   },
 } as const;

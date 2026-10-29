@@ -113,8 +113,35 @@ export type MockPageRoot = {
   deleted_at: string | null;
   live: MockPageSnapshot;
 };
-// Albums only exist for the `album_id` references of a section.
-export type MockAlbum = { id: number; title: string; status: "published" | "draft" };
+// ---- T1.5.6 albums and FAQ groups (doc/05 sections 13.4, 13.5), stored like a post: the REAL rows (`live`, written directly
+// while the thing is not published) and, for a published one with pending edits, a `kind = "draft"` row in
+// `db.revisions["albums/<id>"]` / `["faq-groups/<id>"]` holding the working copy. Snapshots follow doc/05 13.2 (children as arrays
+// keyed by `locale_code`). `db.albums` is also read by the pages model (`album_id` references): it needs `id`, `status`, `deleted_at`.
+export type MockAlbumItemTranslation = { locale_code: string; caption_title: string | null; caption_description: string | null; alt: string | null };
+export type MockAlbumItem = { id: number; public_id: string; media_id: number; sort_order: number; layout_hint: string | null; translations: MockAlbumItemTranslation[] };
+export type MockAlbumTranslation = { locale_code: string; title: string; description: string | null };
+export type MockAlbumSnapshot = { album: { cover_media_id: number | null }; translations: MockAlbumTranslation[]; items: MockAlbumItem[] };
+export type MockFaqItemTranslation = { locale_code: string; question: string; answer: Record<string, unknown> };
+export type MockFaqItem = { id: number; public_id: string; sort_order: number; is_visible: boolean; translations: MockFaqItemTranslation[] };
+export type MockFaqSnapshot = { group: { name: string }; items: MockFaqItem[] };
+type MockPublishableRoot<S> = {
+  id: number;
+  public_id: string;
+  key: string;
+  status: PublishableStatus;
+  lock_version: number;
+  published_at: string | null;
+  first_published_at: string | null;
+  unpublished_at: string | null;
+  created_by: UserRef;
+  updated_by: UserRef;
+  created_at: string;
+  updated_at: string;
+  deleted_at: string | null;
+  live: S;
+};
+export type MockAlbum = MockPublishableRoot<MockAlbumSnapshot>;
+export type MockFaqGroup = MockPublishableRoot<MockFaqSnapshot>;
 // A stored answer of a request that carried an `Idempotency-Key` (create page, set-home, publish, unpublish).
 export type MockIdempotent = { fingerprint: string; status: number; data: unknown; etag?: string };
 // A post of the mock (doc/05 section 13.3), stored like a page: the REAL rows (`live`, written directly while the post is not
@@ -240,6 +267,12 @@ export type MockDb = {
   nextPageId: number;
   nextSectionId: number;
   albums: MockAlbum[];
+  // T1.5.6 galleries and FAQ: `translateOnly` containing "albums" / "faq-groups" makes the model a translate-only writer (05 13.4.2, 13.5.2).
+  nextAlbumId: number;
+  nextAlbumItemId: number;
+  faqGroups: MockFaqGroup[];
+  nextFaqGroupId: number;
+  nextFaqItemId: number;
   idempotency: Record<string, MockIdempotent>;
   posts: MockPostRoot[];
   nextPostId: number;
