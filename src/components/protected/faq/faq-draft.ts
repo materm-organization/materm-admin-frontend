@@ -2,7 +2,7 @@
 // row has BOTH texts (the columns are NOT NULL), so a row is either complete or not there. The visibility is NOT part of it: it is saved at once.
 import { isRichTextEmpty, type RichTextDoc } from "@/components/schema-form/richtext-doc";
 import { MAX_QUESTION, charCount } from "@/lib/faq";
-import type { CreateFaqItemPayload, FaqItem, UpdateFaqItemPayload } from "@/types/faq";
+import type { CreateFaqItemPayload, FaqAnswer, FaqItem, UpdateFaqItemPayload } from "@/types/faq";
 
 export type FaqEditMode = "full" | "translate" | "none";
 export type FaqRowDraft = { question: string; answer: RichTextDoc | null };
@@ -54,7 +54,9 @@ export function validateItemDraft(draft: FaqItemDraft, baseline: FaqItemDraft | 
   return problems;
 }
 
-const docOf = (a: RichTextDoc | null): RichTextDoc => a ?? { type: "doc", content: [] };
+// The `lite` editor can only produce the nodes the backend accepts for an answer (paragraph / bulletList / orderedList at the top,
+// no headings), so the wire type is a narrowing of the editor's generic document.
+const docOf = (a: RichTextDoc | null): FaqAnswer => (a ?? { type: "doc", content: [] }) as FaqAnswer;
 
 // Only the languages and texts that changed; an emptied non-default language is removed (`null`, `update` only).
 export function buildItemPatch(baseline: FaqItemDraft, edit: FaqItemDraft, defaultLocale: string, mode: FaqEditMode): UpdateFaqItemPayload | null {
@@ -70,7 +72,7 @@ export function buildItemPatch(baseline: FaqItemDraft, edit: FaqItemDraft, defau
       continue;
     }
     const existed = rowFilled(base);
-    const part: { question?: string; answer?: RichTextDoc } = {};
+    const part: { question?: string; answer?: FaqAnswer } = {};
     if (!existed || !sameQ) part.question = row.question.trim();
     if (!existed || !sameA) part.answer = docOf(row.answer);
     translations[code] = part;

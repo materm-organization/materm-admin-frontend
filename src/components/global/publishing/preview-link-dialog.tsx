@@ -242,11 +242,11 @@ function PreviewLinkDialogBody({ resource, entityId, onOpenChange, isDirty = fal
                   className="flex-wrap"
                 >
                   {PRESET_TTL_MINUTES.map((minutes) => (
-                    <ToggleGroupItem key={minutes} value={String(minutes)} aria-label={t(`expiry.preset.${minutes}`)}>
+                    <ToggleGroupItem key={minutes} value={String(minutes)} aria-label={t(`expiry.preset.${minutes}`)} className="flex-none px-3">
                       {t(`expiry.preset.${minutes}`)}
                     </ToggleGroupItem>
                   ))}
-                  <ToggleGroupItem value={CUSTOM}>{t("expiry.custom")}</ToggleGroupItem>
+                  <ToggleGroupItem value={CUSTOM} className="flex-none px-3">{t("expiry.custom")}</ToggleGroupItem>
                 </ToggleGroup>
                 {preset === CUSTOM ? (
                   <div className="space-y-1">

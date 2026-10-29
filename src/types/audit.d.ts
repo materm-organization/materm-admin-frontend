@@ -47,3 +47,15 @@ export type AuditListParams = {
   from?: string;
   to?: string;
 };
+
+// The TAB SHAPE of GET /audit-logs: the only shape a caller without `ops.audit:read` may use (then `read` on the entity's own
+// permission key is enough; any other shape is 403). Both entity members are required, nothing else filters.
+export type AuditTabParams = {
+  entity_type: string;
+  entity_id: number | string;
+  from?: string;
+  to?: string;
+  page?: number;
+  limit?: number;
+  sort?: string;
+};

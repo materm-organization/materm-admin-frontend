@@ -117,15 +117,18 @@ export function AuditFilters({
 
   return (
     <form onSubmit={apply} className="w-full space-y-2" aria-label={t("form")}>
-      <div className="flex flex-wrap items-end gap-3">
+      <div className="flex flex-wrap items-start gap-3">
         <div className="space-y-1">
           <Label className="text-xs">{t("range")}</Label>
-          <DateRangeFilter
-            label={t("range")}
-            dateRange={draft.range}
-            setDateRange={(v) => set("range", typeof v === "function" ? v(draft.range) : v)}
-          />
-          {!draft.range ? <p className="text-[11px] text-muted-foreground">{t("rangeDefault")}</p> : null}
+          {/* The hint sits NEXT to the button, not under it: a taller block made the other controls of the row sit lower than the date button; h-8 = the height of the inputs and selects. */}
+          <div className="flex h-8 items-center gap-2">
+            <DateRangeFilter
+              label={t("range")}
+              dateRange={draft.range}
+              setDateRange={(v) => set("range", typeof v === "function" ? v(draft.range) : v)}
+            />
+            {!draft.range ? <p className="max-w-32 text-[11px] leading-tight text-muted-foreground">{t("rangeDefault")}</p> : null}
+          </div>
         </div>
         <div className="space-y-1">
           <Label htmlFor={field("actor")} className="text-xs">

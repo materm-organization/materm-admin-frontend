@@ -3,7 +3,6 @@
 // registry is the 12 fixtures of `doc/content-schemas`; the rest are the picker fixtures, plus the model's own albums
 // and posts. INVENTED: nothing but the usage counts (not shown by the editor).
 import { SECTION_TYPE_FIXTURES } from "@/components/schema-form/fixtures";
-import { FORM_FIXTURES } from "@/components/schema-form/fixtures/lookup";
 import { MockHttpError, fail, notFound, paginate, rejectUnknown, validationFailed, type MockDb, type Params } from "@/mocks/mock-core";
 import { albumTitle } from "@/mocks/mock-albums";
 import { listTemplates } from "@/mocks/mock-pages";
@@ -52,12 +51,11 @@ function filtered(rows: Row[], params: Params, fields: string[]) {
   return rows.filter((r) => !keyword || fields.some((f) => String(r[f] ?? "").toLowerCase().includes(keyword)));
 }
 
-// The post picker reads the real `GET /posts` (mock-posts.ts).
-export function listLookup(db: MockDb, kind: "albums" | "faq-groups" | "forms", params: Params) {
+// The post picker reads the real `GET /posts` (mock-posts.ts), the form picker the real `GET /forms` (mock-forms.ts).
+export function listLookup(db: MockDb, kind: "albums" | "faq-groups", params: Params) {
   let rows: Row[];
   if (kind === "albums") rows = db.albums.filter((a) => !a.deleted_at).map((a) => ({ id: a.id, title: albumTitle(a), slug: a.key, status: a.status }));
-  else if (kind === "faq-groups") rows = db.faqGroups.filter((g) => !g.deleted_at).map((g) => ({ key: g.key, name: g.live.group.name, status: g.status }));
-  else rows = FORM_FIXTURES.map((o) => ({ slug: o.value, name: o.label, status: o.status }));
+  else rows = db.faqGroups.filter((g) => !g.deleted_at).map((g) => ({ key: g.key, name: g.live.group.name, status: g.status }));
   return paginate(filtered(rows, params, ["title", "name", "slug", "key"]), params, 20);
 }
 

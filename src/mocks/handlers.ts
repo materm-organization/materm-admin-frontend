@@ -7,6 +7,7 @@
 import { http, HttpResponse, type HttpHandler } from "msw";
 
 import { LOCALE_ROWS } from "@/components/schema-form/fixtures/lookup";
+import { listAuditLogs } from "@/mocks/mock-audit";
 import { formsApiHandlers } from "@/mocks/forms-handlers";
 import { createMenuItem, deleteMenuItem, getMenu, listMenus, patchMenuItem, reorderMenuItems } from "@/mocks/mock-menus";
 import { getSectionType, listAlbumItems, listLookup, listSectionTypes } from "@/mocks/mock-cms-lookups";
@@ -245,6 +246,14 @@ export const systemApiHandlers: HttpHandler[] = [
 ];
 
 export const localeApiHandlers: HttpHandler[] = [http.get(P("/locales"), () => ok(LOCALE_ROWS))];
+
+// The audit log: the full filter set for `ops.audit:read`, the History tab shape for anyone with `read` on the entity (mock-audit.ts).
+export const auditApiHandlers: HttpHandler[] = [
+  http.get(P("/audit-logs"), guard(({ request }) => {
+    const { data, meta } = listAuditLogs(getMockDb(), searchOf(request));
+    return ok(data, { meta });
+  })),
+];
 
 // --- T1.3.8 save-live -------------------------------------------------------------------------------------------
 const menuHandlers: HttpHandler[] = [
@@ -588,7 +597,7 @@ const previewLinkHandlers: HttpHandler[] = [
 const cmsLookupHandlers: HttpHandler[] = [
   http.get(P("/section-types"), guard(({ request }) => ok(listSectionTypes(getMockDb(), searchOf(request))))),
   http.get(P("/section-types/:key"), guard(({ params }) => ok(getSectionType(param(params, "key"))))),
-  ...(["albums", "faq-groups", "forms"] as const).map((kind) =>
+  ...(["albums", "faq-groups"] as const).map((kind) =>
     http.get(P(`/${kind}`), guard(({ request }) => {
       const { data, meta } = listLookup(getMockDb(), kind, searchOf(request));
       return ok(data, { meta });
@@ -678,6 +687,7 @@ export const mockApiHandlers: HttpHandler[] = [
   ...revisionApiHandlers,
   ...systemApiHandlers,
   ...localeApiHandlers,
+  ...auditApiHandlers,
 ];
 
 export { mediaHandlers };

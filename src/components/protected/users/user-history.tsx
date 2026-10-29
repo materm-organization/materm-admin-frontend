@@ -6,7 +6,7 @@ import { useFormatter, useTranslations } from "next-intl";
 import { ErrorState } from "@/components/global/states/error-state";
 import { NoPermission } from "@/components/layout/no-permission";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useAuditLogs } from "@/hooks/use-audit";
+import { useEntityAuditLogs } from "@/hooks/use-audit";
 import { useCan } from "@/hooks/use-permission";
 import { isNoPermissionError } from "@/lib/api-error";
 import { PERMISSION_ACTIONS, PERMISSION_KEYS } from "@/lib/constants/permissions";
@@ -18,7 +18,7 @@ export function UserHistory({ userId }: { userId: number }) {
   const t = useTranslations("users.history");
   const format = useFormatter();
   const canAudit = useCan(PERMISSION_KEYS.OPS_AUDIT, PERMISSION_ACTIONS.READ);
-  const { data, isLoading, error, refetch, isFetching } = useAuditLogs({
+  const { data, isLoading, error, refetch, isFetching } = useEntityAuditLogs({
     entity_type: "iam.user",
     entity_id: userId,
     limit: 20,

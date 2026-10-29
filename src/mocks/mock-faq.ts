@@ -28,7 +28,7 @@ import {
 } from "@/mocks/mock-core";
 import { blank, entityReferenced, findReferences, isObject, issue, makeEngine, TRASH_DAYS } from "@/mocks/mock-faq-album-engine";
 import type { ApiFieldError } from "@/types/api";
-import type { FaqGroupListItem, FaqItem } from "@/types/faq";
+import type { FaqAnswer, FaqGroupListItem, FaqItem } from "@/types/faq";
 import type { UserRef } from "@/types/media";
 import type { PublishIssue } from "@/types/publishing";
 
@@ -189,7 +189,7 @@ export function faqItemView(it: MockFaqItem): FaqItem {
     public_id: it.public_id,
     sort_order: it.sort_order,
     is_visible: it.is_visible,
-    translations: Object.fromEntries(it.translations.map((t) => [t.locale_code, { question: t.question, answer: structuredClone(t.answer) }])),
+    translations: Object.fromEntries(it.translations.map((t) => [t.locale_code, { question: t.question, answer: structuredClone(t.answer) as FaqAnswer }])),
   };
 }
 

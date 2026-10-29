@@ -94,7 +94,7 @@ export function UiStringsPage() {
         header: t("columns.key"),
         enableSorting: true,
         cell: ({ row }) => (
-          <div className="min-w-0">
+          <div className="min-w-0 whitespace-normal">
             <span className="font-mono text-xs break-all">{row.original.key}</span>
             <div className="mt-0.5 flex flex-wrap gap-1">
               <Badge variant="outline" className="text-[10px]">{row.original.namespace}</Badge>
@@ -117,7 +117,7 @@ export function UiStringsPage() {
           return (
             <button
               type="button"
-              className="group flex w-full min-w-40 items-start gap-1 rounded-sm text-left hover:bg-accent/50 focus-visible:outline-2"
+              className="group flex w-full min-w-40 items-start gap-1 rounded-sm text-left whitespace-normal hover:bg-accent/50 focus-visible:outline-2"
               aria-label={t("editCell", { key: row.original.key, locale: l.name })}
               onClick={() => setEditing({ key: row.original.key, locale: l.code })}
             >

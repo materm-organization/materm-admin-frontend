@@ -8,7 +8,10 @@ import type { PageDraftRef } from "@/types/pages";
 import type { AggregateStamp, PublishableMeta, PublishedRevisionRef } from "@/types/publishing";
 
 // Tiptap / ProseMirror document JSON, profile `lite` (doc/04 section 3.7). Never HTML.
-export type FaqAnswer = { type: "doc"; content?: unknown[] } | Record<string, unknown>;
+// The answer is rich text of profile `lite` (doc/04 3.7): the backend accepts only these top-level nodes (anything else, a
+// heading for one, is 422 `not_in_enum`); the children (listItem, text, hardBreak) and the marks (bold / italic / link) are the editor's.
+export type FaqAnswerNode = { type: "paragraph" | "bulletList" | "orderedList"; attrs?: Record<string, unknown>; content?: unknown[] };
+export type FaqAnswer = { type: "doc"; content?: FaqAnswerNode[] };
 
 // A language row has BOTH texts (the columns are NOT NULL).
 export type FaqItemTranslation = { question: string; answer: FaqAnswer };
