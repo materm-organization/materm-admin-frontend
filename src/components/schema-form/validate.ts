@@ -3,6 +3,7 @@ import Ajv2020, { type ErrorObject, type ValidateFunction } from "ajv/dist/2020"
 import type { JsonSchema } from "@/types/cms";
 
 import { LEGACY_LINK_URL_PATTERN, PORTABLE_LINK_URL_PATTERN, isSafeRichLinkHref } from "./link-rules";
+import { canonicalJson, collectIfConditions, findPrecompiled, type PrecompiledEntry } from "./precompiled";
 import { escapePointerSegment, joinPointer, parsePointer, pointerFromSegments } from "./pointer";
 import { collectRichTextLinks, isRichTextEmpty } from "./richtext-doc";
 import { isPlainObject, walkSchemaValue, type IfMatcher } from "./schema-walker";
@@ -27,6 +28,8 @@ export type SchemaValidator = {
   // false when `ajv.compile` was refused (CSP without 'unsafe-eval'); then `validate` returns [] and the form
   // shows a notice - the server validates on save anyway.
   available: boolean;
+  // true: the validators were compiled at build time (no `new Function`, works under the production CSP).
+  precompiled?: boolean;
   unavailable?: ValidatorUnavailable;
   validate: (props: unknown, options: ValidateOptions) => Issue[];
 };
@@ -260,13 +263,39 @@ function dedupe(issues: Issue[]): Issue[] {
   });
 }
 
-export function createSchemaValidator(schemaIn: JsonSchema): SchemaValidator {
+// The build-time validators of this schema, when `schemaHash` is known to the build AND every `if` condition of the
+// schema has its own precompiled validator (otherwise the entry is not for this schema: use the runtime path).
+function usablePrecompiled(
+  schema: JsonSchema,
+  schemaHash: string | null | undefined,
+  lookup: typeof findPrecompiled
+): PrecompiledEntry | undefined {
+  const entry = lookup(schemaHash);
+  if (!entry) return undefined;
+  for (const key of collectIfConditions(schema).keys()) if (!Object.hasOwn(entry.ifs, key)) return undefined;
+  return entry;
+}
+
+// `schemaHash` = `schema_hash` of the section type from the server: with it a precompiled validator is used when
+// this build carries one (it does not need `new Function`); without it, or when unknown, Ajv compiles at run time.
+// `lookup` is for tests (a registry other than the committed one).
+export function createSchemaValidator(
+  schemaIn: JsonSchema,
+  schemaHash?: string | null,
+  lookup: typeof findPrecompiled = findPrecompiled
+): SchemaValidator {
   const schema = patchLinkPattern(schemaIn);
   let compiled: ValidateFunction;
   let matchIf: IfMatcher | undefined;
+  const pre = usablePrecompiled(schema, schemaHash, lookup);
   try {
-    compiled = newAjv().compile(schema);
-    matchIf = ajvIfMatcher(schema);
+    if (pre) {
+      compiled = pre.root as unknown as ValidateFunction;
+      matchIf = (condition, value) => pre.ifs[canonicalJson(condition)](value) === true;
+    } else {
+      compiled = newAjv().compile(schema);
+      matchIf = ajvIfMatcher(schema);
+    }
   } catch (error) {
     if (!isCspError(error)) throw error;
     const message = error instanceof Error ? error.message : String(error);
@@ -280,6 +309,7 @@ export function createSchemaValidator(schemaIn: JsonSchema): SchemaValidator {
   }
   return {
     available: true,
+    precompiled: Boolean(pre),
     validate(props, options) {
       compiled(props);
       let errors = compiled.errors ?? [];
@@ -295,11 +325,11 @@ const cache = new Map<string, SchemaValidator>();
 
 // One validator per `key@version#schema_hash` (compile once; doc/07 section 4.1). Without a cache key the
 // schema is compiled every time - pass one.
-export function getSchemaValidator(schema: JsonSchema, cacheKey?: string): SchemaValidator {
-  if (!cacheKey) return createSchemaValidator(schema);
+export function getSchemaValidator(schema: JsonSchema, cacheKey?: string, schemaHash?: string | null): SchemaValidator {
+  if (!cacheKey) return createSchemaValidator(schema, schemaHash);
   let validator = cache.get(cacheKey);
   if (!validator) {
-    validator = createSchemaValidator(schema);
+    validator = createSchemaValidator(schema, schemaHash);
     cache.set(cacheKey, validator);
   }
   return validator;

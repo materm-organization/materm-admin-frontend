@@ -40,7 +40,7 @@ export function useSchemaValidation(
   const settled = useDebouncedValue(props, delayMs);
   const schema = type.json_schema;
   const cacheKey = schemaCacheKey(type);
-  const validator = useMemo(() => getSchemaValidator(schema, cacheKey), [schema, cacheKey]);
+  const validator = useMemo(() => getSchemaValidator(schema, cacheKey, type.schema_hash), [schema, cacheKey, type.schema_hash]);
   const issues = useMemo(
     () => validator.validate(settled, { mode, defaultLocale, media }),
     [validator, settled, mode, defaultLocale, media]

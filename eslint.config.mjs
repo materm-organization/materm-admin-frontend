@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Ajv standalone output (scripts/generate-schema-validators.mjs).
+    "src/components/schema-form/precompiled/validators.generated.js",
   ]),
   {
     // shadcn's current codegen output (components/ui/sidebar.tsx's random

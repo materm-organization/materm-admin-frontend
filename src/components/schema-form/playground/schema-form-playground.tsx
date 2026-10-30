@@ -12,6 +12,7 @@ import type { ApiFieldError } from "@/types/api";
 
 import { SchemaFormDataProvider } from "../data/provider";
 import { memorySchemaFormData } from "../data/memory-data";
+import { bundledSchemaHash } from "../precompiled";
 import { EXAMPLE_SECTIONS, SECTION_TYPE_FIXTURES, SECTION_TYPE_KEYS } from "../fixtures";
 import { LOCALE_ROWS } from "../fixtures/lookup";
 import { SchemaForm, type SchemaFormHandle } from "../schema-form";
@@ -149,7 +150,7 @@ function PlaygroundBody({
         <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_22rem]">
           <SchemaForm
             ref={formRef}
-            sectionType={type}
+            sectionType={{ ...type, schema_hash: bundledSchemaHash(type.key, type.version) ?? type.schema_hash }}
             value={state.value}
             onChange={state.setValue}
             locales={LOCALE_ROWS}
