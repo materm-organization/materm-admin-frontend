@@ -70,7 +70,7 @@ export function PermissionMatrix({
       <p id={hintId} className="text-sm text-muted-foreground">
         {readOnly ? t("hintReadOnly") : t("hint")}
       </p>
-      <div className="overflow-x-auto rounded-md border" data-testid="permission-matrix">
+      <div className="relative overflow-x-auto rounded-md border" data-testid="permission-matrix">
         <table className="w-full min-w-[960px] border-separate border-spacing-0 text-sm [&_td]:border-b [&_th]:border-b [&_tbody>tr:last-child>*]:border-b-0" aria-describedby={hintId}>
           <thead>
             <tr className="bg-muted text-xs">

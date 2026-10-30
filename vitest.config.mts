@@ -13,6 +13,7 @@ export default defineConfig({
     environmentOptions: { jsdom: { url: "http://localhost:3000" } },
     setupFiles: ["./src/test/setup.ts"],
     include: ["src/**/*.test.{ts,tsx}"],
+    exclude: ["node_modules/**", "tests/e2e/**"], // the browser E2E suite has its own runner (npm run e2e)
     css: false,
     restoreMocks: true,
   },
