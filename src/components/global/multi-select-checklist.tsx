@@ -43,7 +43,6 @@ interface Props {
   // keyword-filtered result, not a client-filterable superset.
   setSelectSearch?: React.Dispatch<React.SetStateAction<string>>;
   isLoading?: boolean;
-  instantApply?: boolean;
   // Standard controlled/uncontrolled hybrid for the popover's open state.
   // Omitted (the common case — matches every other filter in this repo,
   // none of which need to be opened/closed from outside), the popover
@@ -60,7 +59,7 @@ interface Props {
 const SEARCH_DEBOUNCE_MS = 300;
 
 // Faceted multi-select filter with an in-popup search box — same
-// (draft-until-committed, "Apply" button unless `instantApply`) commit
+// (draft-until-committed, always with a "Search" button) commit
 // flow as SingleSelectFilter, just toggling membership in an array
 // instead of swapping a single value. Selection is kept as full
 // `{ value, name }` pairs (not just ids) so a round picked while searching
@@ -76,7 +75,6 @@ export function MultiSelectChecklist({
   label = "Select to filter",
   setSelectSearch,
   isLoading,
-  instantApply = false,
   open: openProp,
   onOpenChange: onOpenChangeProp,
 }: Props) {
@@ -93,7 +91,6 @@ export function MultiSelectChecklist({
   };
   const [selected, setSelected] = useState<MultiSelectOption[]>([]);
   const [searchInput, setSearchInput] = useState("");
-  const skipInstantApplyOnCloseRef = useRef(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -142,7 +139,6 @@ export function MultiSelectChecklist({
   }
 
   const commitSelection = (override?: MultiSelectOption[]) => {
-    skipInstantApplyOnCloseRef.current = true;
     setIsOpen(false);
     const applied = override ?? selected;
     setSelectedValues(applied);
@@ -178,7 +174,7 @@ export function MultiSelectChecklist({
           onClick={() => {
             setSelectedValues([]);
             setSelected([]);
-            if (instantApply) onSearch?.();
+            onSearch?.();
           }}
         >
           <CircleX size={16} />
@@ -195,15 +191,6 @@ export function MultiSelectChecklist({
             return;
           }
           if (debounceRef.current) clearTimeout(debounceRef.current);
-          if (instantApply) {
-            if (skipInstantApplyOnCloseRef.current) {
-              skipInstantApplyOnCloseRef.current = false;
-              return;
-            }
-            if (isSameSelection(selected, selectedValues)) return;
-            setSelectedValues(selected);
-            onSearch?.();
-          }
         }}
       >
         <PopoverTrigger asChild>
@@ -268,13 +255,11 @@ export function MultiSelectChecklist({
                 </CommandGroup>
               )}
             </CommandList>
-            {!instantApply ? (
-              <div className="border-t p-2">
-                <Button type="button" className="w-full" size="sm" onClick={() => commitSelection()}>
-                  {t("search")}
-                </Button>
-              </div>
-            ) : null}
+            <div className="border-t p-2">
+              <Button type="button" className="w-full" size="sm" onClick={() => commitSelection()}>
+                {t("search")}
+              </Button>
+            </div>
           </Command>
         </PopoverContent>
       </Popover>

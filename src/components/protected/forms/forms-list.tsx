@@ -137,7 +137,6 @@ export function FormsList() {
           <MultiSelectChecklist
             label={t("filters.status")}
             data={statusOptions}
-            instantApply
             selectedValues={toSelected(filters.status)}
             setSelectedValues={(action: SetStateAction<MultiSelectOption[]>) => {
               const next = typeof action === "function" ? action(toSelected(filters.status)) : action;

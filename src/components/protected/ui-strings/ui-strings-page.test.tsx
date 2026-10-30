@@ -79,7 +79,7 @@ describe("UiStringsPage (SCR-34)", () => {
     await screen.findByRole("button", { name: "Edit blog.categories.all in Lao" });
     await user.click(screen.getByText("Not translated in"));
     await user.click(await screen.findByRole("menuitem", { name: /Lao/ }));
-    await user.keyboard("{Escape}"); // a chip applies its choice when its menu closes
+    await user.click(screen.getByRole("button", { name: "Search" })); // every chip popup has the Search button that commits its choice
     await waitFor(() => expect(nav.push).toHaveBeenCalled());
     expect(String(nav.push.mock.calls.at(-1)![0])).toContain("missing=la");
     unmount();

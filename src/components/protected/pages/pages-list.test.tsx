@@ -81,7 +81,7 @@ describe("PagesList (SCR-19)", () => {
     await user.click(screen.getAllByRole("button", { name: /Status/ }).find((b) => !b.closest("th"))!);
     const list = await screen.findByRole("listbox");
     await user.click(within(list).getByText("Draft"));
-    await user.keyboard("{Escape}");
+    await user.click(screen.getByRole("button", { name: "Search" }));
     await waitFor(() => expect(nav.push).toHaveBeenCalledWith("/admin/pages?status=draft", { scroll: false }));
   });
 

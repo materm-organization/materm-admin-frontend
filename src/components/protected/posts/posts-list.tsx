@@ -327,7 +327,6 @@ export function PostsList() {
                 <MultiSelectChecklist
                   label={t("filters.status")}
                   data={statusOptions}
-                  instantApply
                   selectedValues={toSelected(filters.status, statusOptions)}
                   setSelectedValues={(action: SetStateAction<MultiSelectOption[]>) => {
                     const next = typeof action === "function" ? action(toSelected(filters.status, statusOptions)) : action;
@@ -338,7 +337,6 @@ export function PostsList() {
                   label={t("filters.category")}
                   data={categoryOptions}
                   isLoading={categories.isLoading}
-                  instantApply
                   selectedValue={facetValue(filters.category_id, categoryOptions)}
                   setSelectedValue={(action) => {
                     const picked = pickFacet(action, facetValue(filters.category_id, categoryOptions));
@@ -349,7 +347,6 @@ export function PostsList() {
                   label={t("filters.tag")}
                   data={tagOptions}
                   isLoading={tags.isLoading}
-                  instantApply
                   selectedValues={toSelected(filters.tag_id, tagOptions)}
                   setSelectedValues={(action: SetStateAction<MultiSelectOption[]>) => {
                     const next = typeof action === "function" ? action(toSelected(filters.tag_id, tagOptions)) : action;
@@ -360,7 +357,6 @@ export function PostsList() {
                   label={t("filters.author")}
                   data={authorOptions}
                   isLoading={canReadUsers && users.isLoading}
-                  instantApply
                   selectedValue={facetValue(filters.created_by, authorOptions)}
                   setSelectedValue={(action) => {
                     const picked = pickFacet(action, facetValue(filters.created_by, authorOptions));
@@ -370,7 +366,6 @@ export function PostsList() {
                 <SingleSelectFilter
                   label={t("filters.language")}
                   data={localeOptions}
-                  instantApply
                   selectedValue={facetValue(filters.locale, localeOptions)}
                   setSelectedValue={(action) => list.setFilters({ locale: pickFacet(action, facetValue(filters.locale, localeOptions)) })}
                 />

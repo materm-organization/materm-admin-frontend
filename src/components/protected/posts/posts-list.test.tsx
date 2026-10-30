@@ -95,19 +95,19 @@ describe("PostsList (SCR-24)", () => {
     await screen.findByRole("table");
     await user.click(screen.getAllByRole("button", { name: /Status/ }).find((b) => !b.closest("th"))!);
     await user.click(within(await screen.findByRole("listbox")).getByText("Draft"));
-    await user.keyboard("{Escape}");
+    await user.click(screen.getByRole("button", { name: "Search" }));
     await waitFor(() => expect(nav.push).toHaveBeenCalledWith("/admin/blog/posts?status=draft", { scroll: false }));
 
     nav.push.mockReset();
     await user.click(screen.getAllByText("Author").find((el) => !el.closest("th"))!);
     await user.click(await screen.findByText("Mine (Noy Keomany)"));
-    await user.keyboard("{Escape}");
+    await user.click(screen.getByRole("button", { name: "Search" }));
     await waitFor(() => expect(nav.push).toHaveBeenCalledWith("/admin/blog/posts?status=draft&created_by=6", { scroll: false }));
 
     nav.push.mockReset();
     await user.click(screen.getAllByText("Language of the texts").find((el) => !el.closest("th"))!);
     await user.click(await screen.findByText("English (en)"));
-    await user.keyboard("{Escape}");
+    await user.click(screen.getByRole("button", { name: "Search" }));
     await waitFor(() => expect(nav.push).toHaveBeenCalledWith("/admin/blog/posts?status=draft&created_by=6&locale=en", { scroll: false }));
   });
 

@@ -238,7 +238,6 @@ export function SubmissionsList() {
               label={t("filters.form")}
               data={formOptions}
               isLoading={summary.isLoading}
-              instantApply
               selectedValue={facet(filters.form_id, formOptions)}
               setSelectedValue={(action) => {
                 const picked = pick(action, facet(filters.form_id, formOptions));
@@ -250,7 +249,6 @@ export function SubmissionsList() {
               <SingleSelectFilter
                 label={t("filters.topic")}
                 data={topicOptions}
-                instantApply
                 selectedValue={facet(filters.topic, topicOptions)}
                 setSelectedValue={(action) => list.setFilters({ topic: pick(action, facet(filters.topic, topicOptions)) })}
               />

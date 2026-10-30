@@ -285,7 +285,6 @@ export function PagesList() {
                 <MultiSelectChecklist
                   label={t("filters.status")}
                   data={statusOptions}
-                  instantApply
                   selectedValues={toSelected(filters.status, statusOptions)}
                   setSelectedValues={(action: SetStateAction<MultiSelectOption[]>) => {
                     const current = toSelected(filters.status, statusOptions);
@@ -297,7 +296,6 @@ export function PagesList() {
                   label={t("filters.template")}
                   data={templateOptions}
                   isLoading={templates.isLoading}
-                  instantApply
                   selectedValues={toSelected(filters.template, templateOptions)}
                   setSelectedValues={(action: SetStateAction<MultiSelectOption[]>) => {
                     const current = toSelected(filters.template, templateOptions);

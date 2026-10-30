@@ -148,7 +148,6 @@ export function UsersList() {
               label={t("filters.role")}
               data={roleOptions}
               isLoading={roles.isLoading}
-              instantApply
               selectedValues={selectedRoles}
               setSelectedValues={(action: SetStateAction<MultiSelectOption[]>) => {
                 const next = typeof action === "function" ? action(selectedRoles) : action;
@@ -158,7 +157,6 @@ export function UsersList() {
             <MultiSelectChecklist
               label={t("filters.state")}
               data={stateOptions}
-              instantApply
               selectedValues={selectedStates}
               setSelectedValues={(action: SetStateAction<MultiSelectOption[]>) => {
                 const next = typeof action === "function" ? action(selectedStates) : action;

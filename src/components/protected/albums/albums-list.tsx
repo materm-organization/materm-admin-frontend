@@ -272,7 +272,6 @@ export function AlbumsList() {
                 <MultiSelectChecklist
                   label={t("filters.status")}
                   data={statusOptions}
-                  instantApply
                   selectedValues={toSelected(filters.status, statusOptions)}
                   setSelectedValues={(action: SetStateAction<MultiSelectOption[]>) => {
                     const next = typeof action === "function" ? action(toSelected(filters.status, statusOptions)) : action;
@@ -282,7 +281,6 @@ export function AlbumsList() {
                 <SingleSelectFilter
                   label={t("filters.language")}
                   data={localeOptions}
-                  instantApply
                   selectedValue={facetValue(filters.locale, localeOptions)}
                   setSelectedValue={(action) => list.setFilters({ locale: pickFacet(action, facetValue(filters.locale, localeOptions)) })}
                 />

@@ -76,7 +76,7 @@ describe("UsersList (SCR-07): role / state filters and sort live in the URL", ()
     const list = await screen.findByRole("listbox");
     await u.click(within(list).getByText("Editor"));
     await u.click(within(list).getByText("Author"));
-    await u.keyboard("{Escape}");
+    await u.click(screen.getByRole("button", { name: "Search" }));
     await waitFor(() => expect(nav.push).toHaveBeenCalledWith("/admin/users?role_id=2%2C3", { scroll: false }));
   });
 
@@ -87,7 +87,7 @@ describe("UsersList (SCR-07): role / state filters and sort live in the URL", ()
     await u.click(filterButton(/Status/));
     const list = await screen.findByRole("listbox");
     await u.click(within(list).getByText("Locked"));
-    await u.keyboard("{Escape}");
+    await u.click(screen.getByRole("button", { name: "Search" }));
     await waitFor(() => expect(nav.push).toHaveBeenCalledWith("/admin/users?state=locked", { scroll: false }));
   });
 

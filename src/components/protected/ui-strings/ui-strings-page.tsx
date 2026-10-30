@@ -193,7 +193,6 @@ export function UiStringsPage() {
             <SingleSelectFilter
               label={t("filters.namespace")}
               data={namespaceOptions}
-              instantApply
               selectedValue={facetValue(filters.namespace, namespaceOptions)}
               setSelectedValue={(action) =>
                 list.setFilters({ namespace: pickFacet(action, facetValue(filters.namespace, namespaceOptions)) as (typeof NAMESPACES)[number] | undefined })
@@ -202,14 +201,12 @@ export function UiStringsPage() {
             <SingleSelectFilter
               label={t("filters.missingIn")}
               data={missingOptions}
-              instantApply
               selectedValue={facetValue(filters.missing, missingOptions)}
               setSelectedValue={(action) => list.setFilters({ missing: pickFacet(action, facetValue(filters.missing, missingOptions)) })}
             />
             <SingleSelectFilter
               label={t("filters.copyOfEnglish")}
               data={copyOptions}
-              instantApply
               selectedValue={facetValue(filters.copy_of_en, copyOptions)}
               setSelectedValue={(action) => list.setFilters({ copy_of_en: pickFacet(action, facetValue(filters.copy_of_en, copyOptions)) })}
             />

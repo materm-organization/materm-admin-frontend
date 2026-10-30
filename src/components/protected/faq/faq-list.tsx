@@ -254,7 +254,6 @@ export function FaqList() {
                 <MultiSelectChecklist
                   label={t("filters.status")}
                   data={statusOptions}
-                  instantApply
                   selectedValues={toSelected(filters.status, statusOptions)}
                   setSelectedValues={(action: SetStateAction<MultiSelectOption[]>) => {
                     const next = typeof action === "function" ? action(toSelected(filters.status, statusOptions)) : action;
