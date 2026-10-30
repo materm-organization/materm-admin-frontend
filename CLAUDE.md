@@ -8,7 +8,7 @@ This file provides guidance to Claude Code when working on this project.
 auth (sign-in, forgot/reset password, accept invitation, profile), the IAM/ops screens (users, roles +
 permission matrix, audit log, locales, system status + cache purge), the media library + MediaPicker, the generic
 revisions tab, the save-live screens (menus, site settings, SEO, UI strings, categories / tags), a protected layout shell and
-shared infrastructure. It has no backend of its own; the other CMS content screens come in later milestones.
+shared infrastructure, and the CMS screens of M3-M5 (pages / sections, posts, galleries, FAQ, forms, inbox, dashboard). It has no backend of its own. Since M6 (T1.6.3) every screen has been run against the real admin backend (`npm run e2e`, 70 steps).
 
 ## Tech stack
 
@@ -34,6 +34,8 @@ npm run build
 npm run lint
 npm run typecheck   # tsc --noEmit
 npm run test        # Vitest (unit + component, MSW for HTTP); `npm run test:watch` while developing
+npm run generate:validators   # precompiled section-type validators (B7); `prebuild` runs it before every `next build`
+npm run e2e         # E2E against the REAL backends (tests/e2e/run.sh, see "E2E (T1.6.3)" below); not part of `npm test`
 ```
 
 Tests live next to the code (`*.test.ts(x)`); helpers in `src/test/` (`renderWithIntl` renders with the real
@@ -98,7 +100,7 @@ Screens and building blocks built so far (phase P1 milestone M1; contract `../do
   own `Idempotency-Key` per dialog open).
 
 - **W2a schema-driven form engine (T1.2.10)** — `components/schema-form/` renders a section's props form from
-  `GET /section-types/{key}` (`json_schema` + `ui_schema`); built against MSW, no backend yet. See "Schema form
+  `GET /section-types/{key}` (`json_schema` + `ui_schema`); built against MSW, run against the real backend in M6. See "Schema form
   engine" below. Pieces: `SchemaForm` (+ `SchemaFormHandle`), `compile-field-tree.ts`, `validate.ts`,
   `completeness.ts`, `issues.ts`, `widgets/*`, `data/*` (picker lookups), `use-schema-validation.ts`,
   `use-schema-form-state.ts`; `components/rich-text/` (`RichTextEditor` lite/full), `components/global/sortable-list.tsx`
@@ -126,8 +128,19 @@ Screens and building blocks built so far (phase P1 milestone M1; contract `../do
 
 - **T1.5.6 galleries and FAQ (SCR-28 / SCR-29 / SCR-30, M5)** - built against the mock API (the backend modules `cms/albums` and `cms/faq` are not wired yet).
   See "Galleries and FAQ (T1.5.6)" below.
-- **T1.5.7 forms, messages inbox, dashboard (SCR-31 / SCR-32 / SCR-05, M5)** - built against the mock API (the forms module of the backend is done but not wired; the
-  dashboard endpoint T1.5.4 does not exist). See "Forms, inbox, dashboard (T1.5.7)" below.
+- **T1.5.7 forms, messages inbox, dashboard (SCR-31 / SCR-32 / SCR-05, M5)** - built against the mock API (the backend modules were written in parallel). See "Forms, inbox, dashboard (T1.5.7)" below.
+
+- **M6 (T1.6.3 + fixes, commits `a25e069` ... `44d099e`)** - the M3-M5 screens above were BUILT against MSW / the mock API and have now been RUN against the real
+  admin backend: the contract mismatches found are fixed (`a25e069`: list `limit` max 100, taxonomy ETag from `row.etag` in UTC, ui-strings bundle-sync
+  manifest keys, footer `{year}` ICU argument) and the mocks are strict like the server. B7 is CLOSED (see "CSP" under the schema form engine). The
+  browser tab icon (`src/app/icon.svg`) and the sidebar / auth-page logo (`public/brand/materm-logo-{white,dark}.svg`) are the Materm mark shared with
+  the portal; the inherited `logo.png` is gone. Every list-screen filter chip popup (keyword, multi-select) shows its Search button that commits the
+  choice (`instantApply` dropped, `4af2914`). Shadcn gotchas met in the sweep: `TableCell` / `TableHead` carry `whitespace-nowrap` (long text needs `whitespace-normal`
+  on the cell, or the table overflows its card); `ToggleGroupItem` has `flex-1 min-w-0` in `ui/toggle-group.tsx`, so items share the group width equally. The Lao admin copy got a full review
+  (`ee31997`, 768 values); the Lao text still waits for a native reviewer (CSV `/Users/max/Desktop/materm-lao-review.csv`). Permission-matrix overflow fixed
+  and muted text reaches 4.5:1 contrast. Left as is: the brand orange `#f28a1f` has 2.29:1 contrast with white text (decision pending), role descriptions
+  stay English in the Lao UI, the reset-password toast says "link sent" even when `email_delivery` is `logged_only`, and `.env.development` of this working
+  copy sets `NEXT_PUBLIC_DISABLE_AUTH_GUARD=true` (the user's local file; never in `.env.production`).
 
 To add a module, follow the feature-vertical pattern:
 `src/app/(protected)/(routes)/admin/<feature>/page.tsx` + `src/services/<feature>.api.ts` +
@@ -628,10 +641,15 @@ const form = useSchemaFormState(section.props);                 // value, setVal
   (`edge-cases.test.ts` runs it, and compares it with the backend copy when `../materm-admin-backend` exists - re-copy
   after a change there). The 12 section types + 17 example sections in `fixtures/` are copies of `doc/content-schemas`
   (`fixtures.drift.test.ts` compares them when `../doc` exists).
-- **CSP**: Ajv compiles with `new Function`, which the production CSP (no `'unsafe-eval'`, `lib/security/csp.ts`) refuses.
-  `createSchemaValidator` then returns `available: false` (the form shows a notice, client validation is off, the server
-  still validates on save; editing, completeness and rich text work). Deciding how to get client validation in production
-  (precompiled validators per `schema_hash`, or `'unsafe-eval'`) is an open M3 decision; do not loosen the CSP silently.
+- **CSP (B7, CLOSED in M6, `9be7624`)**: Ajv normally compiles with `new Function`, which the production CSP (no `'unsafe-eval'`,
+  `lib/security/csp.ts`) refuses. So the validators of the 12 section types are PRECOMPILED at build time with Ajv standalone code
+  (`scripts/generate-schema-validators.mjs` -> `components/schema-form/precompiled/validators.generated.js`; `npm run generate:validators`,
+  `prebuild` regenerates it, `--check` exits 1 when stale, and `precompiled.test.ts` fails when the committed file differs from a fresh
+  generation). `validate.ts` looks a validator up by the `schema_hash` the server sends with the section type (`findPrecompiled`); a hash this
+  build does not know (a schema newer than the build) has no entry, falls back to `new Function` compilation, and under the production CSP that
+  fails: `createSchemaValidator` returns `available: false` (the form shows a notice, client validation is off, the server still validates on
+  save; editing, completeness and rich text work). The CSP stays without `'unsafe-eval'`; do not loosen it. After changing `doc/content-schemas`
+  re-copy the fixtures and run `npm run generate:validators`.
 - **Server errors**: `serverErrors` (the 422 `errors[]`, `serverErrorPrefix` strips e.g. `/props`; keep the array of the
   failed save in state and pass it UNCHANGED - a new array instance is a new batch) become issues keyed by
   pointer; the first one switches language, opens its array item and focuses the field (`SchemaFormHandle.focusFirstIssue()`
@@ -654,3 +672,12 @@ const form = useSchemaFormState(section.props);                 // value, setVal
   (`renderApp`) need `vi.mock("next/navigation")`. `src/test/setup.ts` stubs the DOM measuring Tiptap needs. dnd-kit keyboard
   drag works in jsdom only with stubbed `getBoundingClientRect` (see `sortable-list.test.tsx`); the up/down buttons are
   the primary keyboard path. Real-browser check (Playwright, in a clone) covers drag by keyboard.
+
+## E2E (T1.6.3, `npm run e2e`)
+
+`tests/e2e/run.sh` (README beside it): builds an isolated stack with the scripts of `../e2e-cross-system` (used, never edited; scratch Postgres 55433 and
+Redis 56380 from `make testdb-up` in the admin backend, HEAD clones plus the working tree of this repo), then drives a production build in system Chrome
+with `playwright-core` (installed into the stack's temp dir, not into this repo) through `tests/e2e/specs/00..60*.mjs` (70 steps, all green at the end of
+M6) and tears down. Ports 3201 (admin backend), 3202 (portal backend), 3203 (admin frontend), 3204 (portal frontend); Redis proxy 56390. `SPEC=30`,
+`XFLOWS="55 80"`, `KEEP=1` and `up|test|down` are in the README. `tests/e2e/eye-check.mjs` is the screenshot sweep. Needs Docker, Go, Chrome, `rsync`
+and the sibling repos. Never touches 5432 / 6379 / 3000-3002 or the `materm` database.
