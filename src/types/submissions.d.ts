@@ -28,6 +28,8 @@ export type SubmissionListItem = {
   notes_count: number;
   anonymized_at: string | null;
   retention_until: string;
+  // The ETag of the row, quotes included: the same value as the ETag header of `GET /submissions/{id}`. The bulk status sends it as it is.
+  etag: string;
 };
 
 export type SubmissionField = { key: string; label: string; type: string; value: unknown };
@@ -72,7 +74,7 @@ export type SubmissionsQuery = {
 // The export takes the filter of the list without paging / sort, plus the language of the column labels.
 export type SubmissionsExportQuery = Omit<SubmissionsQuery, "page" | "limit" | "sort"> & { locale?: string };
 
-// One entry per submission: the ETag the caller last read (`GET /submissions/{id}`, quotes included). The list rows carry no ETag.
+// One entry per submission: the `etag` of its list row (quotes included).
 export type BulkStatusItem = { id: number; etag: string };
 
 export type BulkStatusPayload = { items: BulkStatusItem[]; status: SubmissionStatus };

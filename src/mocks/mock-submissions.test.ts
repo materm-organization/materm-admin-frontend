@@ -14,6 +14,7 @@ import {
   setExportUnavailable,
   setSubmissionStatus,
   setSubmissionsRights,
+  submissionListItem,
   submissionsState,
   submissionsSummary,
   touchSubmissionAsSomeoneElse,
@@ -160,6 +161,17 @@ describe("PATCH /submissions/{id} (the status table)", () => {
   it("needs the update right", () => {
     setSubmissionsRights(getMockDb(), { update: false });
     fails(() => setStatus(9, "read"), 403);
+  });
+});
+
+describe("list rows carry the etag", () => {
+  it("a list row, the detail body and the PATCH answer carry the same etag as the ETag of the detail", () => {
+    const db = getMockDb();
+    const row = submissionListItem(db, submissionsState(db).items.find((s) => s.id === 9)!);
+    expect(row.etag).toBe(get(9).etag);
+    expect(get(9).data.etag).toBe(get(9).etag);
+    const patched = setStatus(9, "read");
+    expect(patched.data.etag).toBe(patched.etag);
   });
 });
 

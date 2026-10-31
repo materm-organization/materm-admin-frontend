@@ -87,7 +87,7 @@ export function SubmissionsList() {
 
   const selectedIds = Object.entries(selection).filter(([, on]) => on).map(([id]) => Number(id));
   // Selected rows of the current page (the selection is reset with the page); `created_at` is the partition hint of the read.
-  const selectedRows = (data?.data ?? []).filter((r) => selectedIds.includes(r.id)).map((r) => ({ id: r.id, created_at: r.created_at }));
+  const selectedRows = (data?.data ?? []).filter((r) => selectedIds.includes(r.id)).map((r) => ({ id: r.id, etag: r.etag }));
   const onlyStatus = filters.status?.length === 1 ? filters.status[0] : undefined;
 
   const formOptions = useMemo<SelectedType[]>(() => {

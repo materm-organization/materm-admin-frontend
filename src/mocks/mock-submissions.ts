@@ -194,6 +194,7 @@ export function submissionListItem(db: MockDb, s: MockSubmission): SubmissionLis
     notes_count: anon ? 0 : s.notes.length,
     anonymized_at: s.anonymized_at,
     retention_until: s.retention_until,
+    etag: etagOfSubmission(s),
   };
 }
 

@@ -188,24 +188,43 @@ describe("SubmissionsList (SCR-32)", () => {
     expect(submissionsState(getMockDb()).items.find((s) => s.id === 9)!.status).toBe("read");
   });
 
-  it("bulk: a row changed by someone else is not written, is reported as stale and the list is reloaded", async () => {
+  it("bulk: the etag of the list row is sent as it is; no detail is read first, and the rows are refreshed from updated[].etag", async () => {
     const u = user();
-    const seen: Array<{ items: Array<{ id: number; etag: string }> }> = [];
+    const gets: string[] = [];
+    server.use(http.get(`${API}/submissions/:id`, ({ request }) => {
+      gets.push(new URL(request.url).pathname);
+      return undefined;
+    }));
     await rows();
+    const row9 = submissionsState(getMockDb()).items.find((s) => s.id === 9)!;
+    const listed = (await (await fetch(`${API}/submissions?limit=50`)).json()) as { data: Array<{ id: number; etag: string }> };
+    const etag9 = listed.data.find((r) => r.id === 9)!.etag;
+    expect(etag9).toMatch(/^"/);
     await u.click(within(await rowOf("Dara Phommachan Jr.")).getByRole("checkbox"));
     const bar = await screen.findByRole("region", { name: "Actions for the selected rows" });
-    // The etag is read when the button is pressed; somebody else moves the row in between: the request carries the old one.
+    const seen: Array<{ items: Array<{ id: number; etag: string }> }> = [];
     server.use(http.post(`${API}/submissions/bulk-status`, async ({ request }) => {
-      const body = (await request.clone().json()) as { items: Array<{ id: number; etag: string }> };
-      seen.push(body);
-      const row = submissionsState(getMockDb()).items.find((s) => s.id === 9)!;
-      row.status = "replied";
-      row.updated_at = "2026-10-29T00:00:00.000001Z";
+      seen.push((await request.clone().json()) as { items: Array<{ id: number; etag: string }> });
       return undefined;
     }));
     await u.click(within(bar).getByRole("button", { name: "Mark as read" }));
+    await waitFor(() => expect(toast.success).toHaveBeenCalled());
+    expect(seen[0].items).toEqual([{ id: 9, etag: etag9 }]);
+    expect(gets.filter((g) => g === "/api/v1/submissions/9" || g.endsWith("/submissions/9"))).toHaveLength(0);
+    expect(row9.status).toBe("read");
+  });
+
+  it("bulk: a row changed by someone else is not written, is reported as stale and the list is reloaded", async () => {
+    const u = user();
+    await rows();
+    await u.click(within(await rowOf("Dara Phommachan Jr.")).getByRole("checkbox"));
+    const bar = await screen.findByRole("region", { name: "Actions for the selected rows" });
+    // Somebody else moves the row after the list was loaded: the row's etag in the request is the old one.
+    const row = submissionsState(getMockDb()).items.find((s) => s.id === 9)!;
+    row.status = "replied";
+    row.updated_at = "2026-10-29T00:00:00.000001Z";
+    await u.click(within(bar).getByRole("button", { name: "Mark as read" }));
     await waitFor(() => expect(toast.warning).toHaveBeenCalledWith("1 message was changed by someone else and was not updated. The list has been reloaded."));
-    expect(seen).toHaveLength(1);
     expect(toast.info).not.toHaveBeenCalled();
     expect(submissionsState(getMockDb()).items.find((s) => s.id === 9)!.status).toBe("replied");
   });
