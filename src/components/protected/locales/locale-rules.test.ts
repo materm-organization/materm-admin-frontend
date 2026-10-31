@@ -24,6 +24,7 @@ const loc = (code: string, extra: Partial<Locale> = {}): Locale => ({
   sort_order: 0,
   created_at: "",
   updated_at: "",
+  etag: `"${code}"`,
   ...extra,
 });
 

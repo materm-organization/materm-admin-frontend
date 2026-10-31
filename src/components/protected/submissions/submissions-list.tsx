@@ -86,6 +86,8 @@ export function SubmissionsList() {
   const [exportOpen, setExportOpen] = useState(false);
 
   const selectedIds = Object.entries(selection).filter(([, on]) => on).map(([id]) => Number(id));
+  // Selected rows of the current page (the selection is reset with the page); `created_at` is the partition hint of the read.
+  const selectedRows = (data?.data ?? []).filter((r) => selectedIds.includes(r.id)).map((r) => ({ id: r.id, created_at: r.created_at }));
   const onlyStatus = filters.status?.length === 1 ? filters.status[0] : undefined;
 
   const formOptions = useMemo<SelectedType[]>(() => {
@@ -154,10 +156,14 @@ export function SubmissionsList() {
 
   const runBulk = async (status: SubmissionStatus) => {
     try {
-      const result = await bulk.mutateAsync({ ids: selectedIds, status });
+      const result = await bulk.mutateAsync({ rows: selectedRows, status });
       setSelection({});
       toast.success(t("bulk.done", { updated: result.counts.updated, skipped: result.counts.skipped }));
-      if (result.counts.skipped > 0) toast.info(t("bulk.skipped", { count: result.counts.skipped }));
+      const stale = result.skipped.filter((s) => s.reason === "stale").length;
+      const others = result.counts.skipped - stale;
+      if (others > 0) toast.info(t("bulk.skipped", { count: others }));
+      // Not written: somebody else changed these rows. The list (and any open detail) is reloaded by the mutation.
+      if (stale > 0) toast.warning(t("bulk.stale", { count: stale }));
     } catch (e) {
       toastError(e, t("bulk.failed"));
     }

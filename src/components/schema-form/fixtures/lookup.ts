@@ -83,5 +83,6 @@ export const LOCALE_ROWS: Locale[] = LOCALE_FIXTURES.map((l) => ({
   date_formats: null,
   created_at: "",
   updated_at: "",
+  etag: `"2026-10-27T03:00:00.${String(l.sort_order).padStart(6, "0")}Z"`,
   ...l,
 }));

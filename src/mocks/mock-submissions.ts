@@ -362,32 +362,45 @@ export function bulkSubmissionStatus(db: MockDb, body: unknown): BulkStatusResul
   if (typeof body !== "object" || body === null || Array.isArray(body)) throw validationFailed([{ in: "body", path: "", code: "invalid_type", params: { expected: "object" } }]);
   const input = body as Record<string, unknown>;
   const errors: ApiFieldError[] = [];
-  for (const k of Object.keys(input)) if (k !== "ids" && k !== "status") errors.push({ in: "body", path: `/${k}`, code: "unknown_field" });
+  // SEC-P1-5: `ids` is gone (unknown_field); every item carries the ETag the caller last read.
+  for (const k of Object.keys(input)) if (k !== "items" && k !== "status") errors.push({ in: "body", path: `/${k}`, code: "unknown_field" });
   if (typeof input.status !== "string" || !(SUBMISSION_STATUSES as readonly string[]).includes(input.status)) errors.push({ in: "body", path: "/status", code: input.status === undefined ? "required" : "not_in_enum", params: { expected: [...SUBMISSION_STATUSES] } });
-  const ids = input.ids;
-  if (!Array.isArray(ids) || ids.length < 1) errors.push({ in: "body", path: "/ids", code: ids === undefined ? "required" : "too_short", params: { min: 1 } });
-  else if (ids.length > MAX_BULK_IDS) errors.push({ in: "body", path: "/ids", code: "limit_exceeded", params: { max: MAX_BULK_IDS } });
+  const items = input.items;
+  if (!Array.isArray(items) || items.length < 1) errors.push({ in: "body", path: "/items", code: items === undefined ? "required" : "too_short", params: { min: 1 } });
+  else if (items.length > MAX_BULK_IDS) errors.push({ in: "body", path: "/items", code: "limit_exceeded", params: { max: MAX_BULK_IDS } });
   else {
     const seen = new Set<unknown>();
-    ids.forEach((v, i) => {
-      if (typeof v !== "number" || !Number.isInteger(v) || v < 1) errors.push({ in: "body", path: `/ids/${i}`, code: "invalid_type", params: { expected: "integer" } });
-      else if (seen.has(v)) errors.push({ in: "body", path: `/ids/${i}`, code: "duplicate" });
-      seen.add(v);
+    items.forEach((it, i) => {
+      const o = typeof it === "object" && it !== null && !Array.isArray(it) ? (it as Record<string, unknown>) : null;
+      if (!o) {
+        errors.push({ in: "body", path: `/items/${i}`, code: "invalid_type", params: { expected: "object" } });
+        return;
+      }
+      for (const k of Object.keys(o)) if (k !== "id" && k !== "etag") errors.push({ in: "body", path: `/items/${i}/${k}`, code: "unknown_field" });
+      if (typeof o.id !== "number" || !Number.isInteger(o.id)) errors.push({ in: "body", path: `/items/${i}/id`, code: "invalid_type", params: { expected: "integer" } });
+      else if (o.id < 1) errors.push({ in: "body", path: `/items/${i}/id`, code: "out_of_range", params: { min: 1 } });
+      else if (seen.has(o.id)) errors.push({ in: "body", path: `/items/${i}/id`, code: "duplicate" });
+      seen.add(o.id);
+      const tag = typeof o.etag === "string" ? o.etag.trim() : "";
+      if (tag === "") errors.push({ in: "body", path: `/items/${i}/etag`, code: "required" });
+      else if (tag === "*") errors.push({ in: "body", path: `/items/${i}/etag`, code: "invalid_format" });
     });
   }
   if (errors.length) throw validationFailed(errors);
 
   const to = input.status as SubmissionStatus;
   const result: BulkStatusResult = { updated: [], skipped: [], counts: { updated: 0, skipped: 0 } };
-  for (const id of ids as number[]) {
-    const s = state.items.find((x) => x.id === id);
-    if (!s) result.skipped.push({ id, reason: "not_found" });
-    else if (s.anonymized_at) result.skipped.push({ id, reason: "anonymized" });
-    else if (s.status === to) result.skipped.push({ id, reason: "unchanged" });
-    else if (!canMoveSubmission(s.status, to)) result.skipped.push({ id, reason: "invalid_transition", from: s.status });
+  for (const item of items as Array<{ id: number; etag: string }>) {
+    const s = state.items.find((x) => x.id === item.id);
+    if (!s) result.skipped.push({ id: item.id, reason: "not_found" });
+    // A changed row is NOT written; it answers its current status and ETag so the caller can refresh.
+    else if (item.etag.trim() !== etagOfSubmission(s)) result.skipped.push({ id: item.id, reason: "stale", from: s.status, etag: etagOfSubmission(s) });
+    else if (s.anonymized_at) result.skipped.push({ id: item.id, reason: "anonymized", from: s.status });
+    else if (s.status === to) result.skipped.push({ id: item.id, reason: "unchanged", from: s.status });
+    else if (!canMoveSubmission(s.status, to)) result.skipped.push({ id: item.id, reason: "invalid_transition", from: s.status });
     else {
       applyStatus(db, s, to);
-      result.updated.push({ id, status: to });
+      result.updated.push({ id: item.id, status: to, etag: etagOfSubmission(s) });
     }
   }
   result.counts = { updated: result.updated.length, skipped: result.skipped.length };

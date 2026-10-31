@@ -20,7 +20,7 @@ vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: nav.push, replace: vi.fn() }),
   useSearchParams: () => new URLSearchParams(nav.search),
 }));
-const toast = vi.hoisted(() => ({ success: vi.fn(), error: vi.fn(), info: vi.fn() }));
+const toast = vi.hoisted(() => ({ success: vi.fn(), error: vi.fn(), info: vi.fn(), warning: vi.fn() }));
 vi.mock("sonner", () => ({ toast }));
 
 const FULL = grants({ "forms.submissions": ["read", "update", "export"], "forms.manage": ["read"] });
@@ -181,10 +181,33 @@ describe("SubmissionsList (SCR-32)", () => {
     expect(within(bar).queryByRole("button", { name: "Not spam" })).not.toBeInTheDocument();
     await u.click(within(bar).getByRole("button", { name: "Mark as read" }));
     await waitFor(() => expect(toast.success).toHaveBeenCalledWith("1 message changed."));
-    expect(seen).toEqual([{ ids: expect.arrayContaining([9, 5]), status: "read" }]);
+    expect(seen).toEqual([{ items: expect.arrayContaining([{ id: 9, etag: expect.stringMatching(/^"/) }, { id: 5, etag: expect.stringMatching(/^"/) }]), status: "read" }]);
+    expect((seen[0] as { ids?: unknown }).ids).toBeUndefined();
     expect(toast.info).toHaveBeenCalledWith("1 message could not make that move and was left as it is.");
     await waitFor(() => expect(screen.queryByRole("region", { name: "Actions for the selected rows" })).not.toBeInTheDocument());
     expect(submissionsState(getMockDb()).items.find((s) => s.id === 9)!.status).toBe("read");
+  });
+
+  it("bulk: a row changed by someone else is not written, is reported as stale and the list is reloaded", async () => {
+    const u = user();
+    const seen: Array<{ items: Array<{ id: number; etag: string }> }> = [];
+    await rows();
+    await u.click(within(await rowOf("Dara Phommachan Jr.")).getByRole("checkbox"));
+    const bar = await screen.findByRole("region", { name: "Actions for the selected rows" });
+    // The etag is read when the button is pressed; somebody else moves the row in between: the request carries the old one.
+    server.use(http.post(`${API}/submissions/bulk-status`, async ({ request }) => {
+      const body = (await request.clone().json()) as { items: Array<{ id: number; etag: string }> };
+      seen.push(body);
+      const row = submissionsState(getMockDb()).items.find((s) => s.id === 9)!;
+      row.status = "replied";
+      row.updated_at = "2026-10-29T00:00:00.000001Z";
+      return undefined;
+    }));
+    await u.click(within(bar).getByRole("button", { name: "Mark as read" }));
+    await waitFor(() => expect(toast.warning).toHaveBeenCalledWith("1 message was changed by someone else and was not updated. The list has been reloaded."));
+    expect(seen).toHaveLength(1);
+    expect(toast.info).not.toHaveBeenCalled();
+    expect(submissionsState(getMockDb()).items.find((s) => s.id === 9)!.status).toBe("replied");
   });
 
   it("on the spam tab the only bulk move is Not spam", async () => {

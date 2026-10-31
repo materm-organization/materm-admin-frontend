@@ -565,6 +565,7 @@
       "bulk": {
         "done": "{updated, plural, =0 {No message changed} one {# message changed} other {# messages changed}}.",
         "skipped": "{count, plural, one {# message could not make that move and was left as it is.} other {# messages could not make that move and were left as they are.}}",
+        "stale": "{count, plural, one {# message was changed by someone else and was not updated. The list has been reloaded.} other {# messages were changed by someone else and were not updated. The list has been reloaded.}}",
         "failed": "The messages could not be changed.",
         "tooMany": "Select at most {max} messages at a time.",
         "to": {

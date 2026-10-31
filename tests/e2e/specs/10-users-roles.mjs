@@ -117,6 +117,25 @@ await t.step('locales: list shows Lao + English, edit sheet opens', async () => 
   await page.keyboard.press('Escape');
 });
 
+await t.step('locales: saving sends If-Match (the row etag) and the new etag is used by the next save (SEC-P1-5)', async () => {
+  await open(page, '/admin/locales');
+  await page.getByRole('switch', { name: /English is active/ }).waitFor();
+  const save = async (value) => {
+    await page.getByRole('button', { name: 'Edit English' }).click();
+    const dlg = page.getByRole('dialog'); await dlg.waitFor({ timeout: 5000 });
+    const f = dlg.getByLabel('Native name'); await f.fill(value);
+    const w = page.waitForResponse((r) => /\/locales\/en$/.test(r.url()) && r.request().method() === 'PATCH');
+    await dlg.getByRole('button', { name: 'Save' }).click();
+    const res = await w;
+    ok(/^"/.test(res.request().headers()['if-match'] ?? ''), 'If-Match carries the quoted row etag');
+    eq(res.status(), 200, 'locale PATCH');
+    ok(/^"/.test(res.headers()['etag'] ?? ''), 'answer has an ETag');
+    await dlg.waitFor({ state: 'detached', timeout: 5000 });
+  };
+  await save('English E2E');
+  await save('English'); // second write in a row uses the etag of the first answer, not a stale one
+});
+
 await t.step('system: status renders and the cache purge dialog opens', async () => {
   await open(page, '/admin/system');
   ok(/status|database|redis/i.test(await mainText(page)), 'status text');

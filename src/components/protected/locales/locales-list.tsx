@@ -14,12 +14,13 @@ import { NoPermission } from "@/components/layout/no-permission";
 import { LocaleEditSheet } from "@/components/protected/locales/locale-edit-sheet";
 import { dependentsOf, formatDateExample } from "@/components/protected/locales/locale-rules";
 import { Badge } from "@/components/ui/badge";
+import { ConflictDialog } from "@/components/global/conflict-dialog";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { useApiErrorHandler } from "@/hooks/use-api-error";
 import { useLocales, useMutationUpdateLocale } from "@/hooks/use-locales";
 import { useCan } from "@/hooks/use-permission";
-import { isNoPermissionError } from "@/lib/api-error";
+import { isConflictError, isNoPermissionError } from "@/lib/api-error";
 import { PERMISSION_ACTIONS, PERMISSION_KEYS } from "@/lib/constants/permissions";
 import type { Locale } from "@/types/locales";
 
@@ -35,15 +36,22 @@ export function LocalesList() {
 
   const [editing, setEditing] = useState<Locale | null>(null);
   const [confirmOff, setConfirmOff] = useState<Locale | null>(null);
+  const [conflict, setConflict] = useState(false);
+  const [reloading, setReloading] = useState(false);
 
   const locales = useMemo(() => data?.data ?? [], [data]);
 
   const setActive = async (locale: Locale, isActive: boolean) => {
     try {
-      await toggle.mutateAsync({ code: locale.code, payload: { is_active: isActive } });
+      await toggle.mutateAsync({ code: locale.code, payload: { is_active: isActive }, etag: locale.etag });
       toast.success(t(isActive ? "toast.activated" : "toast.deactivated", { name: locale.name }));
     } catch (e) {
-      toastError(e, t("toast.error"));
+      if (isConflictError(e)) {
+        // Somebody else changed the row: offer to load what the server has now.
+        setConflict(true);
+      } else {
+        toastError(e, t("toast.error"));
+      }
       throw e;
     }
   };
@@ -150,13 +158,27 @@ export function LocalesList() {
 
       {editing ? (
         <LocaleEditSheet
-          key={`${editing.code}|${locales.find((l) => l.code === editing.code)?.updated_at ?? ""}`}
+          key={`${editing.code}|${locales.find((l) => l.code === editing.code)?.etag ?? ""}`}
           locale={locales.find((l) => l.code === editing.code) ?? editing}
           locales={locales}
           canEdit={canEdit}
           onClose={() => setEditing(null)}
         />
       ) : null}
+
+      <ConflictDialog
+        open={conflict}
+        onOpenChange={setConflict}
+        isReloading={reloading}
+        onReload={async () => {
+          setReloading(true);
+          try {
+            await refetch();
+          } finally {
+            setReloading(false);
+          }
+        }}
+      />
 
       <ConfirmDialog
         open={confirmOff !== null}

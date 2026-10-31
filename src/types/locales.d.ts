@@ -21,6 +21,8 @@ export type Locale = {
   sort_order: number;
   created_at: string;
   updated_at: string;
+  // The row's version, quotes included; sent as `If-Match` on every PATCH (428 without it, 409 when stale).
+  etag: string;
 };
 
 // PATCH /locales/{code}: partial; `null` clears only `flag` and `fallback_code`.

@@ -164,28 +164,44 @@ describe("PATCH /submissions/{id} (the status table)", () => {
 });
 
 describe("POST /submissions/bulk-status", () => {
+  const items = (...ids: number[]) => ids.map((id) => ({ id, etag: get(id).etag }));
   it("changes what it can and reports the rest instead of failing", () => {
-    const r = bulkSubmissionStatus(getMockDb(), { ids: [9, 5, 8, 999, 4], status: "read" });
-    expect(r.updated).toEqual([{ id: 9, status: "read" }]);
+    const r = bulkSubmissionStatus(getMockDb(), { items: [...items(9, 5, 8), { id: 999, etag: '"x"' }, ...items(4)], status: "read" });
+    expect(r.updated).toEqual([{ id: 9, status: "read", etag: expect.stringMatching(/^"/) }]);
     expect(r.skipped).toEqual([
-      { id: 5, reason: "unchanged" },
-      { id: 8, reason: "anonymized" },
+      { id: 5, reason: "unchanged", from: "read" },
+      { id: 8, reason: "anonymized", from: expect.any(String) },
       { id: 999, reason: "not_found" },
       { id: 4, reason: "invalid_transition", from: "spam" },
     ]);
     expect(r.counts).toEqual({ updated: 1, skipped: 4 });
+    expect(r.updated[0].etag).toBe(get(9).etag);
   });
 
-  it("validates the ids (1 - 100, no duplicates) and the status", () => {
-    expect(errorsOf(fails(() => bulkSubmissionStatus(getMockDb(), { ids: [1, 1], status: "read" }), 422))[0]).toMatchObject({ path: "/ids/1", code: "duplicate" });
-    expect(errorsOf(fails(() => bulkSubmissionStatus(getMockDb(), { ids: Array.from({ length: 101 }, (_, i) => i + 1), status: "read" }), 422))[0]).toMatchObject({ path: "/ids", code: "limit_exceeded", params: { max: 100 } });
-    expect(errorsOf(fails(() => bulkSubmissionStatus(getMockDb(), { ids: [], status: "read" }), 422))[0].path).toBe("/ids");
-    expect(errorsOf(fails(() => bulkSubmissionStatus(getMockDb(), { ids: [1], status: "x" }), 422))[0].path).toBe("/status");
+  it("does not write a row whose ETag is old: stale, with its current status and ETag", () => {
+    const old = items(9);
+    setStatus(9, "replied");
+    const r = bulkSubmissionStatus(getMockDb(), { items: old, status: "read" });
+    expect(r.updated).toEqual([]);
+    expect(r.skipped).toEqual([{ id: 9, reason: "stale", from: "replied", etag: get(9).etag }]);
+    expect(get(9).data.status).toBe("replied");
+  });
+
+  it("validates the items (1 - 100, no duplicates, an ETag each) and the status", () => {
+    const at = (body: unknown) => errorsOf(fails(() => bulkSubmissionStatus(getMockDb(), body), 422))[0];
+    expect(at({ items: [{ id: 1, etag: '"a"' }, { id: 1, etag: '"a"' }], status: "read" })).toMatchObject({ path: "/items/1/id", code: "duplicate" });
+    expect(at({ items: Array.from({ length: 101 }, (_, i) => ({ id: i + 1, etag: '"a"' })), status: "read" })).toMatchObject({ path: "/items", code: "limit_exceeded", params: { max: 100 } });
+    expect(at({ items: [], status: "read" })).toMatchObject({ path: "/items", code: "too_short" });
+    expect(at({ items: [{ id: 0, etag: '"a"' }], status: "read" })).toMatchObject({ path: "/items/0/id", code: "out_of_range" });
+    expect(at({ items: [{ id: 1 }], status: "read" })).toMatchObject({ path: "/items/0/etag", code: "required" });
+    expect(at({ items: [{ id: 1, etag: "*" }], status: "read" })).toMatchObject({ path: "/items/0/etag", code: "invalid_format" });
+    expect(at({ items: [{ id: 1, etag: '"a"' }], status: "x" }).path).toBe("/status");
+    expect(at({ ids: [1], items: [{ id: 1, etag: '"a"' }], status: "read" })).toMatchObject({ path: "/ids", code: "unknown_field" });
   });
 
   it("is limited to 30 a user and hour (429 with Retry-After)", () => {
-    for (let i = 0; i < 30; i++) bulkSubmissionStatus(getMockDb(), { ids: [9], status: "read" });
-    const e = fails(() => bulkSubmissionStatus(getMockDb(), { ids: [9], status: "read" }), 429, "RATE_LIMITED");
+    for (let i = 0; i < 30; i++) bulkSubmissionStatus(getMockDb(), { items: [{ id: 9, etag: '"x"' }], status: "read" });
+    const e = fails(() => bulkSubmissionStatus(getMockDb(), { items: [{ id: 9, etag: '"x"' }], status: "read" }), 429, "RATE_LIMITED");
     expect(e.headers["Retry-After"]).toBe("1800");
   });
 });

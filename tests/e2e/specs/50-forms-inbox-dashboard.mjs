@@ -79,7 +79,10 @@ await t.step('bulk: select a new message and archive it in one request', async (
   const w = page.waitForResponse((r) => /bulk-status/.test(r.url()));
   await bulk.click();
   const dlg = page.getByRole('alertdialog'); if (await dlg.count()) await dlg.getByRole('button').last().click();
-  eq((await w).status(), 200, 'bulk-status');
+  const res = await w;
+  eq(res.status(), 200, 'bulk-status');
+  const sent = res.request().postDataJSON();
+  ok(Array.isArray(sent.items) && sent.items.length === 1 && /^"/.test(sent.items[0].etag) && sent.ids === undefined, 'bulk body = items[{id, etag}], no ids');
   await page.getByRole('button', { name: 'Archived', exact: true }).click(); await sleep(1200);
   await page.getByText(MSG2).first().waitFor({ timeout: 8000 });
 });

@@ -6,6 +6,8 @@
 // puts its own handler in front with `server.use(...)`.
 import { http, HttpResponse, type HttpHandler } from "msw";
 
+import { lockConflict, notFound, preconditionRequired } from "@/mocks/mock-core";
+import type { Locale } from "@/types/locales";
 import { LOCALE_ROWS } from "@/components/schema-form/fixtures/lookup";
 import { listAuditLogs } from "@/mocks/mock-audit";
 import { formsApiHandlers } from "@/mocks/forms-handlers";
@@ -245,7 +247,28 @@ export const systemApiHandlers: HttpHandler[] = [
   ),
 ];
 
-export const localeApiHandlers: HttpHandler[] = [http.get(P("/locales"), () => ok(LOCALE_ROWS))];
+// Locales: every PATCH needs `If-Match: <row.etag>` (missing or `*` -> 428, stale -> 409 CONFLICT_LOCK_VERSION, never 412); the answer
+// is the row with its new `etag` (also as the `ETag` header). The edit is applied to a module-level copy (`resetMockLocales`).
+let mockLocales: Locale[] = structuredClone(LOCALE_ROWS);
+let localeStamp = 0;
+export const resetMockLocales = () => {
+  mockLocales = structuredClone(LOCALE_ROWS);
+  localeStamp = 0;
+};
+export const localeApiHandlers: HttpHandler[] = [
+  http.get(P("/locales"), () => ok(mockLocales)),
+  http.patch(P("/locales/:code"), guard(async ({ request, params }) => {
+    const row = mockLocales.find((l) => l.code === param(params, "code"));
+    if (!row) throw notFound();
+    const ifMatch = request.headers.get("If-Match")?.trim();
+    if (!ifMatch || ifMatch === "*") throw preconditionRequired();
+    if (ifMatch !== row.etag) throw lockConflict();
+    Object.assign(row, (await jsonBody(request)) as Partial<Locale>);
+    localeStamp += 1;
+    row.etag = `"2026-10-28T02:00:00.${String(localeStamp).padStart(6, "0")}Z"`;
+    return ok(row, { etag: row.etag });
+  })),
+];
 
 // The audit log: the full filter set for `ops.audit:read`, the History tab shape for anyone with `read` on the entity (mock-audit.ts).
 export const auditApiHandlers: HttpHandler[] = [

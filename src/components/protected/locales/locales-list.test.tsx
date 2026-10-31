@@ -20,7 +20,7 @@ const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "
 const loc = (code: string, over: Record<string, unknown> = {}) => ({
   code, name: code === "la" ? "Lao" : code === "en" ? "English" : "Thai", native_name: code, short_label: code.toUpperCase(), flag: null,
   text_direction: "ltr", is_default: false, is_active: true, fallback_code: null, search_config: "simple",
-  date_formats: { short: "{month}. {day}.{year}", months: MONTHS }, sort_order: 10, created_at: "", updated_at: `t-${code}`, ...over,
+  date_formats: { short: "{month}. {day}.{year}", months: MONTHS }, sort_order: 10, created_at: "", updated_at: `t-${code}`, etag: `"e-${code}"`, ...over,
 });
 // la (default) <- en <- th
 const LOCALES = [loc("la", { is_default: true, sort_order: 1 }), loc("en", { fallback_code: "la", sort_order: 2 }), loc("th", { fallback_code: "en", sort_order: 3, is_active: false })];
@@ -45,10 +45,12 @@ describe("LocalesList (SCR-12)", () => {
   it("switching a language on PATCHes only is_active", async () => {
     const u = userEvent.setup();
     let body: unknown;
-    server.use(http.patch(`${API}/locales/th`, async ({ request }) => { body = await request.json(); return HttpResponse.json({ success: true, data: loc("th") }); }));
+    let ifMatch: string | null = null;
+    server.use(http.patch(`${API}/locales/th`, async ({ request }) => { body = await request.json(); ifMatch = request.headers.get("If-Match"); return HttpResponse.json({ success: true, data: loc("th", { etag: '"e-th-2"' }) }, { headers: { ETag: '"e-th-2"' } }); }));
     renderApp(<LocalesList />);
     await u.click(await screen.findByRole("switch", { name: "Thai is active" }));
     await waitFor(() => expect(body).toEqual({ is_active: true }));
+    expect(ifMatch).toBe('"e-th"');
     await waitFor(() => expect(toasts.success).toHaveBeenCalledWith("Thai is now active"));
   });
 
@@ -127,6 +129,34 @@ describe("LocalesList (SCR-12)", () => {
     await u.click(await screen.findByRole("option", { name: "Lao (la)" }));
     await u.click(within(sheet).getByRole("button", { name: "Save" }));
     expect(await within(sheet).findByText("The fallback chain would loop.")).toBeInTheDocument();
+  });
+
+  it("a 409 CONFLICT_LOCK_VERSION on the switch opens the conflict dialog and loading the latest refetches the list", async () => {
+    const u = userEvent.setup();
+    let lists = 0;
+    server.use(
+      http.get(`${API}/locales`, () => { lists += 1; return HttpResponse.json({ success: true, data: LOCALES }); }),
+      http.patch(`${API}/locales/th`, () => HttpResponse.json({ success: false, code: "CONFLICT_LOCK_VERSION" }, { status: 409 }))
+    );
+    renderApp(<LocalesList />);
+    await u.click(await screen.findByRole("switch", { name: "Thai is active" }));
+    const dialog = await screen.findByRole("dialog");
+    const before = lists;
+    await u.click(within(dialog).getByRole("button", { name: /latest/i }));
+    await waitFor(() => expect(lists).toBeGreaterThan(before));
+  });
+
+  it("a 409 on the edit sheet save opens the conflict dialog", async () => {
+    const u = userEvent.setup();
+    server.use(http.patch(`${API}/locales/th`, () => HttpResponse.json({ success: false, code: "CONFLICT_LOCK_VERSION" }, { status: 409 })));
+    renderApp(<LocalesList />);
+    await u.click(await screen.findByRole("button", { name: "Edit Thai" }));
+    const sheet = await screen.findByRole("dialog");
+    const name = within(sheet).getByLabelText("Name");
+    await u.clear(name);
+    await u.type(name, "Thai 2");
+    await u.click(within(sheet).getByRole("button", { name: "Save" }));
+    expect(await screen.findByText("Someone else changed this item")).toBeInTheDocument();
   });
 
   it("without cms.locales:update everything is view-only", async () => {

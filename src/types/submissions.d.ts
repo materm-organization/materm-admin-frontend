@@ -72,12 +72,16 @@ export type SubmissionsQuery = {
 // The export takes the filter of the list without paging / sort, plus the language of the column labels.
 export type SubmissionsExportQuery = Omit<SubmissionsQuery, "page" | "limit" | "sort"> & { locale?: string };
 
-export type BulkStatusPayload = { ids: number[]; status: SubmissionStatus };
+// One entry per submission: the ETag the caller last read (`GET /submissions/{id}`, quotes included). The list rows carry no ETag.
+export type BulkStatusItem = { id: number; etag: string };
 
-export type BulkSkipReason = "not_found" | "invalid_transition" | "anonymized" | "unchanged";
+export type BulkStatusPayload = { items: BulkStatusItem[]; status: SubmissionStatus };
+
+// `stale`: the row changed since the ETag was read; it was NOT written. `from` and `etag` then carry its current status and ETag.
+export type BulkSkipReason = "not_found" | "stale" | "invalid_transition" | "anonymized" | "unchanged";
 
 export type BulkStatusResult = {
-  updated: Array<{ id: number; status: SubmissionStatus }>;
-  skipped: Array<{ id: number; reason: BulkSkipReason; from?: SubmissionStatus }>;
+  updated: Array<{ id: number; status: SubmissionStatus; etag: string }>;
+  skipped: Array<{ id: number; reason: BulkSkipReason; from?: SubmissionStatus; etag?: string }>;
   counts: { updated: number; skipped: number };
 };

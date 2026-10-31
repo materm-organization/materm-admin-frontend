@@ -1,3 +1,4 @@
+import { isAxiosError } from "axios";
 import { keepPreviousData, useMutation, useQuery, useQueryClient, type QueryClient } from "@tanstack/react-query";
 
 import { API_ENDPOINTS } from "@/lib/constants/api-endpoints";
@@ -6,7 +7,8 @@ import { SUBMISSION_GC_TIME } from "@/lib/submissions";
 import { SubmissionsAPI } from "@/services/submissions.api";
 import type { ApiResponse } from "@/types/api";
 import type {
-  BulkStatusPayload,
+  BulkStatusItem,
+  BulkStatusResult,
   SubmissionDetail,
   SubmissionListItem,
   SubmissionNote,
@@ -66,16 +68,72 @@ export const useMutationSetSubmissionStatus = (createdAt?: string) => {
   });
 };
 
+const BULK_ETAG_PARALLEL = 10;
+
+// The list rows carry no ETag, so the ETag of a row is the one last read with `GET /submissions/{id}`: the cached detail if the
+// row was opened, otherwise the detail is read now (no side effect) and cached. A row that can not be read (gone) is returned
+// in `missing` and left out of the request.
+async function etagsOf(queryClient: QueryClient, rows: BulkRow[]) {
+  const items: BulkStatusItem[] = [];
+  const missing: number[] = [];
+  const todo: BulkRow[] = [];
+  for (const row of rows) {
+    const cached = queryClient.getQueryData<CachedSubmission>(submissionQueryKey(row.id, row.created_at));
+    if (cached?.etag) items.push({ id: row.id, etag: cached.etag });
+    else todo.push(row);
+  }
+  for (let i = 0; i < todo.length; i += BULK_ETAG_PARALLEL) {
+    await Promise.all(
+      todo.slice(i, i + BULK_ETAG_PARALLEL).map(async (row) => {
+        try {
+          const fresh = await SubmissionsAPI.Get(row.id, row.created_at);
+          queryClient.setQueryData(submissionQueryKey(row.id, row.created_at), fresh);
+          if (fresh.etag) items.push({ id: row.id, etag: fresh.etag });
+          else missing.push(row.id);
+        } catch (error) {
+          if (isAxiosError(error) && error.response?.status === 404) missing.push(row.id);
+          else throw error;
+        }
+      })
+    );
+  }
+  return { items: rows.flatMap((r) => items.filter((i) => i.id === r.id)), missing };
+}
+
+export type BulkRow = Pick<SubmissionListItem, "id" | "created_at">;
+
 export const useMutationBulkSubmissionStatus = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (payload: BulkStatusPayload) => SubmissionsAPI.BulkStatus(payload),
-    onSuccess: () => {
-      // Open detail screens would show an old status: drop them rather than merge a partial answer.
-      void queryClient.invalidateQueries({ predicate: (q) => /^\/submissions\/\d+$/.test(String(q.queryKey[0])) });
+    mutationFn: async ({ rows, status }: { rows: BulkRow[]; status: SubmissionStatus }): Promise<BulkStatusResult> => {
+      const { items, missing } = await etagsOf(queryClient, rows);
+      const gone: BulkStatusResult["skipped"] = missing.map((id) => ({ id, reason: "not_found" }));
+      if (items.length === 0) return { updated: [], skipped: gone, counts: { updated: 0, skipped: gone.length } };
+      const result = await SubmissionsAPI.BulkStatus({ items, status });
+      const skipped = [...result.skipped, ...gone];
+      return { ...result, skipped, counts: { updated: result.counts.updated, skipped: skipped.length } };
+    },
+    onSuccess: (result) => {
+      const touched = new Set([...result.updated.map((u) => u.id), ...result.skipped.filter((s) => s.reason === "stale").map((s) => s.id)]);
+      // The new ETag of a changed row is kept right away, so the next write from an open detail does not conflict with our own change.
+      const etagOfUpdated = new Map(result.updated.map((u) => [u.id, u]));
+      queryClient.setQueriesData<CachedSubmission>({ predicate: (q) => detailId(q.queryKey) !== null && etagOfUpdated.has(detailId(q.queryKey) as number) }, (old) => {
+        const u = old ? etagOfUpdated.get(old.data.data.id) : undefined;
+        return old && u ? { etag: u.etag, data: { ...old.data, data: { ...old.data.data, status: u.status } } } : old;
+      });
+      // Detail screens of changed or stale rows reload (handled_by, handled_at, current status); the others stay.
+      void queryClient.invalidateQueries({ predicate: (q) => {
+        const id = detailId(q.queryKey);
+        return id !== null && touched.has(id);
+      } });
       refreshAfterStatus(queryClient);
     },
   });
+};
+
+const detailId = (queryKey: readonly unknown[]): number | null => {
+  const m = /^\/submissions\/(\d+)$/.exec(String(queryKey[0]));
+  return m ? Number(m[1]) : null;
 };
 
 // A note is appended to the cached detail; it does not change the ETag nor the status.

@@ -3,6 +3,8 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { LockIcon, SaveIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
+import { useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -26,7 +28,9 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { Spinner } from "@/components/ui/spinner";
+import { ConflictDialog } from "@/components/global/conflict-dialog";
 import { useApiErrorHandler } from "@/hooks/use-api-error";
+import { API_ENDPOINTS } from "@/lib/constants/api-endpoints";
 import { useMutationUpdateLocale } from "@/hooks/use-locales";
 import { useUnsavedChangesGuard } from "@/hooks/use-unsaved-changes-guard";
 import type { Locale, UpdateLocalePayload } from "@/types/locales";
@@ -65,8 +69,8 @@ type LocaleValues = z.infer<ReturnType<typeof localeSchema>>;
 // SCR-12 edit sheet (doc/07 section 3.7; PATCH rules: doc/05 section 10.7). Read-only: code, direction, default
 // flag, search config. The fallback picker offers only locales that keep a valid chain (never itself, no loop,
 // ending at the default); the default locale has no fallback. Date formats: `short` / `long` templates with
-// {day} {month} {year} and the 12 month names, with a live example. No ETag on locales: last write wins.
-// Mount while open, keyed by the locale's `updated_at`.
+// {day} {month} {year} and the 12 month names, with a live example. Every PATCH sends the row's `etag` as `If-Match` (409 -> ConflictDialog).
+// Mount while open, keyed by the locale's `etag`.
 export function LocaleEditSheet({
   locale,
   locales,
@@ -81,6 +85,9 @@ export function LocaleEditSheet({
   const t = useTranslations("locales.edit");
   const mutation = useMutationUpdateLocale();
   const { handleFormError } = useApiErrorHandler();
+  const queryClient = useQueryClient();
+  const [conflict, setConflict] = useState(false);
+  const [reloading, setReloading] = useState(false);
 
   const formats = locale.date_formats ?? {};
   const form = useForm<LocaleValues>({
@@ -122,12 +129,14 @@ export function LocaleEditSheet({
     const payload = buildPayload(v);
     if (Object.keys(payload).length === 0) return true;
     try {
-      await mutation.mutateAsync({ code: locale.code, payload });
+      await mutation.mutateAsync({ code: locale.code, payload, etag: locale.etag });
       toast.success(t("toast.success", { name: locale.name }));
       return true;
     } catch (error) {
       // 422 errors land on the matching input (`/fallback_code`, `/date_formats/short` -> `short`).
       handleFormError(form, error, {
+        // 409 CONFLICT_LOCK_VERSION: somebody else changed this language; offer to load the latest row.
+        onConflict: () => setConflict(true),
         fallback: t("toast.error"),
         fieldMap: { "date_formats/short": "short", date_formats: "short" },
       });
@@ -150,6 +159,7 @@ export function LocaleEditSheet({
   });
 
   return (
+    <>
     <Sheet open onOpenChange={(open) => (!open && !mutation.isPending ? onClose() : undefined)}>
       <SheetContent className="w-full overflow-y-auto sm:max-w-xl">
         <SheetHeader>
@@ -359,5 +369,20 @@ export function LocaleEditSheet({
         </Form>
       </SheetContent>
     </Sheet>
+    <ConflictDialog
+      open={conflict}
+      onOpenChange={setConflict}
+      isReloading={reloading}
+      onReload={async () => {
+        setReloading(true);
+        try {
+          // The list answers the row's new etag; the sheet is keyed by it and opens again with the latest values.
+          await queryClient.refetchQueries({ queryKey: [API_ENDPOINTS.LOCALES.LIST] });
+        } finally {
+          setReloading(false);
+        }
+      }}
+    />
+    </>
   );
 }
