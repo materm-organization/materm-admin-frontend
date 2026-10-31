@@ -1076,6 +1076,14 @@
   },
   "roles": {
     "title": "Roles",
+    "systemDescriptions": {
+      "super_admin": "System owner: IAM, security, everything (explicit grants)",
+      "admin": "Day-to-day site manager: users, settings, all content",
+      "editor": "Edit, review and publish content; handle the inbox (includes reviewer)",
+      "author": "Writes own blog posts and media; cannot publish",
+      "translator": "Edits translatable fields only",
+      "viewer": "Read-only (no personal data)"
+    },
     "description": "Roles and what each of them may do.",
     "searchPlaceholder": "Search role name or key",
     "empty": "No roles found",

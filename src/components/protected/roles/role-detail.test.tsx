@@ -277,4 +277,22 @@ describe("RoleDetailView: the permission matrix of SCR-10", () => {
     renderApp(<RoleDetailView id="3" />);
     expect(await screen.findByText("No permission")).toBeInTheDocument();
   });
+
+  it("a system role shows its translated description, a custom role keeps the backend text", async () => {
+    mockRole(role({ role_key: "viewer", name: "Viewer", description: "backend english text", is_system: true }));
+    const { unmount } = renderApp(<RoleDetailView id="3" />);
+    expect(await screen.findByText("Read-only (no personal data)")).toBeInTheDocument();
+    expect(screen.queryByText("backend english text")).not.toBeInTheDocument();
+    unmount();
+    mockRole(role({ role_key: "viewer", name: "Mine", description: "custom text", is_system: false }));
+    renderApp(<RoleDetailView id="3" />);
+    expect(await screen.findByText("custom text")).toBeInTheDocument();
+  });
+
+  it("a system role without a translation falls back to the backend text", async () => {
+    mockRole(role({ role_key: "unknown_sys", name: "X", description: "fallback text", is_system: true }));
+    renderApp(<RoleDetailView id="3" />);
+    expect(await screen.findByText("fallback text")).toBeInTheDocument();
+  });
+
 });

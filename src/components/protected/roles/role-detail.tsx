@@ -58,6 +58,10 @@ export function RoleDetailView({ id }: { id: string }) {
   const [inUseCount, setInUseCount] = useState<number | null>(null);
 
   const role = query.data?.data.data;
+  // System roles are locked, so their seeded English description is replaced by a translation when one exists
+  // (`roles.systemDescriptions.<role_key>`); custom roles and unknown keys keep the backend text.
+  const systemKey = role?.is_system ? `systemDescriptions.${role.role_key}` : null;
+  const description = role ? (systemKey && t.has(systemKey) ? t(systemKey) : role.description) : "";
   const etag = query.data?.etag;
   const notFound = query.error ? parseApiError(query.error).status === 404 : false;
   // `null` = the page names nothing (404 / error): no extra breadcrumb level; `undefined` = loading.
@@ -129,7 +133,7 @@ export function RoleDetailView({ id }: { id: string }) {
               {t("detail.usersCount", { count: role.user_count })}
             </Link>
           </p>
-          {role.description ? <p className="max-w-2xl text-sm">{role.description}</p> : null}
+          {description ? <p className="max-w-2xl text-sm">{description}</p> : null}
         </div>
         <div className="flex gap-2">
           <PermissionGate permission={PERMISSION_KEYS.IAM_ROLES} action={PERMISSION_ACTIONS.UPDATE}>
