@@ -22,7 +22,13 @@ export const AUDIT_ENTITY_PERMISSION: Record<string, string> = {
   "cms.album": "cms.albums",
   "cms.faq_group": "cms.faq",
   "forms.form": "cms.forms",
+  "cms.locale": "cms.locales",
+  "cms.ui_string": "cms.ui_strings",
+  "cms.ui_strings_bundle": "cms.ui_strings",
 };
+
+// The collection tabs: `entity_id=0` means "every row of this entity type" and is valid for exactly these three types.
+export const AUDIT_COLLECTION_TYPES = ["cms.locale", "cms.ui_string", "cms.ui_strings_bundle"] as const;
 
 type Grants = Record<string, readonly string[]>;
 const callers = new WeakMap<MockDb, Grants | null>();
@@ -61,6 +67,10 @@ const ROWS: AuditLogEntry[] = [
   entry(4, 12, { action: "iam.role.permissions_updated", entity_type: "iam.role", entity_id: 3, summary: "Editor grants updated" }),
   entry(5, 15, { action: "cms.page.published", entity_type: "cms.page", entity_id: 4, summary: "Page published" }),
   entry(6, 18, { action: "authz.denied", result: "denied", entity_type: null, entity_id: null, has_changes: false }),
+  entry(7, 21, { action: "cms.locale.updated", entity_type: "cms.locale", entity_id: 2, summary: "locale lo updated: is_active, fallback_code" }),
+  entry(8, 24, { action: "cms.ui_string.restored", entity_type: "cms.ui_string", entity_id: 11, summary: "nav.home: restore of v2" }),
+  entry(9, 27, { action: "cms.ui_string.bundle_synced", entity_type: "cms.ui_string", entity_id: null, summary: "bundle 3f9c2ab: inserted=2 source_updated=1 kept_override=4", has_changes: false }),
+  entry(10, 27, { action: "cms.ui_strings_bundle.synced", entity_type: "cms.ui_strings_bundle", entity_id: null, summary: "bundle 3f9c2ab: inserted=2 source_updated=1 kept_override=4", has_changes: false }),
 ];
 
 export function listAuditLogs(db: MockDb, params: Params) {
@@ -69,7 +79,9 @@ export function listAuditLogs(db: MockDb, params: Params) {
   const entityType = params.get("entity_type");
   const entityId = params.get("entity_id");
   if (entityId !== null && entityType === null) throw validationFailed([{ in: "query", path: "/entity_type", code: "required" }]);
-  if (entityId !== null && !/^[1-9]\d*$/.test(entityId)) throw validationFailed([{ in: "query", path: "/entity_id", code: "invalid_format" }]);
+  const collection = entityType !== null && (AUDIT_COLLECTION_TYPES as readonly string[]).includes(entityType);
+  // `0` = the collection tab, accepted for exactly the three collection types.
+  if (entityId !== null && !(collection && entityId === "0") && !/^[1-9]\d*$/.test(entityId)) throw validationFailed([{ in: "query", path: "/entity_id", code: "invalid_format" }]);
 
   if (!can(grants, "ops.audit")) {
     const keys = [...new Set(params.keys())];
@@ -84,7 +96,7 @@ export function listAuditLogs(db: MockDb, params: Params) {
   const rows = ROWS.filter(
     (r) =>
       (entityType === null || r.entity_type === entityType) &&
-      (entityId === null || r.entity_id === Number(entityId)) &&
+      (entityId === null || (collection && entityId === "0") || r.entity_id === Number(entityId)) &&
       (params.get("action") === null || r.action === params.get("action")) &&
       (params.get("result") === null || r.result === params.get("result")) &&
       (from === null || r.occurred_at >= from) &&

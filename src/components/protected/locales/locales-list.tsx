@@ -11,6 +11,7 @@ import { DataTable } from "@/components/global/data-table";
 import { ErrorState } from "@/components/global/states/error-state";
 import { FetchingBar } from "@/components/global/states/fetching-bar";
 import { NoPermission } from "@/components/layout/no-permission";
+import { CollectionHistorySheet } from "@/components/protected/audit/collection-history";
 import { LocaleEditSheet } from "@/components/protected/locales/locale-edit-sheet";
 import { dependentsOf, formatDateExample } from "@/components/protected/locales/locale-rules";
 import { Badge } from "@/components/ui/badge";
@@ -146,6 +147,9 @@ export function LocalesList() {
   return (
     <div className="space-y-2">
       <FetchingBar active={isFetching && !isLoading} />
+      <div className="flex justify-end">
+        <CollectionHistorySheet entityType="cms.locale" />
+      </div>
       <DataTable
         columns={columns}
         data={locales}

@@ -22,7 +22,7 @@ describe("GET /audit-logs: who may ask which shape", () => {
     setAuditCaller(getMockDb(), { "ops.audit": ["read"] });
     expect(q("action=iam.user.updated").data).toHaveLength(1);
     expect(q("entity_type=iam.role").data).toHaveLength(1);
-    expect(q("").meta.total).toBe(6);
+    expect(q("").meta.total).toBe(10);
   });
 
   it("without ops.audit:read the TAB SHAPE (entity_type + entity_id + from/to/page/limit/sort) works with read on the entity key", () => {
@@ -47,5 +47,27 @@ describe("GET /audit-logs: who may ask which shape", () => {
   it("unknown keys are 422 and entity_id needs entity_type", () => {
     fails("keyword=a", 422);
     fails("entity_id=1", 422);
+  });
+});
+
+describe("GET /audit-logs: collection tabs (entity_id=0)", () => {
+  it("entity_id=0 returns the whole trail of cms.locale / cms.ui_string / cms.ui_strings_bundle with the new summaries", () => {
+    setAuditCaller(getMockDb(), { "cms.locales": ["read"], "cms.ui_strings": ["read"] });
+    expect(q("entity_type=cms.locale&entity_id=0").data.map((r) => r.summary)).toEqual(["locale lo updated: is_active, fallback_code"]);
+    const strings = q("entity_type=cms.ui_string&entity_id=0&limit=20").data.map((r) => r.summary);
+    expect(strings).toContain("nav.home: restore of v2");
+    expect(strings.some((x) => x?.startsWith("bundle "))).toBe(true);
+    expect(q("entity_type=cms.ui_strings_bundle&entity_id=0").data[0].summary).toBe("bundle 3f9c2ab: inserted=2 source_updated=1 kept_override=4");
+  });
+
+  it("entity_id=0 stays invalid for any other entity type, and an extra filter on a collection tab is 403 without ops.audit:read", () => {
+    setAuditCaller(getMockDb(), { "cms.locales": ["read"], "iam.users": ["read"] });
+    fails("entity_type=iam.user&entity_id=0", 422);
+    fails("entity_type=cms.locale&entity_id=0&action=cms.locale.updated", 403);
+  });
+
+  it("needs read on the key of that entity", () => {
+    setAuditCaller(getMockDb(), { "cms.locales": ["read"] });
+    fails("entity_type=cms.ui_string&entity_id=0", 403);
   });
 });

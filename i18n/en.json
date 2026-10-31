@@ -1316,6 +1316,20 @@
         "removed": "Removed",
         "changed": "Changed"
       }
+    },
+    "collection": {
+      "button": "History",
+      "empty": "No recorded events yet.",
+      "title": {
+        "locale": "Language history",
+        "uiString": "UI strings history",
+        "bundle": "Bundle sync history"
+      },
+      "description": {
+        "locale": "Changes to the languages of the site.",
+        "uiString": "Edits, restores and bundle syncs of the interface texts.",
+        "bundle": "Previous syncs from the website bundle."
+      }
     }
   },
   "locales": {
@@ -2610,7 +2624,10 @@
       "applied": "Bundle synced.",
       "failed": "The sync failed.",
       "cancel": "Cancel",
-      "apply": "Apply sync"
+      "apply": "Apply sync",
+      "history": {
+        "title": "Previous syncs"
+      }
     },
     "sheet": {
       "tabs": {

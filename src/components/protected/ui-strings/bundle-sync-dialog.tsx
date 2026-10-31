@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { useId, useState } from "react";
 import { toast } from "sonner";
 
+import { CollectionHistory } from "@/components/protected/audit/collection-history";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -158,6 +159,10 @@ function Content({ onClose }: { onClose: () => void }) {
             ) : null}
           </section>
         ) : null}
+        <section className="space-y-1.5">
+          <h3 className="text-sm font-medium">{t("history.title")}</h3>
+          <CollectionHistory entityType="cms.ui_strings_bundle" limit={5} />
+        </section>
       </div>
       <DialogFooter>
         <Button type="button" variant="ghost" onClick={onClose} disabled={sync.isPending}>{t("cancel")}</Button>

@@ -8,6 +8,7 @@ import { z } from "zod";
 
 import { ListPage } from "@/components/global/list/list-page";
 import { SingleSelectFilter, type SelectedType } from "@/components/global/single-select-filter";
+import { CollectionHistorySheet } from "@/components/protected/audit/collection-history";
 import { BundleSyncDialog } from "@/components/protected/ui-strings/bundle-sync-dialog";
 import { UiStringSheet } from "@/components/protected/ui-strings/ui-string-sheet";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -151,11 +152,14 @@ export function UiStringsPage() {
           <h1 className="text-2xl font-semibold tracking-wide">{t("title")}</h1>
           <p className="mt-1 text-base text-muted-foreground">{t("description")}</p>
         </div>
-        {canImport ? (
-          <Button type="button" variant="outline" onClick={() => setSyncOpen(true)}>
-            <RefreshCwIcon /> {t("sync.open")}
-          </Button>
-        ) : null}
+        <div className="flex flex-wrap items-center gap-2">
+          <CollectionHistorySheet entityType="cms.ui_string" />
+          {canImport ? (
+            <Button type="button" variant="outline" onClick={() => setSyncOpen(true)}>
+              <RefreshCwIcon /> {t("sync.open")}
+            </Button>
+          ) : null}
+        </div>
       </div>
 
       {meta ? (
