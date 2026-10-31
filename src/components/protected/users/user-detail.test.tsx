@@ -14,7 +14,7 @@ const me = vi.hoisted(() => ({ current: { id: 1, roleID: 1, permissions: [] as P
 vi.mock("@/hooks/use-auth", () => ({ useFetchCurrentUser: () => ({ data: { data: me.current } }) }));
 const router = vi.hoisted(() => ({ push: vi.fn(), replace: vi.fn() }));
 vi.mock("next/navigation", () => ({ useRouter: () => router, usePathname: () => "/admin/users/7" }));
-const toasts = vi.hoisted(() => ({ success: vi.fn(), error: vi.fn() }));
+const toasts = vi.hoisted(() => ({ success: vi.fn(), error: vi.fn(), warning: vi.fn() }));
 vi.mock("sonner", () => ({ toast: toasts }));
 
 const ROLES = [
@@ -51,6 +51,7 @@ beforeEach(() => {
   router.push.mockReset();
   toasts.success.mockReset();
   toasts.error.mockReset();
+  toasts.warning.mockReset();
 });
 
 const openMenu = async (u: ReturnType<typeof userEvent.setup>) => {
@@ -268,6 +269,44 @@ describe("UserDetailView: commands", () => {
     await u.click(await screen.findByRole("menuitem", { name: "Resend invitation" }));
     await waitFor(() => expect(called).toBe(1));
     await waitFor(() => expect(toasts.success).toHaveBeenCalledWith(expect.stringContaining("Invitation sent again")));
+  });
+
+  it("e-mail reset: logged_only shows an honest warning, queued keeps the success toast", async () => {
+    for (const [delivery, kind] of [["logged_only", "warning"], ["queued", "success"]] as const) {
+      const u = userEvent.setup();
+      toasts.success.mockReset();
+      toasts.warning.mockReset();
+      mockBase();
+      server.use(
+        http.post(`${API}/users/7/reset-password`, () =>
+          ok({ delivery: "email", temporary_password: null, link_expires_at: "2026-10-30T00:00:00Z", revoked_sessions: 1, email_delivery: delivery })
+        )
+      );
+      const { unmount } = renderApp(<UserDetailView id="7" />);
+      await openMenu(u);
+      await u.click(await screen.findByRole("menuitem", { name: "Reset password" }));
+      const dialog = await screen.findByRole("dialog", { name: "Reset the password of Ann" });
+      await u.click(within(dialog).getByRole("button", { name: "Reset password" }));
+      if (kind === "warning") {
+        await waitFor(() => expect(toasts.warning).toHaveBeenCalledWith(expect.stringContaining("only written to the server log")));
+        expect(toasts.success).not.toHaveBeenCalled();
+      } else {
+        await waitFor(() => expect(toasts.success).toHaveBeenCalledWith(expect.stringContaining("Reset link sent")));
+        expect(toasts.warning).not.toHaveBeenCalled();
+      }
+      unmount();
+    }
+  });
+
+  it("resend invitation: logged_only shows an honest warning", async () => {
+    const u = userEvent.setup();
+    mockBase(userOf({ state: "invited", status: false, invited_at: "2026-10-26T00:00:00Z" }));
+    server.use(http.post(`${API}/users/7/invitation/resend`, () => ok({ invitation_expires_at: "2026-10-30T00:00:00Z", email_delivery: "logged_only" })));
+    renderApp(<UserDetailView id="7" />);
+    await openMenu(u);
+    await u.click(await screen.findByRole("menuitem", { name: "Resend invitation" }));
+    await waitFor(() => expect(toasts.warning).toHaveBeenCalledWith(expect.stringContaining("only written to the server log")));
+    expect(toasts.success).not.toHaveBeenCalled();
   });
 
   it("an endpoint the backend does not have yet fails through normal error handling", async () => {

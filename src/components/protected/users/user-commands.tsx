@@ -119,6 +119,8 @@ export function UserCommands({ user }: { user: User }) {
           setPending(null);
           if (res.data.delivery === "temporary_password") {
             setIssued(secret);
+          } else if (res.data.email_delivery === "logged_only") {
+            toast.warning(t("reset.toast.loggedOnly", { sessions: res.data.revoked_sessions }));
           } else {
             toast.success(
               res.data.link_expires_at
@@ -150,14 +152,16 @@ export function UserCommands({ user }: { user: User }) {
               onSelect={() =>
                 resend.mutate(undefined, {
                   onSuccess: (res) =>
-                    toast.success(
-                      t("resend.toast.success", {
-                        expires: format.dateTime(new Date(res.data.invitation_expires_at), {
-                          dateStyle: "medium",
-                          timeStyle: "short",
-                        }),
-                      })
-                    ),
+                    res.data.email_delivery === "logged_only"
+                      ? toast.warning(t("resend.toast.loggedOnly"))
+                      : toast.success(
+                          t("resend.toast.success", {
+                            expires: format.dateTime(new Date(res.data.invitation_expires_at), {
+                              dateStyle: "medium",
+                              timeStyle: "short",
+                            }),
+                          })
+                        ),
                   onError: (error) => toastError(error, t("resend.toast.error")),
                 })
               }

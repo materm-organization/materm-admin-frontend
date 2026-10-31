@@ -980,13 +980,15 @@
         "toast": {
           "error": "Failed to reset the password",
           "linkSent": "Reset link sent. It expires {expires}. {sessions, plural, one {# session ended} other {# sessions ended}}.",
-          "linkSentNoExpiry": "Reset link sent. {sessions, plural, one {# session ended} other {# sessions ended}}."
+          "linkSentNoExpiry": "Reset link sent. {sessions, plural, one {# session ended} other {# sessions ended}}.",
+          "loggedOnly": "Email delivery is not configured; the link was only written to the server log. {sessions, plural, one {# session ended} other {# sessions ended}}."
         }
       },
       "resend": {
         "item": "Resend invitation",
         "toast": {
           "success": "Invitation sent again. It expires {expires}.",
+          "loggedOnly": "Email delivery is not configured; the invitation link was only written to the server log.",
           "error": "Failed to resend the invitation"
         }
       }
