@@ -121,6 +121,19 @@ await t.step('media: edit alt text + caption of a file, reload keeps them', asyn
   await page.keyboard.press('Escape');
 });
 
+await t.step('locales: the History sheet asks the collection trail (entity_id=0) and answers 200', async () => {
+  await open(page, '/admin/locales');
+  const w = page.waitForResponse((r) => /\/audit-logs\?/.test(r.url()) && /entity_type=cms\.locale/.test(r.url()));
+  await page.getByRole('button', { name: 'History' }).click();
+  const res = await w;
+  eq(res.status(), 200, 'audit-logs cms.locale');
+  const q = new URL(res.url()).searchParams;
+  eq(q.get('entity_id'), '0', 'entity_id=0');
+  ok([...q.keys()].every((k) => ['entity_type', 'entity_id', 'limit'].includes(k)), 'tab shape only');
+  await page.getByRole('dialog').waitFor({ timeout: 5000 });
+  await page.keyboard.press('Escape');
+});
+
 await t.step('every screen above produced no 5xx and no page error', async () => {
   const bad = sink.http.filter((h) => h.status >= 500); ok(bad.length === 0, JSON.stringify(bad));
   const pe = sink.console.filter((c) => c.startsWith('PAGEERROR')); ok(pe.length === 0, pe.join(' | '));
