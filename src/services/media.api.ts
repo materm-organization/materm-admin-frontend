@@ -9,6 +9,11 @@ import type {
   CreateMediaFolderPayload,
   MediaAsset,
   MediaAssetDetail,
+  MediaBulkDeleteUpdated,
+  MediaBulkItem,
+  MediaBulkMoveUpdated,
+  MediaBulkResult,
+  MediaDuplicateSummary,
   MediaFolder,
   MediaListQuery,
   MediaUploadResult,
@@ -104,6 +109,18 @@ export const MediaAPI = {
       })
     );
   },
+  // FR-MEDIA-11. `folder_id` is REQUIRED (null = the root). <= 100 items, unique ids; no `If-Match` header.
+  BulkMove: async (items: MediaBulkItem[], folderId: number | null) => {
+    const { data } = await axiosInstance.post<ApiResponse<MediaBulkResult<MediaBulkMoveUpdated>>>(API_ENDPOINTS.MEDIA.BULK_MOVE, {
+      items,
+      folder_id: folderId,
+    });
+    return data.data;
+  },
+  BulkDelete: async (items: MediaBulkItem[]) => {
+    const { data } = await axiosInstance.post<ApiResponse<MediaBulkResult<MediaBulkDeleteUpdated>>>(API_ENDPOINTS.MEDIA.BULK_DELETE, { items });
+    return data.data;
+  },
   // Flat, not paginated, ordered by path.
   ListFolders: async () => {
     const { data } = await axiosInstance.get<ApiResponse<MediaFolder[]>>(API_ENDPOINTS.MEDIA.FOLDERS);
@@ -160,12 +177,11 @@ export type UploadOptions = {
   onProgress?: (percent: number | undefined) => void;
 };
 
-// THE ONE PLACE that knows how the backend reports a duplicate checksum (FR-MEDIA-12). The final shape is not
-// decided yet, so this accepts the plausible ones and returns `null` when the body is not a duplicate warning:
-//   { code: "DUPLICATE_MEDIA" | ..., details: { duplicate_of: 12 } }
-//   { details: { duplicate_of: { id: 12, ... } } }  /  { details: { existing: {...} } }
-//   { success: true, data: {...}, duplicate_of: 12 }  /  { data: { duplicate_of: ... } } / { warnings: [{ code: "duplicate", params }] }
-// `existing` is the asset itself when the body carries it, else only the id is known.
+// THE ONE PLACE that knows how the backend reports a duplicate checksum (FR-MEDIA-12). The real answer is
+//   409 CONFLICT_DUPLICATE, details = { reason: "duplicate_checksum", duplicate_of: { id, public_id, original_filename, kind, mime_type, etag, url? } }
+// a PARTIAL asset (`existing` is only a summary, to show the name). The older guesses are still read, returning `null` when
+// the body is not a duplicate warning:
+//   { details: { duplicate_of: 12 } } / { details: { existing: {...} } } / { success: true, duplicate_of: 12 } / { warnings: [...] }
 export function parseDuplicate(body: unknown): Extract<MediaUploadResult, { kind: "duplicate" }> | null {
   const root = asRecord(body);
   if (!root) return null;
@@ -175,7 +191,7 @@ export function parseDuplicate(body: unknown): Extract<MediaUploadResult, { kind
     for (const key of ["duplicate_of", "existing_asset", "existing", "existing_asset_id", "existing_id"]) {
       const found = source[key];
       const id = toId(found);
-      if (id !== null) return { kind: "duplicate", existingId: id, existing: isAssetLike(found) ? (found as MediaAsset) : null };
+      if (id !== null) return { kind: "duplicate", existingId: id, existing: toSummary(found) };
     }
   }
   const warnings = Array.isArray(root.warnings) ? root.warnings : [];
@@ -191,10 +207,12 @@ export function parseDuplicate(body: unknown): Extract<MediaUploadResult, { kind
 
 const asRecord = (value: unknown): Record<string, unknown> | null =>
   value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : null;
-const isAssetLike = (value: unknown): boolean => {
+// The duplicate's own data is only a SUMMARY (409 `CONFLICT_DUPLICATE`, `details.duplicate_of`): never treated as a full asset.
+function toSummary(value: unknown): MediaDuplicateSummary | null {
   const rec = asRecord(value);
-  return rec !== null && typeof rec.id === "number" && typeof rec.original_filename === "string";
-};
+  if (!rec || typeof rec.id !== "number" || typeof rec.original_filename !== "string") return null;
+  return rec as unknown as MediaDuplicateSummary;
+}
 function toId(value: unknown): number | null {
   if (typeof value === "number" && Number.isInteger(value) && value > 0) return value;
   if (typeof value === "string" && /^\d+$/.test(value)) return Number(value);

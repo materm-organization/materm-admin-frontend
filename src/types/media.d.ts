@@ -149,4 +149,28 @@ export type MediaAssetsPage = { rows: MediaAsset[]; meta: ApiMeta };
 // server sent it (else only its id is known).
 export type MediaUploadResult =
   | { kind: "created"; asset: MediaAssetDetail; etag: string | undefined }
-  | { kind: "duplicate"; existingId: number; existing: MediaAsset | null };
+  | { kind: "duplicate"; existingId: number; existing: MediaDuplicateSummary | null };
+
+// `details.duplicate_of` of the 409 `CONFLICT_DUPLICATE` (`details.reason = "duplicate_checksum"`): a PARTIAL asset, not
+// the detail. Whoever needs the real asset fetches `GET /media/assets/{id}` first (`MediaAPI.GetAsset`).
+export type MediaDuplicateSummary = {
+  id: number;
+  public_id?: string;
+  original_filename: string;
+  kind?: MediaKind;
+  mime_type?: string;
+  etag?: string;
+  url?: string;
+};
+
+// FR-MEDIA-11 bulk move / delete (`POST /media/assets/bulk-move|bulk-delete`, doc/05 11.6). Each item carries the ETag the
+// caller last read; a request-level problem is a 422 / 403, everything per item is in `skipped`.
+export type MediaBulkItem = { id: number; etag: string };
+export type MediaBulkMoveReason = "not_found" | "stale" | "trashed" | "unchanged" | "error";
+export type MediaBulkDeleteReason = "not_found" | "stale" | "already_deleted" | "in_use" | "error";
+// `request_failed` is added by the client for the items of a chunk whose request failed as a whole.
+export type MediaBulkSkippedReason = MediaBulkMoveReason | MediaBulkDeleteReason | "request_failed";
+export type MediaBulkSkipped = { id: number; reason: MediaBulkSkippedReason; etag?: string };
+export type MediaBulkMoveUpdated = { id: number; folder_id?: number | null; etag: string };
+export type MediaBulkDeleteUpdated = { id: number; purge_at: string; etag: string };
+export type MediaBulkResult<U> = { updated: U[]; skipped: MediaBulkSkipped[]; counts: { updated: number; skipped: number } };

@@ -1,11 +1,13 @@
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { http } from "msw";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { MediaPicker, type MediaPickerProps } from "@/components/protected/media/media-picker";
 import { matchesAccept } from "@/lib/media-upload";
 import { getMockDb } from "@/mocks/mock-db";
 import { useMockApi } from "@/mocks/test-setup";
+import { server } from "@/test/msw-server";
 import { grants, renderApp } from "@/test/render-app";
 import type { PermissionGrant } from "@/types/user";
 
@@ -71,11 +73,20 @@ describe("MediaPicker: Upload new", () => {
     const digest = await crypto.subtle.digest("SHA-256", bytes);
     getMockDb().assets.find((a) => a.id === 6)!.checksum_sha256 = [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, "0")).join("");
     const before = getMockDb().assets.length;
+    const detailReads: string[] = [];
+    server.use(
+      http.get("*/api/v1/media/assets/:id", ({ params }) => {
+        detailReads.push(String(params.id));
+        return undefined;
+      })
+    );
     const { user, dialog, input, onSelect } = await openUpload();
     await user.upload(input, png("same-as-6.png", 9));
     await user.click(await within(dialog).findByRole("button", { name: "Use the existing file" }, { timeout: 4000 }));
     await waitFor(() => expect(onSelect).toHaveBeenCalledTimes(1));
     expect(onSelect.mock.calls[0][0]).toMatchObject([{ id: 6, filename: "blog-card-2.jpg" }]);
+    // the 409 carries a PARTIAL asset: the full one is read before it is selected
+    expect(detailReads).toContain("6");
     expect(getMockDb().assets).toHaveLength(before);
   });
 

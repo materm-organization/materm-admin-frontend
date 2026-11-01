@@ -3,10 +3,10 @@
 //   POST /media/assets/{id}/file     multipart, ONE part `file`, `If-Match` required
 // Strict like the rest of the mock (unknown query / form fields are 422 `unknown_field`, no `If-Match` is 428, a stale
 // one 409), the type is decided by MAGIC BYTES (415) and the size by the type (413). A duplicate checksum answers
-// 409 `DUPLICATE_MEDIA` with `details.duplicate_of` = the existing asset: that shape is an ASSUMPTION (not final in the
-// backend), `parseDuplicate` in services/media.api.ts is the only code that reads it.
+// 409 `CONFLICT_DUPLICATE`, `details = { reason: "duplicate_checksum", duplicate_of: { id, public_id, original_filename, kind,
+// mime_type, etag, url } }` = the REAL shape, a partial asset; `parseDuplicate` in services/media.api.ts is the only code that reads it.
 import { MOCK_USER, fail, etagOf, requireIfMatch, tick, validationFailed, type MockDb } from "@/mocks/mock-core";
-import { findAsset, recomputeFolders, tileUrl, toListRow } from "@/mocks/mock-db";
+import { findAsset, recomputeFolders, tileUrl } from "@/mocks/mock-db";
 import type { ApiFieldError } from "@/types/api";
 import type { MediaAssetDetail, MediaKind } from "@/types/media";
 
@@ -130,7 +130,9 @@ export async function uploadAsset(db: MockDb, request: Request) {
 
   const existing = db.assets.find((a) => !a.deleted_at && a.checksum_sha256 === checksum);
   if (existing && !allowDuplicate) {
-    throw fail(409, "DUPLICATE_MEDIA", "A file with the same content already exists.", { details: { duplicate_of: toListRow(existing) } });
+    // The real shape (admin backend): a PARTIAL asset, not the detail.
+    const duplicateOf = { id: existing.id, public_id: existing.public_id, original_filename: existing.original_filename, kind: existing.kind, mime_type: existing.mime_type, etag: etagOf(existing.updated_at), url: existing.url };
+    throw fail(409, "CONFLICT_DUPLICATE", "A file with the same content already exists.", { details: { reason: "duplicate_checksum", duplicate_of: duplicateOf } });
   }
 
   const id = Math.max(0, ...db.assets.map((a) => a.id)) + 1;

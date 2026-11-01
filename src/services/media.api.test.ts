@@ -100,7 +100,7 @@ describe("MediaAPI.UploadFile / ReplaceFile (against the strict mock)", () => {
 describe("parseDuplicate (the one place that knows the duplicate shape)", () => {
   const existing = { id: 12, original_filename: "old.png" };
   it("reads the plausible shapes", () => {
-    expect(parseDuplicate({ code: "DUPLICATE_MEDIA", details: { duplicate_of: existing } })).toMatchObject({ existingId: 12, existing });
+    expect(parseDuplicate({ code: "CONFLICT_DUPLICATE", details: { reason: "duplicate_checksum", duplicate_of: existing } })).toMatchObject({ existingId: 12, existing });
     expect(parseDuplicate({ details: { duplicate_of: 12 } })).toEqual({ kind: "duplicate", existingId: 12, existing: null });
     expect(parseDuplicate({ details: { existing } })).toMatchObject({ existingId: 12 });
     expect(parseDuplicate({ success: true, duplicate_of: 12 })).toMatchObject({ existingId: 12 });
@@ -115,5 +115,23 @@ describe("parseDuplicate (the one place that knows the duplicate shape)", () => 
   it("a 2xx duplicate warning from the server is a duplicate result, not a created asset", async () => {
     server.use(http.post(`${API}/media/uploads`, () => HttpResponse.json({ success: true, data: null, duplicate_of: 5 }, { status: 200 })));
     await expect(MediaAPI.UploadFile(pngFile())).resolves.toMatchObject({ kind: "duplicate", existingId: 5 });
+  });
+});
+
+describe("duplicate upload against the strict mock (real shape)", () => {
+  useMockApi();
+  it("409 CONFLICT_DUPLICATE with a PARTIAL duplicate_of is a duplicate result carrying the summary only", async () => {
+    const db = getMockDb();
+    const bytes = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 7]);
+    const digest = await crypto.subtle.digest("SHA-256", bytes);
+    db.assets.find((a) => a.id === 6)!.checksum_sha256 = [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, "0")).join("");
+    const result = await MediaAPI.UploadFile(new File([bytes], "dup.png", { type: "image/png" }));
+    expect(result).toMatchObject({ kind: "duplicate", existingId: 6, existing: { id: 6, original_filename: "blog-card-2.jpg", mime_type: "image/jpeg" } });
+    // a summary, not the detail: no bytes / translations / usage_count
+    expect((result as { existing: object }).existing).not.toHaveProperty("translations");
+  });
+  it("parseDuplicate reads the real details and never exposes it as a full asset", () => {
+    const body = { success: false, code: "CONFLICT_DUPLICATE", details: { reason: "duplicate_checksum", duplicate_of: { id: 4, public_id: "p", original_filename: "a.png", kind: "image", mime_type: "image/png", etag: '"e"' } } };
+    expect(parseDuplicate(body)).toMatchObject({ kind: "duplicate", existingId: 4, existing: { original_filename: "a.png", etag: '"e"' } });
   });
 });

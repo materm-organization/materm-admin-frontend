@@ -6,7 +6,7 @@
 //                       -> duplicate                 (same checksum: "use existing file" -> done, "upload anyway" -> queued)
 //                       -> failed                    (`Retry` -> queued; 429 / 503 / network are retried automatically a few times)
 import { isAutoRetryable, mapUploadError, MAX_FILES_PER_BATCH, UPLOAD_CONCURRENCY, type UploadError } from "@/lib/media-upload";
-import type { MediaAsset, MediaAssetDetail, MediaUploadResult } from "@/types/media";
+import type { MediaAsset, MediaAssetDetail, MediaDuplicateSummary, MediaUploadResult } from "@/types/media";
 
 export type UploadStatus = "queued" | "uploading" | "done" | "failed" | "duplicate";
 
@@ -23,7 +23,9 @@ export type UploadItem = {
   asset?: MediaAsset | MediaAssetDetail;
   reusedExisting?: boolean;
   // `duplicate`: the asset the server already has (`existing` may be unknown: only its id).
-  duplicate?: { existingId: number; existing: MediaAsset | null };
+  duplicate?: { existingId: number; existing: MediaDuplicateSummary | null };
+  // `Use the existing file` is fetching the full asset (the duplicate answer carries only a summary).
+  resolving?: boolean;
   allowDuplicate: boolean;
 };
 
@@ -38,6 +40,9 @@ export type UploadFn = (
 
 export type QueueOptions = {
   upload: UploadFn;
+  // Loads the FULL asset of a duplicate (`GET /media/assets/{id}`): the 409 carries a partial one. Without it the
+  // summary is not used as an asset (tests of the queue alone).
+  fetchExisting?: (id: number) => Promise<MediaAsset | MediaAssetDetail>;
   // Client-side convenience check (`checkFile`): an error here puts the file straight to `failed` (not retryable).
   precheck?: (file: File, context: UploadContext) => UploadError | null;
   concurrency?: number;
@@ -187,10 +192,21 @@ export class UploadQueue {
   }
 
   // Duplicate choice 1: keep the existing file, nothing is uploaded.
-  reuseExisting(id: string) {
+  async reuseExisting(id: string): Promise<void> {
     const item = this.get(id);
-    if (!item || item.status !== "duplicate" || !item.duplicate) return;
-    this.patch(id, { status: "done", asset: item.duplicate.existing ?? undefined, reusedExisting: true });
+    if (!item || item.status !== "duplicate" || !item.duplicate || item.resolving) return;
+    const { existingId } = item.duplicate;
+    if (!this.options.fetchExisting) {
+      this.patch(id, { status: "done", asset: undefined, reusedExisting: true });
+      return;
+    }
+    this.patch(id, { resolving: true });
+    try {
+      const asset = await this.options.fetchExisting(existingId);
+      if (this.get(id)?.status === "duplicate") this.patch(id, { status: "done", asset, reusedExisting: true, resolving: false });
+    } catch (error) {
+      if (this.get(id)?.status === "duplicate") this.patch(id, { status: "failed", error: mapUploadError(error), resolving: false, duplicate: undefined });
+    }
   }
   // Duplicate choice 2: send it again with `allow_duplicate=true`.
   uploadAnyway(id: string) {

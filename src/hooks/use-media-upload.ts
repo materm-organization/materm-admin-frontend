@@ -22,6 +22,7 @@ export function useMediaUpload({ folderId, allowSvg, accept }: { folderId: numbe
       new UploadQueue({
         upload: (file, { allowDuplicate, signal, onProgress, context }) =>
           MediaAPI.UploadFile(file, { folderId: context.folderId, allowDuplicate, signal, onProgress }),
+        fetchExisting: async (id) => (await MediaAPI.GetAsset(id)).data.data,
         precheck: (file, context) =>
           matchesAccept(file, context.accept)
             ? checkFile(file, { allowSvg: context.allowSvg })

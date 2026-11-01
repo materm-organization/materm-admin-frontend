@@ -138,16 +138,19 @@ describe("UploadQueue", () => {
 
   it("a duplicate pauses the file: 'use existing' finishes it, 'upload anyway' resends with allow_duplicate", async () => {
     const { upload, calls } = controllable();
-    const q = new UploadQueue({ upload });
+    const fetchExisting = vi.fn(async (id: number) => ({ id, original_filename: "old.png", full: true }) as never);
+    const q = new UploadQueue({ upload, fetchExisting });
     q.add([png("a"), png("b")]);
-    const existing = { id: 7, original_filename: "old.png" } as never;
+    const existing = { id: 7, original_filename: "old.png" };
     calls[0].resolve({ kind: "duplicate", existingId: 7, existing });
     calls[1].resolve({ kind: "duplicate", existingId: 8, existing: null });
     await flush();
     expect(byName(q, "a")).toMatchObject({ status: "duplicate", duplicate: { existingId: 7 } });
 
-    q.reuseExisting(byName(q, "a").id);
-    expect(byName(q, "a")).toMatchObject({ status: "done", reusedExisting: true, asset: { id: 7 } });
+    await q.reuseExisting(byName(q, "a").id);
+    // the summary is not the asset: the FULL one is fetched first
+    expect(fetchExisting).toHaveBeenCalledWith(7);
+    expect(byName(q, "a")).toMatchObject({ status: "done", reusedExisting: true, asset: { id: 7, full: true } });
     expect(calls).toHaveLength(2);
 
     q.uploadAnyway(byName(q, "b").id);
@@ -211,5 +214,18 @@ describe("UploadQueue", () => {
     q.clearDone();
     expect(q.getSnapshot().map((i) => i.file.name)).toEqual(["b"]);
     expect(listener).toHaveBeenCalled();
+  });
+});
+
+describe("reuseExisting when the full asset can not be fetched", () => {
+  it("the file fails (retryable) instead of selecting a partial asset", async () => {
+    const { upload, calls } = controllable();
+    const q = new UploadQueue({ upload, fetchExisting: async () => Promise.reject(new Error("boom")) });
+    q.add([png("a")]);
+    calls[0].resolve({ kind: "duplicate", existingId: 7, existing: { id: 7, original_filename: "old.png" } });
+    await flush();
+    await q.reuseExisting(byName(q, "a").id);
+    expect(byName(q, "a")).toMatchObject({ status: "failed" });
+    expect(byName(q, "a").asset).toBeUndefined();
   });
 });
