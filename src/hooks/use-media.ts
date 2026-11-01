@@ -2,11 +2,16 @@ import { keepPreviousData, useMutation, useQuery, useQueryClient, type QueryClie
 
 import { API_ENDPOINTS } from "@/lib/constants/api-endpoints";
 import type { WithEtag } from "@/lib/etag";
+import { runBulkChunks, toBulkItems } from "@/lib/media-bulk";
 import { revisionsQueryKey } from "@/lib/revision-resources";
 import { MediaAPI } from "@/services/media.api";
 import type { ApiResponse } from "@/types/api";
 import type {
   CreateMediaFolderPayload,
+  MediaBulkDeleteUpdated,
+  MediaBulkMoveUpdated,
+  MediaBulkResult,
+  MediaAsset,
   MediaAssetDetail,
   MediaListQuery,
   UpdateMediaAssetPayload,
@@ -141,3 +146,24 @@ export const useMutationDeleteMediaFolder = () => {
     },
   });
 };
+
+// FR-MEDIA-11. The rows come from the loaded list (each row's ETag is its precondition); more than 100 go in chunks. The
+// answer is always a merged result (`error` = the request-level failure that stopped the run, if any).
+type BulkRows = { rows: Pick<MediaAsset, "id" | "updated_at">[] };
+function useBulkMedia<U extends { id: number }, V extends BulkRows>(call: (items: ReturnType<typeof toBulkItems>, variables: V) => Promise<MediaBulkResult<U>>) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (variables: V) => runBulkChunks(toBulkItems(variables.rows), (chunk) => call(chunk, variables)),
+    onSettled: (data) => {
+      for (const u of data?.result.updated ?? []) void queryClient.invalidateQueries({ queryKey: mediaAssetKey(u.id) });
+      void queryClient.invalidateQueries({ queryKey: MEDIA_LISTS_KEY });
+      void queryClient.invalidateQueries({ queryKey: MEDIA_FOLDERS_KEY });
+      void queryClient.invalidateQueries({ queryKey: ["schema-form", "media"] });
+      void queryClient.invalidateQueries({ queryKey: ["schema-form", "media-list"] });
+    },
+  });
+}
+
+export const useMutationBulkMoveMedia = () =>
+  useBulkMedia<MediaBulkMoveUpdated, BulkRows & { folderId: number | null }>((items, { folderId }) => MediaAPI.BulkMove(items, folderId));
+export const useMutationBulkDeleteMedia = () => useBulkMedia<MediaBulkDeleteUpdated, BulkRows>((items) => MediaAPI.BulkDelete(items));

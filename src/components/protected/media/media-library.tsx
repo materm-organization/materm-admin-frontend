@@ -17,6 +17,7 @@ import { EmptyFiltered } from "@/components/global/states/empty-filtered";
 import { ErrorState } from "@/components/global/states/error-state";
 import { FetchingBar } from "@/components/global/states/fetching-bar";
 import { NoPermission } from "@/components/layout/no-permission";
+import { MediaBulkActions } from "@/components/protected/media/media-bulk-actions";
 import { MediaFolderTree, NO_FOLDER } from "@/components/protected/media/media-folders";
 import { MediaAssetSheet } from "@/components/protected/media/media-asset-sheet";
 import { MediaUploadButton } from "@/components/protected/media/media-upload-dialog";
@@ -94,6 +95,8 @@ export function MediaLibrary() {
   const canSeeTrash = useCan(PERMISSION_KEYS.MEDIA_LIBRARY, [PERMISSION_ACTIONS.DELETE, PERMISSION_ACTIONS.DELETE_OWN]);
   const canDeleteFolder = useCan(PERMISSION_KEYS.MEDIA_LIBRARY, PERMISSION_ACTIONS.DELETE);
 
+  const canBulkDelete = canDeleteFolder;
+
   const { filters } = list.params;
   const query = useMemo<MediaListQuery>(() => {
     const q: MediaListQuery = { ...(list.query as MediaListQuery) };
@@ -112,6 +115,7 @@ export function MediaLibrary() {
   const rowSelection = selection.key === queryKey ? selection.rows : {};
   const setRowSelection = (next: RowSelectionState) => setSelection({ key: queryKey, rows: next });
   const selectedRows = rows.filter((r) => rowSelection[String(r.id)]);
+  const allSelected = rows.length > 0 && selectedRows.length === rows.length;
 
   const copyNames = async () => {
     const text = selectedRows.map((r) => r.original_filename).join("\n");
@@ -292,7 +296,15 @@ export function MediaLibrary() {
               <CopyIcon />
               {t("bulk.copyNames")}
             </Button>
-            <span className="text-xs text-muted-foreground">{t("bulk.note")}</span>
+            {!trashed ? (
+              <MediaBulkActions
+                rows={selectedRows}
+                canMove={canUpdate}
+                canDelete={canBulkDelete}
+                // The skipped ones stay selected (the list is reloaded by the mutation; the query key does not change).
+                onFinished={(keep) => setRowSelection(Object.fromEntries(keep.map((id) => [String(id), true])))}
+              />
+            ) : null}
           </BulkBar>
         ) : null}
 
@@ -336,6 +348,15 @@ export function MediaLibrary() {
                 />
               )
             ) : (
+              <>
+              <label className="mb-2 flex w-fit cursor-pointer items-center gap-2 text-sm">
+                <Checkbox
+                  checked={allSelected ? true : selectedRows.length > 0 ? "indeterminate" : false}
+                  onCheckedChange={(value) => setRowSelection(value === true ? Object.fromEntries(rows.map((r) => [String(r.id), true])) : {})}
+                  aria-label={t("bulk.selectAll")}
+                />
+                {t("bulk.selectAll")}
+              </label>
               <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4" aria-label={t("grid.label")}>
                 {rows.map((asset) => (
                   <MediaTile
@@ -349,6 +370,7 @@ export function MediaLibrary() {
                   />
                 ))}
               </ul>
+              </>
             )}
           </div>
         )}

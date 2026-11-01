@@ -70,6 +70,9 @@ export const API_ENDPOINTS = {
     // P2 (FR-MEDIA-01 / 08). Note the paths: NOT under `/media/assets` (as agreed with the backend task).
     UPLOADS: "/media/uploads",
     ASSET_FILE: (id: number | string) => `/media/assets/${id}/file`,
+    // FR-MEDIA-11: up to 100 `{id, etag}` per request, each item's etag is its own precondition (no If-Match header).
+    BULK_MOVE: "/media/assets/bulk-move",
+    BULK_DELETE: "/media/assets/bulk-delete",
   },
   // Revisions of the save-live entities (doc/05 section 11.7). `base` = `/menus/main`, `/settings/brand`,
   // `/ui-strings/<key>`, `/categories/3`, `/tags/5`, `/media/assets/7` (see `lib/revision-resources.ts`).

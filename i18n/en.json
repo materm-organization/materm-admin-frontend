@@ -1824,7 +1824,53 @@
       "copyNames": "Copy file names",
       "copied": "{count, plural, one {# file name copied} other {# file names copied}}",
       "copyFailed": "Could not copy to the clipboard.",
-      "note": "Moving and deleting several files at once comes with uploads."
+      "cancel": "Cancel",
+      "move": {
+        "button": "Move to folder",
+        "title": "{count, plural, one {Move # file} other {Move # files}}",
+        "description": "Choose the folder the selected files go to. The root means no folder.",
+        "folder": "Folder",
+        "root": "No folder (root)",
+        "confirm": "Move",
+        "done": "{count, plural, one {# file moved} other {# files moved}}",
+        "failed": "Could not move the files.",
+        "resultTitle": "Move finished"
+      },
+      "delete": {
+        "button": "Delete",
+        "title": "{count, plural, one {Delete # file?} other {Delete # files?}}",
+        "description": "The files go to the trash and can be restored for 30 days. Files that are still used on a page, post or album are skipped and stay where they are.",
+        "confirm": "Delete",
+        "done": "{count, plural, one {# file deleted} other {# files deleted}}",
+        "failed": "Could not delete the files.",
+        "resultTitle": "Delete finished"
+      },
+      "result": {
+        "counts": "{updated, plural, one {# file changed} other {# files changed}}, {skipped, plural, one {# skipped} other {# skipped}}.",
+        "skippedHeading": "Skipped files",
+        "keptSelected": "The skipped files stay selected.",
+        "close": "Close"
+      },
+      "reasons": {
+        "error": "Could not be processed. Try again.",
+        "move": {
+          "not_found": "The file no longer exists.",
+          "stale": "Somebody changed this file meanwhile. The list was reloaded; try again.",
+          "trashed": "The file is in the trash.",
+          "unchanged": "Already in that folder.",
+          "error": "Could not be processed. Try again.",
+          "request_failed": "Not sent: the request failed."
+        },
+        "delete": {
+          "not_found": "The file no longer exists.",
+          "stale": "Somebody changed this file meanwhile. The list was reloaded; try again.",
+          "already_deleted": "Already in the trash.",
+          "in_use": "Still used on a page, post or album, so it was not deleted.",
+          "error": "Could not be processed. Try again.",
+          "request_failed": "Not sent: the request failed."
+        }
+      },
+      "selectAll": "Select all files on this page"
     },
     "columns": {
       "name": "File",

@@ -91,6 +91,7 @@ import {
   restoreFaqRevision,
   unpublishFaqGroup,
 } from "@/mocks/mock-faq";
+import { bulkDeleteAssets, bulkMoveAssets } from "@/mocks/mock-media-bulk";
 import { replaceAssetFile, uploadAsset } from "@/mocks/mock-media-upload";
 import { createPreviewLink, listPreviewLinks, revokePreviewLink } from "@/mocks/mock-preview";
 import { getSettingsGroup, listSettingsGroups, putSettingsGroup } from "@/mocks/mock-settings";
@@ -157,6 +158,9 @@ const mediaHandlers: HttpHandler[] = [
     const { data, meta } = listAssets(getMockDb(), searchOf(request));
     return ok(data, { meta });
   })),
+  // FR-MEDIA-11: fixed segments, declared before `/media/assets/:id` (POST has no `:id` route, but keep the order obvious).
+  http.post(P("/media/assets/bulk-move"), guard(async ({ request }) => ok(bulkMoveAssets(getMockDb(), await jsonBody(request))))),
+  http.post(P("/media/assets/bulk-delete"), guard(async ({ request }) => ok(bulkDeleteAssets(getMockDb(), await jsonBody(request))))),
   http.get(P("/media/assets/:id"), guard(({ params }) => {
     const { asset, etag } = getAsset(getMockDb(), param(params, "id"));
     return ok(asset, { etag });

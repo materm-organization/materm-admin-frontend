@@ -216,7 +216,7 @@ function UploadRow({ item, queue }: { item: UploadItem; queue: Queue }) {
             <div className="mt-1 space-y-2">
               <p className="text-xs">{t("duplicate.message", { name: duplicateName })}</p>
               <div className="flex flex-wrap gap-2">
-                <Button type="button" size="sm" variant="outline" onClick={() => queue.reuseExisting(item.id)}>
+                <Button type="button" size="sm" variant="outline" disabled={item.resolving} onClick={() => void queue.reuseExisting(item.id)}>
                   {t("duplicate.useExisting")}
                 </Button>
                 <Button type="button" size="sm" variant="outline" onClick={() => queue.uploadAnyway(item.id)}>
