@@ -148,6 +148,12 @@ export const API_ENDPOINTS = {
     DETAIL: (id: number | string) => `/categories/${id}`,
     RESTORE: (id: number | string) => `/categories/${id}/restore`,
   },
+  REDIRECTS: {
+    LIST: "/redirects",
+    DETAIL: (id: number | string) => `/redirects/${id}`,
+    CHECK: "/redirects/check",
+    EXPORT: "/redirects/export",
+  },
   TAGS: {
     LIST: "/tags",
     DETAIL: (id: number | string) => `/tags/${id}`,

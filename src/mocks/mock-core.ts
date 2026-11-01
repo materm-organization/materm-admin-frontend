@@ -7,6 +7,7 @@ import type { MenuDetail } from "@/types/menus";
 import type { PublishableStatus } from "@/types/publishing";
 import type { RevisionDetail, RevisionKind } from "@/types/revisions";
 import type { CachePurgeResult } from "@/types/system";
+import type { Redirect } from "@/types/redirects";
 import type { Category, Tag } from "@/types/taxonomy";
 
 export const MOCK_USER = { id: 6, name: "Noy Keomany" } as const;
@@ -295,6 +296,9 @@ export type MockDb = {
   tags: Tag[];
   nextCategoryId: number;
   nextTagId: number;
+  // SCR-42 redirects (doc/05 6.10): save-live rows, ETag = `"<updated_at>"`.
+  redirects: Redirect[];
+  nextRedirectId: number;
   // --- T1.4.4 preview links ---------------------------------------------------------------------------------
   previewLinks: MockPreviewLink[];
   nextPreviewLinkId: number;

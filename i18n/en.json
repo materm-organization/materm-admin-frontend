@@ -221,7 +221,8 @@
     "pages": "Pages",
     "posts": "Blog posts",
     "galleries": "Galleries",
-    "faq": "FAQ"
+    "faq": "FAQ",
+    "redirects": "Redirects"
   },
   "breadcrumb": {
     "forms": "Forms",
@@ -243,7 +244,8 @@
     "pages": "Pages",
     "posts": "Blog posts",
     "galleries": "Galleries",
-    "faq": "FAQ"
+    "faq": "FAQ",
+    "redirects": "Redirects"
   },
   "dashboard": {
     "title": "Dashboard",
@@ -767,7 +769,10 @@
       "media_not_ready": "This image is not ready to use yet.",
       "empty_default_locale": "This text is required in the default language.",
       "template_violation": "This does not fit the page template.",
-      "media_alt_missing": "The image has no alt text in the default language."
+      "media_alt_missing": "The image has no alt text in the default language.",
+      "redirect_loop": "The redirect would loop.",
+      "redirect_chain_too_long": "The chain of redirects is too long. Point it straight at the final address.",
+      "target_equals_source": "The new address is the same as the old one."
     },
     "loadAccount": "Could not load your account. Check your connection and try again."
   },
@@ -4046,6 +4051,99 @@
       "added": "The question was added.",
       "failed": "The question could not be added.",
       "full": "The group is full."
+    }
+  },
+  "redirects": {
+    "title": "Redirects",
+    "description": "Send an old address to a new one. Changes go live at once. A published page at the same address always wins.",
+    "searchPlaceholder": "Search by address or note",
+    "create": "New redirect",
+    "export": "Export CSV",
+    "empty": "No redirects yet.",
+    "active": "Active",
+    "inactive": "Inactive",
+    "allLanguages": "All languages",
+    "status": {
+      "301": "moved for good",
+      "302": "moved for now",
+      "307": "temporary, same method",
+      "308": "permanent, same method"
+    },
+    "filters": {
+      "code": "Code",
+      "language": "Language",
+      "status": "State"
+    },
+    "columns": {
+      "source": "From",
+      "target": "To",
+      "code": "Code",
+      "language": "Language",
+      "status": "State",
+      "updated": "Updated",
+      "actions": "Actions"
+    },
+    "actions": {
+      "edit": "Edit {path}",
+      "delete": "Delete {path}"
+    },
+    "delete": {
+      "title": "Delete the redirect from \"{path}\"?",
+      "description": "The old address stops redirecting at once. To bring it back, create the redirect again.",
+      "confirm": "Delete"
+    },
+    "toast": {
+      "deleted": "Redirect deleted.",
+      "deleteFailed": "It could not be deleted.",
+      "stale": "Someone else changed this redirect. The list was reloaded.",
+      "exported": "The file was downloaded.",
+      "exportFailed": "The file could not be exported."
+    },
+    "dialog": {
+      "createTitle": "New redirect",
+      "editTitle": "Edit redirect",
+      "createDescription": "The old address and where it should lead.",
+      "editDescription": "Changes go live at once.",
+      "source": "Old address",
+      "sourceHelp": "A path that starts with /. Lower case; a trailing / is removed.",
+      "target": "New address",
+      "targetHelp": "A path on this site (/...) or an https:// address.",
+      "statusCode": "Type",
+      "statusHelp": {
+        "301": "moved for good",
+        "302": "moved for now",
+        "307": "temporary, same method",
+        "308": "permanent, same method"
+      },
+      "language": "Language",
+      "allLanguages": "All languages",
+      "note": "Note",
+      "active": "Active",
+      "close": "Close",
+      "create": "Create",
+      "save": "Save",
+      "created": "Redirect created.",
+      "saved": "Saved. It is live on the website.",
+      "saveFailed": "It could not be saved.",
+      "restored": "Version restored.",
+      "tabs": {
+        "details": "Details",
+        "history": "History"
+      },
+      "check": {
+        "running": "Checking...",
+        "ok": "No loop and no long chain.",
+        "unavailable": "The check could not run. The server checks again when you save.",
+        "errors": {
+          "redirect_loop": "This makes a loop: {chain}.",
+          "redirect_chain_too_long": "The chain has {hops} steps (at most {max}). Point it straight at {final_target}.",
+          "target_equals_source": "The new address is the same as the old one.",
+          "duplicate": "A redirect from {path} already exists for this language."
+        },
+        "warnings": {
+          "page_published": "A published page is at {path}. The page wins, so this redirect will not work until the page is unpublished."
+        }
+      }
     }
   }
 }

@@ -36,6 +36,7 @@ import { seedPageRevisions, seedPages } from "@/mocks/mock-pages";
 import { seedPreviewLinks } from "@/mocks/mock-preview";
 import { SEED_SETTINGS_UPDATED, restoreSettings, seedSettings, seedSettingsRevisions } from "@/mocks/mock-settings";
 import { seedPostRevisions, seedPosts } from "@/mocks/mock-posts";
+import { restoreRedirect, seedRedirectRevisions, seedRedirects } from "@/mocks/mock-redirects";
 import { restoreTaxonomy, seedTaxonomy, seedTaxonomyRevisions } from "@/mocks/mock-taxonomy";
 import { restoreUiString, seedUiStringRevisions, seedUiStrings, uiStringKnown } from "@/mocks/mock-ui-strings";
 import { SEED_MEDIA } from "@/mocks/media-seed";
@@ -201,6 +202,8 @@ export function createMockDb(): MockDb {
     tags: [],
     nextCategoryId: 1,
     nextTagId: 1,
+    redirects: [],
+    nextRedirectId: 1,
     previewLinks: [],
     nextPreviewLinkId: 1,
     previewIssued: [],
@@ -230,6 +233,7 @@ export function createMockDb(): MockDb {
   db.faqGroups = seedFaqGroups();
   seedUiStrings(db);
   seedTaxonomy(db);
+  seedRedirects(db);
   seedRevisions(db);
   seedPageRevisions(db);
   seedPostRevisions(db);
@@ -239,6 +243,7 @@ export function createMockDb(): MockDb {
   seedSettingsRevisions(db);
   seedUiStringRevisions(db);
   seedTaxonomyRevisions(db);
+  seedRedirectRevisions(db);
   seedPreviewLinks(db);
   return db;
 }
@@ -643,6 +648,8 @@ function revisionEntityExists(db: MockDb, resource: string, id: string): boolean
       return db.categories.some((c) => String(c.id) === id);
     case "tags":
       return db.tags.some((t) => String(t.id) === id);
+    case "redirects":
+      return db.redirects.some((r) => String(r.id) === id);
     default:
       return Boolean(db.entities[keyOf(resource, id)]);
   }
@@ -729,6 +736,7 @@ export function restoreRevision(db: MockDb, resource: string, id: string, revId:
   if (resource === "menus") return restoreMenu(db, id, found, note, ifMatch);
   if (resource === "settings") return restoreSettings(db, id, found, note, ifMatch);
   if (resource === "ui-strings") return restoreUiString(db, id, found, note, ifMatch);
+  if (resource === "redirects") return restoreRedirect(db, id, found, note, ifMatch);
   if (resource === "categories" || resource === "tags") return restoreTaxonomy(db, resource, id, found, note, ifMatch);
 
   // Anything else (an id only a test or the playground invents): a stub entity with an ETag.

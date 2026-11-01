@@ -123,6 +123,7 @@ describe("W1 iam/ops routes (T1.1.10)", () => {
       "/admin/blog/tags",
       "/admin/settings",
       "/admin/seo",
+      "/admin/redirects",
       // T1.5.7 the inbox and the forms
       "/admin/forms/submissions",
       "/admin/forms",
@@ -179,6 +180,7 @@ describe("T1.3.8 save-live routes", () => {
     ["/admin/settings", PERMISSION_KEYS.CMS_SETTINGS],
     ["/admin/settings/contact", PERMISSION_KEYS.CMS_SETTINGS],
     ["/admin/seo", PERMISSION_KEYS.CMS_SEO],
+    ["/admin/redirects", PERMISSION_KEYS.CMS_REDIRECTS],
     ["/admin/blog/categories", PERMISSION_KEYS.CMS_CATEGORIES],
     ["/admin/blog/tags", PERMISSION_KEYS.CMS_CATEGORIES],
     ["/admin/ui-strings", PERMISSION_KEYS.CMS_UI_STRINGS],

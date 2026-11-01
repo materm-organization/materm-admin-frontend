@@ -57,7 +57,7 @@ export const NAV_MAIN_CONFIG: NavMainGroupConfig[] = [
       { title: "nav.tags", url: "/admin/blog/tags", anyPermission: [PERMISSION_KEYS.CMS_CATEGORIES] },
     ],
   },
-  // Site-wide settings (SCR-15) and SEO (SCR-16): two keys, `cms.settings` and `cms.seo`.
+  // Site-wide settings (SCR-15) and SEO (SCR-16): three keys, `cms.settings`, `cms.seo` and `cms.redirects`.
   {
     title: "nav.site",
     url: "#",
@@ -65,6 +65,8 @@ export const NAV_MAIN_CONFIG: NavMainGroupConfig[] = [
     items: [
       { title: "nav.settings", url: "/admin/settings", anyPermission: [PERMISSION_KEYS.CMS_SETTINGS] },
       { title: "nav.seo", url: "/admin/seo", anyPermission: [PERMISSION_KEYS.CMS_SEO] },
+      // Redirects (SCR-42, FR-SEO-05/06): the "seo" section of doc/07 section 2.1.
+      { title: "nav.redirects", url: "/admin/redirects", anyPermission: [PERMISSION_KEYS.CMS_REDIRECTS] },
     ],
   },
   // Forms (SCR-31) and the messages they receive (SCR-32, doc/07 section 2.1): two keys, `forms.submissions` and `forms.manage`. The

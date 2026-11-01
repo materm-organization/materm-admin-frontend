@@ -103,6 +103,7 @@ import {
   patchTaxonomy,
   restoreTaxonomyRow,
 } from "@/mocks/mock-taxonomy";
+import { checkRedirect, createRedirect, deleteRedirect, exportRedirects, getRedirect, listRedirects, patchRedirect } from "@/mocks/mock-redirects";
 import { bundleSync, deleteUiString, listUiStrings, putUiString, uiStringKeyEtag } from "@/mocks/mock-ui-strings";
 import {
   MockHttpError,
@@ -233,6 +234,7 @@ export const revisionApiHandlers: HttpHandler[] = [
   ...revisionHandlers("ui-strings", "/ui-strings/:key", "key", (key) => uiStringKeyEtag(getMockDb(), key)),
   ...revisionHandlers("categories", "/categories/:id", "id"),
   ...revisionHandlers("tags", "/tags/:id", "id"),
+  ...revisionHandlers("redirects", "/redirects/:id", "id"),
 ];
 
 export const systemApiHandlers: HttpHandler[] = [
@@ -700,6 +702,37 @@ function taxonomyHandlers(kind: "categories" | "tags"): HttpHandler[] {
   ];
 }
 
+// SCR-42 (doc/05 6.10). `check` and `export` are registered before `:id`.
+const redirectHandlers: HttpHandler[] = [
+  http.get(P("/redirects"), guard(({ request }) => {
+    const { data, meta } = listRedirects(getMockDb(), searchOf(request));
+    return ok(data, { meta });
+  })),
+  http.post(P("/redirects/check"), guard(async ({ request }) => ok(checkRedirect(getMockDb(), await jsonBody(request))))),
+  http.get(P("/redirects/export"), guard(({ request }) =>
+    new Response(exportRedirects(getMockDb(), searchOf(request)), {
+      status: 200,
+      headers: { "Content-Type": "text/csv; charset=utf-8", "Content-Disposition": 'attachment; filename="redirects-20261101T090000Z.csv"' },
+    })
+  )),
+  http.post(P("/redirects"), guard(async ({ request }) => {
+    const { data, etag } = createRedirect(getMockDb(), await jsonBody(request));
+    return ok(data, { status: 201, etag });
+  })),
+  http.get(P("/redirects/:id"), guard(({ params }) => {
+    const { data, etag } = getRedirect(getMockDb(), param(params, "id"));
+    return ok(data, { etag });
+  })),
+  http.patch(P("/redirects/:id"), guard(async ({ request, params }) => {
+    const { data, etag } = patchRedirect(getMockDb(), param(params, "id"), await jsonBody(request), request.headers.get("If-Match"));
+    return ok(data, { etag });
+  })),
+  http.delete(P("/redirects/:id"), guard(({ request, params }) => {
+    deleteRedirect(getMockDb(), param(params, "id"), request.headers.get("If-Match"));
+    return ok(null);
+  })),
+];
+
 export const saveLiveApiHandlers: HttpHandler[] = [
   ...menuHandlers,
   ...pageHandlers,
@@ -712,6 +745,7 @@ export const saveLiveApiHandlers: HttpHandler[] = [
   ...uiStringHandlers,
   ...taxonomyHandlers("categories"),
   ...taxonomyHandlers("tags"),
+  ...redirectHandlers,
 ];
 
 
