@@ -53,5 +53,12 @@ export const useMutationDeleteRedirect = () => {
     onSuccess: (_r, { id }) => refresh(id),
   });
 };
+export const useMutationRestoreRedirect = () => {
+  const refresh = useRefresh();
+  return useMutation({
+    mutationFn: ({ id, etag }: { id: number; etag: string | undefined }) => RedirectsAPI.Restore(id, etag),
+    onSuccess: (_r, { id }) => refresh(id),
+  });
+};
 export const useMutationExportRedirects = () =>
   useMutation({ mutationFn: (query: RedirectsExportQuery) => RedirectsAPI.Export(query) });

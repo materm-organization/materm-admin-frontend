@@ -42,6 +42,7 @@ describe("RedirectsPage (SCR-42)", () => {
     await within(table).findByText("/old-blog");
     const first = within(table).getAllByRole("row").slice(1).map((r) => within(r).getAllByRole("cell")[0].textContent);
     expect(first).toEqual(["/about", "/gallery-2025", "/legacy", "/old-blog", "/promo", "/team"]);
+    expect(within(table).queryByText("/old-team")).toBeNull();
   });
 
   it("a reader sees the table without any button", async () => {
@@ -61,7 +62,7 @@ describe("RedirectsPage (SCR-42)", () => {
     const dialog = await screen.findByRole("dialog");
     await user.type(within(dialog).getByLabelText("Old address"), "/our-path");
     await user.type(within(dialog).getByLabelText("New address"), "/about");
-    expect(await within(dialog).findByText(/This makes a loop/, undefined, { timeout: 3000 })).toBeInTheDocument();
+    expect(await within(dialog).findByText(/This makes a loop: \/our-path > \/about > \/our-path/, undefined, { timeout: 3000 })).toBeInTheDocument();
     expect(within(dialog).getByRole("button", { name: "Create" })).toBeDisabled();
 
     const target = within(dialog).getByLabelText("New address");
@@ -81,7 +82,7 @@ describe("RedirectsPage (SCR-42)", () => {
     const dialog = await screen.findByRole("dialog");
     await user.type(within(dialog).getByLabelText("Old address"), "/");
     await user.type(within(dialog).getByLabelText("New address"), "/blog");
-    expect(await within(dialog).findByText(/A published page is at/, undefined, { timeout: 3000 })).toBeInTheDocument();
+    expect(await within(dialog).findByText(/A published page \("home"\) is at|A published page \(".*"\) is at/, undefined, { timeout: 3000 })).toBeInTheDocument();
     expect(within(dialog).getByRole("button", { name: "Create" })).toBeEnabled();
   });
 
@@ -119,13 +120,33 @@ describe("RedirectsPage (SCR-42)", () => {
     expect(await screen.findByText(/changed by someone else|Someone else|newer version/i)).toBeInTheDocument();
   });
 
-  it("deletes after confirmation", async () => {
+  it("moves to the trash after an honest confirmation, then restores from the trash view", async () => {
     const user = userEvent.setup();
     renderApp(<RedirectsPage />);
     await user.click(await screen.findByRole("button", { name: "Delete /promo" }));
-    await user.click(await screen.findByRole("button", { name: "Delete" }));
-    await waitFor(() => expect(toast.success).toHaveBeenCalledWith("Redirect deleted."));
-    expect(rows().some((r) => r.source_path === "/promo")).toBe(false);
+    expect(await screen.findByText(/moves to the trash/)).toBeInTheDocument();
+    await user.click(await screen.findByRole("button", { name: "Move to trash" }));
+    await waitFor(() => expect(toast.success).toHaveBeenCalledWith("Redirect moved to the trash."));
+    expect(rows().find((r) => r.source_path === "/promo")?.deleted_at).toBeTruthy();
+  });
+
+  it("restores from the trash view", async () => {
+    const user = userEvent.setup();
+    nav.search = "trashed=true";
+    renderApp(<RedirectsPage />);
+    expect(await screen.findByText("/old-team")).toBeInTheDocument();
+    expect(screen.queryByText("/old-blog")).toBeNull();
+    await user.click(await screen.findByRole("button", { name: "Restore /old-team" }));
+    await waitFor(() => expect(toast.success).toHaveBeenCalledWith("Redirect restored."));
+    expect(rows().find((r) => r.source_path === "/old-team")?.deleted_at).toBeNull();
+  });
+
+  it("explains EXPORT_TOO_LARGE", async () => {
+    const user = userEvent.setup();
+    server.use(http.get(`${API}/redirects/export`, () => new Response(JSON.stringify({ success: false, code: "EXPORT_TOO_LARGE", message: "x", details: { matched: 60000, max: 50000 } }), { status: 422, headers: { "Content-Type": "application/json" } })));
+    renderApp(<RedirectsPage />);
+    await user.click(await screen.findByRole("button", { name: "Export CSV" }));
+    await waitFor(() => expect(toast.error).toHaveBeenCalledWith(expect.stringContaining("60000")));
   });
 
   it("exports the CSV", async () => {

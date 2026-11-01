@@ -151,6 +151,7 @@ export const API_ENDPOINTS = {
   REDIRECTS: {
     LIST: "/redirects",
     DETAIL: (id: number | string) => `/redirects/${id}`,
+    RESTORE: (id: number | string) => `/redirects/${id}/restore`,
     CHECK: "/redirects/check",
     EXPORT: "/redirects/export",
   },

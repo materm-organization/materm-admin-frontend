@@ -1,8 +1,7 @@
-// Redirects (SCR-42, doc/05 section 6.10, doc/07 section 3.26, FR-SEO-05/06). Save-live: a write is live at once. Columns follow
-// `cms_redirects` (doc/03): no hit count. ETag = `"<updated_at>"` like the other save-live rows (`etagOfRow`).
-// PROVISIONAL parts (doc/05 6.10 only lists the paths): the list filters, the body and answer of `POST /redirects/check`, the
-// error codes `redirect_loop` / `redirect_chain_too_long` / `target_equals_source` and the CSV export filters. They are
-// listed in the hand-over of T-redirects-ui and must be reconciled with the backend.
+// Redirects (SCR-42, doc/05 section 14, doc/07 section 3.26, FR-SEO-05/06). Save-live: a write is live at once; delete is a soft
+// delete into the 30-day trash (restore needs `cms.redirects:delete`). ETag = `"<updated_at>"` like the other save-live rows
+// (`etagOfRow`; the row also carries `etag`).
+import type { ApiFieldError } from "@/types/api";
 import type { UserRef, SaveLiveWarning } from "@/types/media";
 
 export type RedirectStatusCode = 301 | 302 | 307 | 308;
@@ -23,24 +22,30 @@ export type Redirect = {
   updated_by?: UserRef;
   created_at: string;
   updated_at: string;
+  // Only for a row in the trash.
+  deleted_at?: string | null;
+  purge_at?: string | null;
   etag?: string;
-  // Only on the answer of a write (non-blocking: a published page wins over the redirect, BR-26).
+  // Only on the answer of a write (POST, PATCH, restore; always there, maybe empty). Non-blocking: BR-26, a published page wins.
   warnings?: SaveLiveWarning[];
 };
 
 export type RedirectsQuery = {
   page?: number;
   limit?: number;
-  // Matches source, target and note.
+  // Matches source, target and note (contains, any case).
   keyword?: string;
   status_code?: RedirectStatusCode;
-  // A language code, or `all` = the rows without a language (they apply to every language).
+  // A language code, or `none` = only the rows that apply to every language.
   locale_code?: string;
   is_active?: boolean;
+  // The trash (needs read + delete, else 403).
+  trashed?: boolean;
   sort?: string;
 };
 
-export type RedirectsExportQuery = Omit<RedirectsQuery, "page" | "limit" | "sort">;
+// The export has the same filters but no paging / sort, and no trash (`trashed=true` is a 422 `not_applicable`).
+export type RedirectsExportQuery = Omit<RedirectsQuery, "page" | "limit" | "sort" | "trashed">;
 
 export type CreateRedirectPayload = {
   source_path: string;
@@ -52,26 +57,32 @@ export type CreateRedirectPayload = {
 };
 export type UpdateRedirectPayload = Partial<CreateRedirectPayload>;
 
-// Dry run (FR-SEO-06). `id` = the row being edited (it must not collide with itself).
-export type RedirectCheckPayload = {
-  source_path: string;
-  target: string;
-  status_code?: RedirectStatusCode;
-  locale_code?: string | null;
-  id?: number;
-};
+// Dry run (doc/05 14.5). `id` = the row being edited (left out of the graph and of the slot check).
+export type RedirectCheckPayload = CreateRedirectPayload & { id?: number };
 
-export type RedirectCheckIssue = {
-  // errors: `redirect_loop` (params.chain), `redirect_chain_too_long` (params.hops, params.final_target), `target_equals_source`,
-  // `duplicate`; warnings: `page_published` (params.path)
-  code: string;
-  message?: string;
-  params?: Record<string, unknown>;
-};
+// An error of the check has the shape of `errors[]` of a 422 / 409 (doc/05 1.5); a warning has no `in`.
+// Errors: `redirect_loop` (params.path = the walk, params.locale), `redirect_chain_too_long` (hops, max, final_target),
+// `self_redirect`, `duplicate` (the slot is taken) and every syntax code of 14.2.
+// Warnings: `source_is_published_page` (page_id, page_key: the page wins), `redirect_chain` (hops, final_target).
+export type RedirectCheckWarning = { path: string; code: string; message?: string; params?: Record<string, unknown> };
 
 export type RedirectCheckResult = {
   // `true` when there is no error (warnings do not count).
   valid: boolean;
-  errors: RedirectCheckIssue[];
-  warnings: RedirectCheckIssue[];
+  // `null` when no source path was usable.
+  normalized: { source_path: string; locale_code: string | null; target: string; status_code: RedirectStatusCode; is_active: boolean } | null;
+  errors: ApiFieldError[];
+  warnings: RedirectCheckWarning[];
+  // The length of the chain this redirect would be part of (>= 1 when valid and active, else 0).
+  hops: number;
+};
+
+// The flat snapshot of a revision (doc/05 14.6).
+export type RedirectSnapshot = {
+  source_path: string;
+  locale_code: string | null;
+  target: string;
+  status_code: RedirectStatusCode;
+  is_active: boolean;
+  note: string | null;
 };

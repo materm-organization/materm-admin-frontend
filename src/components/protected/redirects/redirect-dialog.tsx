@@ -23,6 +23,7 @@ import {
   validate,
   type RedirectDraft,
 } from "@/components/protected/redirects/redirect-draft";
+import { redirectErrorText, redirectWarningText } from "@/components/protected/redirects/redirect-errors";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -38,13 +39,12 @@ import { useApiErrorHandler } from "@/hooks/use-api-error";
 import { useMutationCreateRedirect, useMutationUpdateRedirect, useRedirectCheck } from "@/hooks/use-redirects";
 import { useUnsavedChangesGuard } from "@/hooks/use-unsaved-changes-guard";
 import { isConflictError, isNoPermissionError, parseApiError } from "@/lib/api-error";
-import { translateFieldError } from "@/lib/api-error-messages";
 import { API_ENDPOINTS } from "@/lib/constants/api-endpoints";
 import { newIdempotencyKey } from "@/lib/idempotency";
 import { cn } from "@/lib/utils";
 import { RedirectsAPI } from "@/services/redirects.api";
 import type { ApiFieldError } from "@/types/api";
-import type { Redirect, RedirectCheckIssue } from "@/types/redirects";
+import type { Redirect, RedirectCheckWarning } from "@/types/redirects";
 
 const ALL = "__all__";
 type LocaleOption = { code: string; name: string };
@@ -85,6 +85,8 @@ function Loader(props: Props & { id: number }) {
 function Editor({ row, etag, locales, canEdit, canRestore, onClose, reload }: Props & { row: Redirect | null; etag: string | undefined; reload: () => Promise<unknown> }) {
   const t = useTranslations("redirects.dialog");
   const tErrors = useTranslations("errors");
+  const tFieldErrors = useTranslations("redirects.fieldErrors");
+  const tWarn = useTranslations("redirects.dialog.check.warnings");
   const queryClient = useQueryClient();
   const { toastError } = useApiErrorHandler();
   const creating = row === null;
@@ -122,15 +124,17 @@ function Editor({ row, etag, locales, canEdit, canRestore, onClose, reload }: Pr
   };
   const err = (path: string) => {
     const issue = issues.find((i) => i.path === path);
-    return issue ? translateFieldError(tErrors, issue) : undefined;
+    return issue ? redirectErrorText(tFieldErrors, tErrors, issue) : undefined;
   };
-  const issueText = (kind: "errors" | "warnings", i: RedirectCheckIssue) => {
-    const key = `check.${kind}.${i.code}`;
-    const p = i.params ?? {};
-    const values: Record<string, string | number> = {};
-    for (const [k, v] of Object.entries(p)) values[k] = Array.isArray(v) ? v.join(" > ") : typeof v === "string" || typeof v === "number" ? v : "";
-    return t.has(key) ? t(key, values) : i.message ?? i.code;
-  };
+  // The address a chain finally ends at (the check tells it): offer to point straight at it (FR-SEO-06).
+  const finalTargetOf = (params: Record<string, unknown> | undefined) => (typeof params?.final_target === "string" ? params.final_target : null);
+  const finalLink = (finalTarget: string | null) =>
+    finalTarget && finalTarget !== draft.target ? (
+      <Button type="button" variant="link" size="sm" className="h-auto p-0" disabled={!canEdit || pending} onClick={() => set({ target: finalTarget })}>
+        {t("check.useFinal", { target: finalTarget })}
+      </Button>
+    ) : null;
+  const warningTexts = (list: RedirectCheckWarning[] | undefined) => (list ?? []).map((w) => redirectWarningText(tWarn, w));
 
   const save = async (): Promise<boolean> => {
     const found = validate(draft);
@@ -141,15 +145,16 @@ function Editor({ row, etag, locales, canEdit, canRestore, onClose, reload }: Pr
     try {
       if (creating) {
         const result = await create.mutateAsync({ payload: buildCreatePayload(draft), idempotencyKey });
-        if ((result.data.data.warnings ?? []).some((w) => w.code === "page_published")) toast.warning(t("check.warnings.page_published", { path: draft.sourcePath }));
+        const after = warningTexts(result.data.data.warnings);
         toast.success(t("created"));
+        if (after.length) toast.warning(t("savedWithWarnings", { warnings: after.join(" ") }));
         onClose();
         return true;
       }
       const body = buildUpdatePayload(saved, draft);
       if (Object.keys(body).length === 0) return true;
       const result = await update.mutateAsync({ id: row.id, payload: body, etag });
-      setWarnings((result.data.data.warnings ?? []).map((w) => t(`check.warnings.${w.code}`, { path: String(w.params?.path ?? draft.sourcePath) })));
+      setWarnings(warningTexts(result.data.data.warnings));
       toast.success(t("saved"));
       queryClient.setQueryData([API_ENDPOINTS.REDIRECTS.DETAIL(row.id)], { data: result.data, etag: result.etag });
       return true;
@@ -157,7 +162,8 @@ function Editor({ row, etag, locales, canEdit, canRestore, onClose, reload }: Pr
       if (isConflictError(error)) setConflict(true);
       else {
         const parsed = parseApiError(error);
-        if (parsed.fieldErrors.length) setIssues(parsed.fieldErrors);
+        if (parsed.code === "INVALID_STATE" && parsed.details?.reason === "trashed") toast.error(t("trashed"));
+        else if (parsed.fieldErrors.length) setIssues(parsed.fieldErrors);
         else toastError(error, t("saveFailed"));
       }
       return false;
@@ -232,12 +238,23 @@ function Editor({ row, etag, locales, canEdit, canRestore, onClose, reload }: Pr
       <div aria-live="polite" className="space-y-2" data-testid="redirect-check">
         {payload && (check.isFetching || !settled) ? <p className="flex items-center gap-2 text-xs text-muted-foreground"><Spinner className="size-3" /> {t("check.running")}</p> : null}
         {checkErrors.map((e, i) => (
-          <Alert key={`e${i}`} variant="destructive" role="alert"><AlertDescription>{issueText("errors", e)}</AlertDescription></Alert>
+          <Alert key={`e${i}`} variant="destructive" role="alert">
+            <AlertDescription>
+              <span>{redirectErrorText(tFieldErrors, tErrors, e)}</span>
+              {e.code === "redirect_chain_too_long" ? finalLink(finalTargetOf(e.params)) : null}
+            </AlertDescription>
+          </Alert>
         ))}
         {checkWarnings.map((w, i) => (
-          <Alert key={`w${i}`} role="status"><AlertDescription>{issueText("warnings", w)}</AlertDescription></Alert>
+          <Alert key={`w${i}`} role="status">
+            <AlertDescription>
+              <span>{redirectWarningText(tWarn, w)}</span>
+              {w.code === "redirect_chain" ? finalLink(finalTargetOf(w.params)) : null}
+            </AlertDescription>
+          </Alert>
         ))}
         {result && result.valid && checkWarnings.length === 0 ? <p className="text-xs text-muted-foreground">{t("check.ok")}</p> : null}
+        {result && result.valid && result.hops > 0 ? <p className="text-xs text-muted-foreground">{t("check.hops", { hops: result.hops })}</p> : null}
         {check.isError ? <p className="text-xs text-muted-foreground">{t("check.unavailable")}</p> : null}
         {warnings.map((w) => <p key={w} role="status" className="text-sm text-amber-700 dark:text-amber-400">{w}</p>)}
       </div>

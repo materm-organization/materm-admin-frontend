@@ -771,8 +771,13 @@
       "template_violation": "This does not fit the page template.",
       "media_alt_missing": "The image has no alt text in the default language.",
       "redirect_loop": "The redirect would loop.",
-      "redirect_chain_too_long": "The chain of redirects is too long. Point it straight at the final address.",
-      "target_equals_source": "The new address is the same as the old one."
+      "redirect_chain_too_long": "The chain of redirects is too long ({hops} steps, at most {max}). Point it straight at {final_target}.",
+      "https_only": "Only https:// addresses are allowed, not http://.",
+      "scheme_not_allowed": "This kind of address (javascript:, data:, file: ...) is not allowed.",
+      "userinfo_not_allowed": "An address with a user name or password is not allowed.",
+      "host_required": "The address needs a website name after https://.",
+      "path_or_https_url": "Use a path on this site (starting with /) or a full https:// address.",
+      "self_redirect": "The new address is the same as the old one."
     },
     "loadAccount": "Could not load your account. Check your connection and try again."
   },
@@ -4081,23 +4086,33 @@
       "language": "Language",
       "status": "State",
       "updated": "Updated",
-      "actions": "Actions"
+      "actions": "Actions",
+      "deleted": "Deleted",
+      "purge": "Kept until"
     },
     "actions": {
       "edit": "Edit {path}",
-      "delete": "Delete {path}"
+      "delete": "Delete {path}",
+      "restore": "Restore {path}",
+      "restoreShort": "Restore"
     },
     "delete": {
       "title": "Delete the redirect from \"{path}\"?",
-      "description": "The old address stops redirecting at once. To bring it back, create the redirect again.",
-      "confirm": "Delete"
+      "description": "The redirect moves to the trash and stops redirecting at once; its address is free again. You can restore it from the trash (kept for 30 days).",
+      "confirm": "Move to trash"
     },
     "toast": {
-      "deleted": "Redirect deleted.",
+      "deleted": "Redirect moved to the trash.",
       "deleteFailed": "It could not be deleted.",
       "stale": "Someone else changed this redirect. The list was reloaded.",
       "exported": "The file was downloaded.",
-      "exportFailed": "The file could not be exported."
+      "exportFailed": "The file could not be exported.",
+      "restored": "Redirect restored.",
+      "restoreDuplicate": "It could not be restored: another redirect uses this address and language now.",
+      "restoreFailed": "It could not be restored.",
+      "restoreInvalid": "It could not be restored: it would make a loop or a chain that is too long.",
+      "notTrashed": "This redirect is not in the trash any more. The list was reloaded.",
+      "exportTooLarge": "The export is too large ({matched} rows, at most {max}). Narrow the filter."
     },
     "dialog": {
       "createTitle": "New redirect",
@@ -4134,15 +4149,41 @@
         "running": "Checking...",
         "ok": "No loop and no long chain.",
         "unavailable": "The check could not run. The server checks again when you save.",
-        "errors": {
-          "redirect_loop": "This makes a loop: {chain}.",
-          "redirect_chain_too_long": "The chain has {hops} steps (at most {max}). Point it straight at {final_target}.",
-          "target_equals_source": "The new address is the same as the old one.",
-          "duplicate": "A redirect from {path} already exists for this language."
-        },
         "warnings": {
-          "page_published": "A published page is at {path}. The page wins, so this redirect will not work until the page is unpublished."
-        }
+          "source_is_published_page": "A published page (\"{page_key}\") is at this address. The page wins, so this redirect does not work until the page is unpublished.",
+          "redirect_chain": "This starts a chain of {hops} steps. Point it straight at {final_target} to make it faster."
+        },
+        "hops": "This redirect is part of a chain of {hops} step(s).",
+        "useFinal": "Point it straight at {target}"
+      },
+      "trashed": "This redirect is in the trash. Restore it before editing.",
+      "savedWithWarnings": "Saved, but note: {warnings}"
+    },
+    "allLanguagesOnly": "Every language only",
+    "trash": "Trash",
+    "emptyTrash": "The trash is empty.",
+    "fieldErrors": {
+      "rules": {
+        "must_start_with_slash": "The old address must start with /.",
+        "protocol_relative": "An address cannot start with // (it would point to another site).",
+        "no_query_or_fragment": "Leave out ? and # (a redirect works on the path only).",
+        "no_backslash": "A backslash \\ is not allowed.",
+        "no_whitespace_or_control": "Spaces and hidden characters are not allowed.",
+        "empty_segment": "Two / in a row (an empty part) are not allowed.",
+        "dot_segment": "The parts . and .. are not allowed."
+      },
+      "codes": {
+        "https_only": "Only https:// addresses are allowed, not http://.",
+        "scheme_not_allowed": "This kind of address (javascript:, data:, file: ...) is not allowed.",
+        "userinfo_not_allowed": "An address with a user name or password is not allowed.",
+        "host_required": "The address needs a website name after https://.",
+        "path_or_https_url": "Use a path on this site (starting with /) or a full https:// address.",
+        "self_redirect": "The new address is the same as the old one.",
+        "duplicate": "A redirect from this address already exists for this language (it may be inactive).",
+        "redirect_loop": "This makes a loop: {path}.",
+        "redirect_chain_too_long": "The chain has {hops} steps (at most {max}). Point it straight at {final_target}.",
+        "unknown_reference": "This language does not exist.",
+        "invalid_format": "This value has an invalid format."
       }
     }
   }

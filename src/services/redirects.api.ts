@@ -17,7 +17,8 @@ import type {
   UpdateRedirectPayload,
 } from "@/types/redirects";
 
-// Redirects (doc/05 section 6.10). A list row has no ETag header: build it from `updated_at` (`etagOfRow`). PATCH / DELETE need `If-Match`.
+// Redirects (doc/05 section 14). A list row has no ETag header: build it from `updated_at` (`etagOfRow`). PATCH / DELETE / restore need
+// `If-Match` (428 without it). DELETE is a soft delete (the trash); restore needs `cms.redirects:delete`.
 export const RedirectsAPI = {
   List: async (query: RedirectsQuery = {}) => {
     const { data } = await axiosInstance.get<ApiResponsePagination<Redirect[]>>(API_ENDPOINTS.REDIRECTS.LIST, { params: query });
@@ -34,12 +35,14 @@ export const RedirectsAPI = {
     const { data } = await axiosInstance.delete<ApiResponse<null>>(API_ENDPOINTS.REDIRECTS.DETAIL(id), ifMatch(etag, { required: true }));
     return data;
   },
+  Restore: async (id: number | string, etag: string | undefined) =>
+    withEtag(await axiosInstance.post<ApiResponse<Redirect>>(API_ENDPOINTS.REDIRECTS.RESTORE(id), undefined, ifMatch(etag, { required: true }))),
   // Dry run: nothing is written. Needs `cms.redirects:read` only.
   Check: async (payload: RedirectCheckPayload, signal?: AbortSignal) => {
     const { data } = await axiosInstance.post<ApiResponse<RedirectCheckResult>>(API_ENDPOINTS.REDIRECTS.CHECK, payload, { signal });
     return data.data;
   },
-  // CSV `from,to,code` (doc/05 6.10). Fetched as a Blob: a plain link would not carry the Bearer token.
+  // CSV `from,to,code` (doc/05 14.7; UTF-8 with BOM, CRLF). Fetched as a Blob: a plain link would not carry the Bearer token.
   Export: async (query: RedirectsExportQuery): Promise<{ blob: Blob; filename: string }> => {
     let response: AxiosResponse<Blob>;
     try {
