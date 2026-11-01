@@ -1,9 +1,15 @@
 import "@testing-library/jest-dom/vitest";
 
-import { cleanup } from "@testing-library/react";
+import { cleanup, configure } from "@testing-library/react";
 import { afterAll, afterEach, beforeAll } from "vitest";
 
 import { server } from "@/test/msw-server";
+
+// findBy*/waitFor give up after 1 s by default. A heavy jsdom render under CPU contention (two suites at once, a loaded CI
+// box) can need longer, and the failure was "Unable to find ..." on tests that pass alone (also debounced searches that
+// were still refetching after 4 s). 10 s stays below the test timeout
+// (vitest.config.ts), so a real miss still reports the missing element instead of a bare timeout.
+configure({ asyncUtilTimeout: 10_000 });
 
 beforeAll(() => server.listen({ onUnhandledFrame: "error" }));
 afterEach(() => {
