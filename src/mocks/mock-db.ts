@@ -243,7 +243,7 @@ export function createMockDb(): MockDb {
   return db;
 }
 
-function recomputeFolders(db: MockDb) {
+export function recomputeFolders(db: MockDb) {
   const byId = new Map(db.folders.map((f) => [f.id, f]));
   for (const f of db.folders) {
     const chain: string[] = [];
@@ -305,7 +305,7 @@ function defaultAlt(a: MediaAsset): string {
   return a.translations[DEFAULT_LOCALE_CODE]?.alt ?? "";
 }
 
-function toListRow(a: MediaAssetDetail): MediaAsset {
+export function toListRow(a: MediaAssetDetail): MediaAsset {
   // The list carries the common fields only (`folder` / `variants` belong to the detail).
   const { folder: _folder, variants: _variants, ...row } = a;
   void _folder;
@@ -379,7 +379,7 @@ export function listAssets(db: MockDb, params: Params) {
   return paginate(rows.map(toListRow), params);
 }
 
-function findAsset(db: MockDb, id: string): MediaAssetDetail {
+export function findAsset(db: MockDb, id: string): MediaAssetDetail {
   const asset = db.assets.find((a) => String(a.id) === id);
   if (!asset) throw notFound();
   return asset;

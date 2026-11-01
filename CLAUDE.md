@@ -112,7 +112,7 @@ Screens and building blocks built so far (phase P1 milestone M1; contract `../do
 
 - **T1.3.9 media library, MediaPicker, revisions, cache purge (M3)** - built against MSW + the typed API layer; the
   backends are written in parallel (contract = `doc/api/openapi-admin.yaml`, `doc/05` sections 11.6 - 11.8). See
-  "Media, revisions and cache purge" below. No upload anywhere (P2, AS-2).
+  "Media, revisions and cache purge" below. Upload (P2, `media.library:create`; SVG needs `update`) and "Replace file" (`update`, `If-Match`) are built against the CONTRACT in `src/mocks/mock-media-upload.ts` (`POST /media/uploads`, `POST /media/{id}/file`); not yet run against the real backend. The duplicate-checksum answer is read in ONE place, `parseDuplicate` in `services/media.api.ts`; the queue is `lib/media-upload-queue.ts` (3 at a time, <= 50 files, auto-retry of 429/503).
 
 - **T1.3.8 save-live screens (M3)** - built against the mock API (the backend routes are written in parallel). See
   "Save-live screens" below.

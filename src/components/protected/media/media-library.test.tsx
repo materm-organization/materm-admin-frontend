@@ -36,14 +36,14 @@ beforeEach(() => {
 describe("MediaLibrary (SCR-35)", () => {
   useMockApi();
 
-  it("lists the first page as a grid with the file facts and no upload control", async () => {
+  it("lists the first page as a grid with the file facts and the upload button", async () => {
     renderApp(<MediaLibrary />);
     expect(await screen.findByRole("button", { name: "Open hero-bg.png" })).toBeInTheDocument();
     const grid = screen.getByRole("list", { name: "Files" });
     // default page size 20 of the 24 seeded files
     expect(within(grid).getAllByRole("listitem")).toHaveLength(20);
     expect(screen.getByText("24 in total")).toBeInTheDocument();
-    expect(screen.queryByText(/upload/i)).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Upload files" })).toBeInTheDocument();
     // hero-bg.png has no alt text anywhere and is used on the Home page
     const tile = screen.getByRole("button", { name: "Open hero-bg.png" }).closest("li")!;
     expect(within(tile).getByText("No alt text")).toBeInTheDocument();

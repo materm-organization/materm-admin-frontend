@@ -1,6 +1,6 @@
 "use client";
 
-import { ArchiveRestoreIcon, SaveIcon, Trash2Icon, TriangleAlertIcon } from "lucide-react";
+import { ArchiveRestoreIcon, FileUpIcon, SaveIcon, Trash2Icon, TriangleAlertIcon } from "lucide-react";
 import { useFormatter, useTranslations } from "next-intl";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -24,6 +24,7 @@ import {
 } from "@/components/protected/media/asset-draft";
 import { FocalPointPicker } from "@/components/protected/media/focal-point-picker";
 import { MediaThumb } from "@/components/protected/media/media-thumb";
+import { ReplaceFileDialog } from "@/components/protected/media/replace-file-dialog";
 import { UsageList } from "@/components/protected/media/usage-list";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -229,6 +230,7 @@ function AssetEditor({
   const [isReloading, setIsReloading] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [confirmDiscard, setConfirmDiscard] = useState(false);
+  const [replaceOpen, setReplaceOpen] = useState(false);
   const [inUse, setInUse] = useState<{ details: MediaInUseDetails; draftOnly: boolean } | null>(null);
 
   const changes = changedFields(asset, draft);
@@ -419,6 +421,15 @@ function AssetEditor({
                 <MediaThumb asset={asset} alt={filename} fill={false} />
               </div>
             )}
+            {canEditStructure ? (
+              <div className="flex flex-wrap items-center gap-3">
+                <Button type="button" variant="outline" size="sm" disabled={dirty || busy} onClick={() => setReplaceOpen(true)}>
+                  <FileUpIcon />
+                  {t("replace.button")}
+                </Button>
+                {dirty ? <span className="text-xs text-muted-foreground">{t("replace.saveFirst")}</span> : null}
+              </div>
+            ) : null}
             {fieldErrors.focal ? <p role="alert" className="text-sm text-destructive">{fieldErrors.focal}</p> : null}
 
             <section className="space-y-3" aria-label={t("text.title")}>
@@ -673,6 +684,14 @@ function AssetEditor({
         confirmLabel={t("discard.confirm")}
         destructive
         onConfirm={() => onClose()}
+      />
+
+      <ReplaceFileDialog
+        open={replaceOpen}
+        onOpenChange={setReplaceOpen}
+        assetId={asset.id}
+        etag={etag}
+        onConflict={() => setConflictOpen(true)}
       />
 
       <ConflictDialog

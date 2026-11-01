@@ -1,3 +1,5 @@
+import axios from "axios";
+
 import { axiosInstance } from "@/lib/axios";
 import { API_ENDPOINTS } from "@/lib/constants/api-endpoints";
 import { ifMatch, ifMatchHeaders, withEtag } from "@/lib/etag";
@@ -9,6 +11,7 @@ import type {
   MediaAssetDetail,
   MediaFolder,
   MediaListQuery,
+  MediaUploadResult,
   MediaUsage,
   UpdateMediaAssetPayload,
   UpdateMediaFolderPayload,
@@ -59,6 +62,48 @@ export const MediaAPI = {
     );
     return data;
   },
+  // P2 (FR-MEDIA-01): ONE file per request, multipart field `file`, optional `folder_id`. 201 = the asset;
+  // a duplicate checksum answers with the existing asset (see `parseDuplicate`) unless `allow_duplicate=true`.
+  // Failures are rejected as they are (`mapUploadError` in lib/media-upload.ts); nothing here is retried.
+  UploadFile: async (file: File, options: UploadOptions = {}): Promise<MediaUploadResult> => {
+    const body = new FormData();
+    body.append("file", file);
+    if (options.folderId !== undefined && options.folderId !== null) body.append("folder_id", String(options.folderId));
+    try {
+      const response = await axiosInstance.post<ApiResponse<MediaAssetDetail>>(API_ENDPOINTS.MEDIA.UPLOADS, body, {
+        params: options.allowDuplicate ? { allow_duplicate: true } : undefined,
+        // 20 MB over a slow link: the default 30 s is too short.
+        timeout: UPLOAD_TIMEOUT_MS,
+        signal: options.signal,
+        onUploadProgress: (event) => options.onProgress?.(event.total ? Math.min(100, Math.round((event.loaded / event.total) * 100)) : undefined),
+      });
+      // A 2xx other than 201 may be the duplicate warning (shape not final, see `parseDuplicate`).
+      if (response.status !== 201) {
+        const duplicate = parseDuplicate(response.data);
+        if (duplicate) return duplicate;
+      }
+      return { kind: "created", asset: response.data.data, etag: withEtag(response).etag };
+    } catch (error) {
+      if (axios.isAxiosError(error) && error.response) {
+        const duplicate = parseDuplicate(error.response.data);
+        if (duplicate && (error.response.status === 409 || error.response.status === 422)) return duplicate;
+      }
+      throw error;
+    }
+  },
+  // FR-MEDIA-08: keep the id, new file. `If-Match` is mandatory (428); 409 `CONFLICT_LOCK_VERSION` = `isConflictError`.
+  ReplaceFile: async (id: number | string, file: File, etag: string | undefined, options: Pick<UploadOptions, "onProgress" | "signal"> = {}) => {
+    const body = new FormData();
+    body.append("file", file);
+    return withEtag(
+      await axiosInstance.post<ApiResponse<MediaAssetDetail>>(API_ENDPOINTS.MEDIA.ASSET_FILE(id), body, {
+        ...ifMatch(etag, { required: true }),
+        timeout: UPLOAD_TIMEOUT_MS,
+        signal: options.signal,
+        onUploadProgress: (event) => options.onProgress?.(event.total ? Math.min(100, Math.round((event.loaded / event.total) * 100)) : undefined),
+      })
+    );
+  },
   // Flat, not paginated, ordered by path.
   ListFolders: async () => {
     const { data } = await axiosInstance.get<ApiResponse<MediaFolder[]>>(API_ENDPOINTS.MEDIA.FOLDERS);
@@ -103,4 +148,56 @@ export function toUtcMicros(value: string): string {
   const offsetMinutes = sign * (Number(offset.slice(1, 3)) * 60 + Number(offset.slice(4, 6)));
   const utc = new Date(Date.UTC(Number(y), Number(mo) - 1, Number(d), Number(h), Number(mi), Number(sec)) - offsetMinutes * 60_000);
   return `${utc.toISOString().slice(0, 19)}${fraction}Z`;
+}
+
+const UPLOAD_TIMEOUT_MS = 120_000;
+
+export type UploadOptions = {
+  folderId?: number | null;
+  allowDuplicate?: boolean;
+  signal?: AbortSignal;
+  // 0..100 (undefined when the browser does not know the total).
+  onProgress?: (percent: number | undefined) => void;
+};
+
+// THE ONE PLACE that knows how the backend reports a duplicate checksum (FR-MEDIA-12). The final shape is not
+// decided yet, so this accepts the plausible ones and returns `null` when the body is not a duplicate warning:
+//   { code: "DUPLICATE_MEDIA" | ..., details: { duplicate_of: 12 } }
+//   { details: { duplicate_of: { id: 12, ... } } }  /  { details: { existing: {...} } }
+//   { success: true, data: {...}, duplicate_of: 12 }  /  { data: { duplicate_of: ... } } / { warnings: [{ code: "duplicate", params }] }
+// `existing` is the asset itself when the body carries it, else only the id is known.
+export function parseDuplicate(body: unknown): Extract<MediaUploadResult, { kind: "duplicate" }> | null {
+  const root = asRecord(body);
+  if (!root) return null;
+  const sources = [root, asRecord(root.details), asRecord(root.data), asRecord(asRecord(root.data)?.details)];
+  for (const source of sources) {
+    if (!source) continue;
+    for (const key of ["duplicate_of", "existing_asset", "existing", "existing_asset_id", "existing_id"]) {
+      const found = source[key];
+      const id = toId(found);
+      if (id !== null) return { kind: "duplicate", existingId: id, existing: isAssetLike(found) ? (found as MediaAsset) : null };
+    }
+  }
+  const warnings = Array.isArray(root.warnings) ? root.warnings : [];
+  for (const w of warnings) {
+    const rec = asRecord(w);
+    if (rec && typeof rec.code === "string" && rec.code.includes("duplicate")) {
+      const id = toId(asRecord(rec.params)?.duplicate_of ?? asRecord(rec.params)?.existing_id ?? asRecord(rec.params)?.id);
+      if (id !== null) return { kind: "duplicate", existingId: id, existing: null };
+    }
+  }
+  return null;
+}
+
+const asRecord = (value: unknown): Record<string, unknown> | null =>
+  value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : null;
+const isAssetLike = (value: unknown): boolean => {
+  const rec = asRecord(value);
+  return rec !== null && typeof rec.id === "number" && typeof rec.original_filename === "string";
+};
+function toId(value: unknown): number | null {
+  if (typeof value === "number" && Number.isInteger(value) && value > 0) return value;
+  if (typeof value === "string" && /^\d+$/.test(value)) return Number(value);
+  const rec = asRecord(value);
+  return rec && typeof rec.id === "number" ? rec.id : null;
 }

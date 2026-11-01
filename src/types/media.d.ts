@@ -144,3 +144,9 @@ export type CreateMediaFolderPayload = { name: string; parent_id?: number | null
 export type UpdateMediaFolderPayload = { name?: string; parent_id?: number | null; sort_order?: number };
 
 export type MediaAssetsPage = { rows: MediaAsset[]; meta: ApiMeta };
+
+// P2 upload: what `MediaAPI.UploadFile` resolves to. A duplicate is NOT an error: `existing` is the asset when the
+// server sent it (else only its id is known).
+export type MediaUploadResult =
+  | { kind: "created"; asset: MediaAssetDetail; etag: string | undefined }
+  | { kind: "duplicate"; existingId: number; existing: MediaAsset | null };

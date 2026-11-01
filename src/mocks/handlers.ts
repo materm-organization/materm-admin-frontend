@@ -91,6 +91,7 @@ import {
   restoreFaqRevision,
   unpublishFaqGroup,
 } from "@/mocks/mock-faq";
+import { replaceAssetFile, uploadAsset } from "@/mocks/mock-media-upload";
 import { createPreviewLink, listPreviewLinks, revokePreviewLink } from "@/mocks/mock-preview";
 import { getSettingsGroup, listSettingsGroups, putSettingsGroup } from "@/mocks/mock-settings";
 import {
@@ -175,6 +176,15 @@ const mediaHandlers: HttpHandler[] = [
   http.get(P("/media/assets/:id/usages"), guard(({ request, params }) => {
     const { data, meta } = listUsages(getMockDb(), param(params, "id"), searchOf(request));
     return ok(data, { meta });
+  })),
+  // P2: multipart upload / replace (mock-media-upload.ts). The specific paths first: `/media/uploads` is not an id.
+  http.post(P("/media/uploads"), guard(async ({ request }) => {
+    const { asset, etag } = await uploadAsset(getMockDb(), request);
+    return ok(asset, { status: 201, etag });
+  })),
+  http.post(P("/media/:id/file"), guard(async ({ request, params }) => {
+    const { asset, etag } = await replaceAssetFile(getMockDb(), param(params, "id"), request);
+    return ok(asset, { etag });
   })),
   http.get(P("/media/folders"), guard(() => ok(listFolders(getMockDb())))),
   http.post(P("/media/folders"), guard(async ({ request }) => {

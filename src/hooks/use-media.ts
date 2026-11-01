@@ -80,6 +80,16 @@ export const useMutationUpdateMediaAsset = (id: number | string) => {
   });
 };
 
+// P2 FR-MEDIA-08: replace the file, keep the id. The answer carries the NEW ETag (cached like a PATCH).
+export const useMutationReplaceMediaFile = (id: number | string) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ file, etag, onProgress }: { file: File; etag: string | undefined; onProgress?: (percent: number | undefined) => void }) =>
+      MediaAPI.ReplaceFile(id, file, etag, { onProgress }),
+    onSuccess: (result) => cacheAsset(queryClient, result.data.data, result.etag),
+  });
+};
+
 // Soft delete. The detail entry is left alone on purpose (see `useMutationDeleteRole`).
 export const useMutationDeleteMediaAsset = () => {
   const queryClient = useQueryClient();

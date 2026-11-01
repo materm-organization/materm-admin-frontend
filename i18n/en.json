@@ -1908,6 +1908,58 @@
         "cms_menu": "Menu"
       }
     },
+    "upload": {
+      "button": "Upload files",
+      "title": "Upload files",
+      "description": "Add pictures and PDFs to the media library.",
+      "dropzone": "Drag files here, or choose them",
+      "dropzoneActive": "Drop the files to add them",
+      "choose": "Choose files",
+      "hint": "JPEG, PNG, WebP, AVIF, GIF or PDF, up to 20 MB each. At most {max} files at a time.",
+      "hintSvg": "SVG files can be up to 1 MB.",
+      "folder": "Saved in: {folder}",
+      "noFolder": "no folder",
+      "skipped": "{count, plural, one {# file was} other {# files were}} not added: the limit is {max} files at a time.",
+      "listLabel": "Files to upload",
+      "empty": "No files yet.",
+      "summary": "{done} of {total} done, {failed} failed",
+      "summaryDone": "All {total} files are done.",
+      "status": {
+        "queued": "Waiting",
+        "waiting": "Server busy, trying again",
+        "uploading": "Uploading {percent}%",
+        "done": "Done",
+        "doneExisting": "Using the existing file",
+        "failed": "Failed",
+        "duplicate": "Already in the library"
+      },
+      "progress": "Upload progress of {name}",
+      "retry": "Retry",
+      "retryAll": "Retry failed files",
+      "remove": "Remove",
+      "removeFile": "Remove {name} from the list",
+      "retryFile": "Retry {name}",
+      "clearDone": "Clear finished files",
+      "close": "Close",
+      "duplicate": {
+        "message": "This file is already in the library as {name}.",
+        "unknownName": "file #{id}",
+        "useExisting": "Use the existing file",
+        "uploadAnyway": "Upload anyway"
+      },
+      "errors": {
+        "unsupported": "This file type is not allowed.",
+        "tooLarge": "The file is too large.",
+        "svgNotAllowed": "You are not allowed to upload SVG files.",
+        "empty": "The file is empty.",
+        "busy": "The server is busy. Try again in a moment.",
+        "unavailable": "The file service is not available. Try again later.",
+        "forbidden": "You do not have permission to upload.",
+        "invalid": "The server did not accept this file.",
+        "network": "The connection was lost.",
+        "unknown": "The upload failed."
+      }
+    },
     "sheet": {
       "title": "Media file",
       "loading": "Loading the file",
@@ -2008,6 +2060,19 @@
         "more": "and {count} more",
         "close": "Close",
         "ok": "Show where it is used"
+      },
+      "replace": {
+        "button": "Replace file",
+        "saveFirst": "Save your changes first, then replace the file.",
+        "title": "Replace file",
+        "description": "The new file is used everywhere this file is used. The ID stays the same.",
+        "choose": "Choose the new file",
+        "chosen": "New file: {name}",
+        "submit": "Replace",
+        "cancel": "Cancel",
+        "uploading": "Uploading {percent}%",
+        "done": "The file was replaced.",
+        "fileLabel": "New file"
       }
     }
   },

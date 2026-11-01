@@ -19,6 +19,7 @@ import { FetchingBar } from "@/components/global/states/fetching-bar";
 import { NoPermission } from "@/components/layout/no-permission";
 import { MediaFolderTree, NO_FOLDER } from "@/components/protected/media/media-folders";
 import { MediaAssetSheet } from "@/components/protected/media/media-asset-sheet";
+import { MediaUploadButton } from "@/components/protected/media/media-upload-dialog";
 import { MediaThumb } from "@/components/protected/media/media-thumb";
 import { useMediaView } from "@/components/protected/media/use-media-view";
 import { Badge } from "@/components/ui/badge";
@@ -76,8 +77,7 @@ function useAssetParam() {
 }
 
 // SCR-35 (doc/07 section 3.22): the media library - folders on the left, keyword + filters on top, a grid or a
-// table of the files, pagination, selection, and the detail sheet. NO upload (P2, AS-2): rows are the seeded
-// `static/...` assets. A read that ends in 403 is `NoPermission`.
+// table of the files, pagination, selection, upload (P2, `media.library:create`) and the detail sheet. A read that ends in 403 is `NoPermission`.
 export function MediaLibrary() {
   const t = useTranslations("media");
   const tList = useTranslations("list");
@@ -101,6 +101,8 @@ export function MediaLibrary() {
     if (filters.folder_id && filters.folder_id !== NO_FOLDER) q.include_subfolders = true;
     return q;
   }, [list.query, filters.folder_id]);
+  // New files go to the folder being browsed (a numeric id), else to the root.
+  const uploadFolderId = filters.folder_id && /^\d+$/.test(filters.folder_id) ? Number(filters.folder_id) : null;
   const { data, isLoading, isFetching, error, refetch } = useMediaAssets(query);
   const rows = useMemo(() => data?.data ?? [], [data]);
 
@@ -211,7 +213,9 @@ export function MediaLibrary() {
           hasActiveFilters={list.hasActiveFilters}
           onClear={list.clearFilters}
           actions={
-            <ToggleGroup
+            <>
+              <MediaUploadButton folderId={uploadFolderId} />
+              <ToggleGroup
               type="single"
               variant="outline"
               size="sm"
@@ -225,7 +229,8 @@ export function MediaLibrary() {
               <ToggleGroupItem value="list" aria-label={t("view.list")}>
                 <ListIcon />
               </ToggleGroupItem>
-            </ToggleGroup>
+              </ToggleGroup>
+            </>
           }
         >
           <div className="flex items-center gap-2">

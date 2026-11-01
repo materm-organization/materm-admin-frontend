@@ -67,6 +67,9 @@ export const API_ENDPOINTS = {
     ASSET_USAGES: (id: number | string) => `/media/assets/${id}/usages`,
     FOLDERS: "/media/folders",
     FOLDER: (id: number | string) => `/media/folders/${id}`,
+    // P2 (FR-MEDIA-01 / 08). Note the paths: NOT under `/media/assets` (as agreed with the backend task).
+    UPLOADS: "/media/uploads",
+    ASSET_FILE: (id: number | string) => `/media/${id}/file`,
   },
   // Revisions of the save-live entities (doc/05 section 11.7). `base` = `/menus/main`, `/settings/brand`,
   // `/ui-strings/<key>`, `/categories/3`, `/tags/5`, `/media/assets/7` (see `lib/revision-resources.ts`).
