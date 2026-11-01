@@ -1,6 +1,6 @@
 // Mock of the P2 upload endpoints (the backend is built in parallel; this is the CONTRACT the UI codes against):
 //   POST /media/uploads        multipart, ONE part `file` (+ optional `folder_id`), `?allow_duplicate=true`
-//   POST /media/{id}/file      multipart, ONE part `file`, `If-Match` required
+//   POST /media/assets/{id}/file     multipart, ONE part `file`, `If-Match` required
 // Strict like the rest of the mock (unknown query / form fields are 422 `unknown_field`, no `If-Match` is 428, a stale
 // one 409), the type is decided by MAGIC BYTES (415) and the size by the type (413). A duplicate checksum answers
 // 409 `DUPLICATE_MEDIA` with `details.duplicate_of` = the existing asset: that shape is an ASSUMPTION (not final in the

@@ -182,7 +182,7 @@ const mediaHandlers: HttpHandler[] = [
     const { asset, etag } = await uploadAsset(getMockDb(), request);
     return ok(asset, { status: 201, etag });
   })),
-  http.post(P("/media/:id/file"), guard(async ({ request, params }) => {
+  http.post(P("/media/assets/:id/file"), guard(async ({ request, params }) => {
     const { asset, etag } = await replaceAssetFile(getMockDb(), param(params, "id"), request);
     return ok(asset, { etag });
   })),

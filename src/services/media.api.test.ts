@@ -87,7 +87,7 @@ describe("MediaAPI.UploadFile / ReplaceFile (against the strict mock)", () => {
   it("replace without If-Match reaches the server as 428 (strict mock)", async () => {
     let status = 0;
     server.use(
-      http.post(`${API}/media/:id/file`, ({ request }) => {
+      http.post(`${API}/media/assets/:id/file`, ({ request }) => {
         status = request.headers.get("If-Match") ? 200 : 428;
         return HttpResponse.json({ success: false, code: "PRECONDITION_REQUIRED" }, { status });
       })
