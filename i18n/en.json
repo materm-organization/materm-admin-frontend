@@ -3025,7 +3025,7 @@
       },
       "path_changed_published": {
         "title": "The address of a published page changed",
-        "body": "Links to the old address no longer work."
+        "body": "When you publish, a redirect from the old address to the new one is created automatically."
       },
       "post_referenced": {
         "title": "Pages that show this post skip it now",
@@ -3033,7 +3033,7 @@
       },
       "slug_changed_published": {
         "title": "The slug of a published post changed",
-        "body": "Links to the old address no longer work."
+        "body": "When you publish, a redirect from the old address to the new one is created automatically."
       },
       "album_referenced": {
         "title": "Sections that show this album now show nothing",
@@ -3042,6 +3042,16 @@
       "faq_group_referenced": {
         "title": "Sections that show this group now show nothing",
         "body": "{total_references, plural, one {# place names} other {# places name}} this group. It is not on the website while it is unpublished."
+      },
+      "auto_redirect_skipped": {
+        "title": "No automatic redirect was created for {source_path}{scope}",
+        "reason": {
+          "source_taken": "A redirect for the old address already exists, so it was left as it is. Old links go to {existing_target}. If they should go to {target}, open Redirects and change it.",
+          "loop": "The redirect would make a loop with other redirects. Open Redirects, change the ones that point back, then add a redirect from {source_path} to {target}.",
+          "chain_too_long": "Old links would need too many steps to reach the page. Open Redirects and point the old redirects straight to {target}.",
+          "internal_error": "The server could not create it. Old links to {source_path} may not work. Open Redirects and add a redirect from {source_path} to {target} yourself.",
+          "other": "The redirect was not created. Old links to {source_path} may not work. Open Redirects and add a redirect from {source_path} to {target} yourself."
+        }
       }
     },
     "toast": {
@@ -3152,6 +3162,12 @@
         "gone": "The link was already gone.",
         "failed": "The link could not be revoked."
       }
+    },
+    "autoRedirect": {
+      "open": "Open Redirects",
+      "auto_redirect_created": "A redirect from {source_path} to {target}{scope} was created automatically.",
+      "auto_redirect_updated": "The automatic redirect from {source_path} to {target}{scope} was updated.",
+      "auto_redirect_cleanup": "Old automatic redirects for {source_path}{scope} were tidied up. Old links go straight to {target}."
     }
   },
   "pages": {
@@ -3431,7 +3447,7 @@
         "pathHint": "Lower-case letters, numbers and hyphens, starting with /.",
         "pathHome": "The home page keeps the address /. To change it, make another page the home page.",
         "pathLocked": "The address of the blog page is fixed.",
-        "pathChangedPublished": "This page was published at {path}. After you publish the new address, the old one stops working until redirects exist (planned for a later version).",
+        "pathChangedPublished": "This page was published at {path}. When you publish the new address, a redirect from the old address to the new one is created automatically.",
         "template": "Template",
         "templateEmptyHint": "The template can be changed while the page has no sections.",
         "templateLocked": "The template cannot be changed once the page has sections.",
@@ -3627,7 +3643,7 @@
       "takenBy": "Taken by \"{title}\".",
       "taken": "Taken by another post.",
       "use": "Use {slug}",
-      "changedPublished": "This post was published with the slug {slug}. After you publish the new one, links to the old address stop working until redirects exist (planned for a later version)."
+      "changedPublished": "This post was published with the slug {slug}. When you publish the new one, a redirect from the old address to the new one is created automatically."
     },
     "media": {
       "none": "No image",

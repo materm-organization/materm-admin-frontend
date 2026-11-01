@@ -1,6 +1,8 @@
 "use client";
 
 import { EyeIcon, EyeOffIcon, PackageOpenIcon, RocketIcon, SaveIcon, Undo2Icon, XIcon } from "lucide-react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useState, type ReactNode } from "react";
 import { toast } from "sonner";
@@ -20,7 +22,7 @@ import { useIdempotencyKey } from "@/hooks/use-idempotency-key";
 import { useCan } from "@/hooks/use-permission";
 import { useMutationDiscardDraft, useMutationPublish, useMutationUnpublish } from "@/hooks/use-publishing";
 import { isConflictError, parseApiError } from "@/lib/api-error";
-import { PERMISSION_ACTIONS } from "@/lib/constants/permissions";
+import { PERMISSION_ACTIONS, PERMISSION_KEYS } from "@/lib/constants/permissions";
 import { PUBLISHABLE_RESOURCES, type PublishableResource } from "@/lib/publishable-resources";
 import { cn } from "@/lib/utils";
 import type {
@@ -71,12 +73,26 @@ export type PublishBarProps = {
 };
 
 // Warnings of a success the user should read (not only a toast): the draft kept in the History, links that are hidden.
-const NOTICE_CODES = new Set(["draft_kept_as_history", "page_referenced", "post_referenced", "album_referenced", "faq_group_referenced", "form_referenced", "path_changed_published", "slug_changed_published"]);
+const NOTICE_CODES = new Set(["draft_kept_as_history", "page_referenced", "post_referenced", "album_referenced", "faq_group_referenced", "form_referenced", "path_changed_published", "slug_changed_published", "auto_redirect_skipped"]);
+
+// The automatic 301 redirects a publish made when a published page changed path / a published post changed slug (doc/05
+// 14.12). Created / updated / cleanup are information (a short toast with a link to the Redirects screen); `skipped` is a
+// warning the editor must act on, so it stays on the page as a notice.
+const AUTO_REDIRECT_INFO_CODES = new Set(["auto_redirect_created", "auto_redirect_updated", "auto_redirect_cleanup"]);
+const REDIRECTS_URL = "/admin/redirects";
 
 // ICU arguments of a notice from its `params` (primitives only).
 function noticeValues(notice: CommandWarning): Record<string, string | number> {
   const out: Record<string, string | number> = {};
   for (const [k, v] of Object.entries(notice.params ?? {})) if (typeof v === "string" || typeof v === "number") out[k] = v;
+  // Same for the redirect warnings, whose `params` also carry arrays and null (`locale_code: null` = every language).
+  const p = (notice.params ?? {}) as Record<string, unknown>;
+  out.scope = typeof p.locale_code === "string" && p.locale_code ? ` (${p.locale_code})` : "";
+  if (Array.isArray(p.path)) out.loop_path = p.path.join(" > ");
+  for (const key of ["trashed", "deactivated", "repointed"]) {
+    const list = p[key];
+    out[key] = Array.isArray(list) ? list.length : 0;
+  }
   return out;
 }
 
@@ -126,6 +142,7 @@ export function PublishBar({
   const t = useTranslations("publishing");
   const config = PUBLISHABLE_RESOURCES[resource];
   const noun = t(`noun.${resource}`);
+  const router = useRouter();
   const { toastError } = useApiErrorHandler();
 
   const canPublish = useCan(config.permissionKey, PERMISSION_ACTIONS.PUBLISH);
@@ -136,6 +153,7 @@ export function PublishBar({
   const canUpdate = useCan(config.permissionKey, PERMISSION_ACTIONS.UPDATE, own);
   const canTranslate = useCan(config.permissionKey, PERMISSION_ACTIONS.TRANSLATE);
   const canRead = useCan(config.permissionKey, PERMISSION_ACTIONS.READ);
+  const canOpenRedirects = useCan(PERMISSION_KEYS.CMS_REDIRECTS, PERMISSION_ACTIONS.READ);
   const canPreviewAction = useCan(config.permissionKey, config.previewActions, own);
 
   const publishMutation = useMutationPublish(resource, entity.id);
@@ -219,6 +237,9 @@ export function PublishBar({
     setNotices(warnings.filter((w) => NOTICE_CODES.has(w.code)));
     await onResult({ action, data: envelope.data, etag: response.etag, warnings });
     toast.success(t(`toast.${action}`));
+    for (const info of warnings.filter((w) => AUTO_REDIRECT_INFO_CODES.has(w.code))) {
+      toast.info(t(`autoRedirect.${info.code}`, noticeValues(info)), canOpenRedirects ? { action: { label: t("autoRedirect.open"), onClick: () => router.push(REDIRECTS_URL) } } : undefined);
+    }
   };
 
   // --- Publish -------------------------------------------------------------------------------------------------------
@@ -290,6 +311,16 @@ export function PublishBar({
     }
   };
 
+  // The text of a notice; `auto_redirect_skipped` has one per reason (and says what to do), an unknown reason the generic one.
+  const noticeBody = (notice: CommandWarning): string => {
+    const values = noticeValues(notice);
+    if (notice.code === "auto_redirect_skipped") {
+      const reason = String(notice.params?.reason ?? "");
+      return t(t.has(`notices.auto_redirect_skipped.reason.${reason}`) ? `notices.auto_redirect_skipped.reason.${reason}` : "notices.auto_redirect_skipped.reason.other", values);
+    }
+    return t.has(`notices.${notice.code}.body`) ? t(`notices.${notice.code}.body`, values) : (notice.message ?? "");
+  };
+
   const publishReason = noEtag ? t("hints.loading") : isDirty ? t("hints.dirty") : null;
   const saveReason = !isDirty ? t("hints.nothingToSave") : null;
 
@@ -349,7 +380,17 @@ export function PublishBar({
               <Alert key={`${notice.code}-${i}`} className="border-amber-500/50 bg-amber-50 text-amber-950 dark:bg-amber-950/40 dark:text-amber-100" data-testid={`notice-${notice.code}`}>
                 <AlertTitle className="line-clamp-none">{t.has(`notices.${notice.code}.title`) ? t(`notices.${notice.code}.title`, noticeValues(notice)) : notice.code}</AlertTitle>
                 <AlertDescription className="flex items-start justify-between gap-2 text-amber-950/90 dark:text-amber-100/90">
-                  <span>{t.has(`notices.${notice.code}.body`) ? t(`notices.${notice.code}.body`, noticeValues(notice)) : (notice.message ?? "")}</span>
+                  <span>
+                    {noticeBody(notice)}
+                    {notice.code === "auto_redirect_skipped" && canOpenRedirects ? (
+                      <>
+                        {" "}
+                        <Link href={REDIRECTS_URL} className="font-medium underline underline-offset-2" data-testid="notice-open-redirects">
+                          {t("autoRedirect.open")}
+                        </Link>
+                      </>
+                    ) : null}
+                  </span>
                   <Button
                     type="button"
                     variant="ghost"

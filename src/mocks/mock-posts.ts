@@ -69,6 +69,7 @@ import { draftRowOf as pageDraftRow, isTrashed as pageIsTrashed } from "@/mocks/
 import type { ApiFieldError } from "@/types/api";
 import type { SaveLiveWarning, UserRef } from "@/types/media";
 import type { PostDetail, PostListItem, PostMediaItem, PostTranslation, PostTranslationStatus } from "@/types/posts";
+import { autoRedirectWarnings, type PathMove } from "@/mocks/mock-auto-redirects";
 import type { AggregateStamp, PublishIssue } from "@/types/publishing";
 import type { RevisionSummary } from "@/types/revisions";
 
@@ -1254,6 +1255,8 @@ export function publishPost(db: MockDb, id: string, params: Params, body: unknow
   const snapshot = structuredClone(postWorking(db, root));
   // `published_at = coalesce(the date on the root, now)` - kept on a re-publish (PT-7).
   const publishedAt = root.published_at ?? stamp;
+  const wasPublished = root.status === "published" && Boolean(draft);
+  const oldLive = root.live;
   root.live = snapshot;
   let published: StoredRevision;
   if (draft) {
@@ -1268,7 +1271,16 @@ export function publishPost(db: MockDb, id: string, params: Params, body: unknow
   root.published_at = publishedAt;
   root.first_published_at ??= stamp;
   root.unpublished_at = null;
-  const result = { ...writeResult(db, root, warnings.map((w) => ({ path: w.path, code: w.code, params: w.params }))), published_revision: { id: published.id, version: published.version } };
+  // 14.12: a published post whose slug moved in a language gets a 301 from /blog/<old> in that language - or says why not.
+  const moves: PathMove[] = [];
+  if (wasPublished) {
+    for (const t of snapshot.translations) {
+      const old = oldLive.translations.find((x) => x.locale_code === t.locale_code);
+      if (old && old.slug !== t.slug) moves.push({ warningPath: `/translations/${t.locale_code}/slug`, source: `/blog/${old.slug}`, target: `/blog/${t.slug}`, localeCode: t.locale_code, kind: "post" });
+    }
+  }
+  const autoWarnings = autoRedirectWarnings(db, moves);
+  const result = { ...writeResult(db, root, [...warnings, ...autoWarnings].map((w) => ({ path: w.path, code: w.code, params: w.params }))), published_revision: { id: published.id, version: published.version } };
   return { data: result, etag: etagOfPost(root) };
 }
 

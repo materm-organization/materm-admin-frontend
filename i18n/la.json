@@ -3025,7 +3025,7 @@
       },
       "path_changed_published": {
         "title": "ທີ່ຢູ່ຂອງໜ້າທີ່ເຜີຍແຜ່ແລ້ວຖືກປ່ຽນ",
-        "body": "ລິ້ງທີ່ໃຊ້ທີ່ຢູ່ເກົ່າຈະໃຊ້ບໍ່ໄດ້ແລ້ວ."
+        "body": "ເມື່ອເຜີຍແຜ່, ລະບົບຈະສ້າງ redirect ຈາກທີ່ຢູ່ເກົ່າໄປທີ່ຢູ່ໃໝ່ໃຫ້ເອງ."
       },
       "post_referenced": {
         "title": "ໜ້າທີ່ສະແດງບົດຄວາມນີ້ຈະຂ້າມມັນໄປ",
@@ -3033,7 +3033,7 @@
       },
       "slug_changed_published": {
         "title": "Slug ຂອງບົດຄວາມທີ່ເຜີຍແຜ່ແລ້ວຖືກປ່ຽນ",
-        "body": "ລິ້ງທີ່ໃຊ້ທີ່ຢູ່ເກົ່າຈະໃຊ້ບໍ່ໄດ້ແລ້ວ."
+        "body": "ເມື່ອເຜີຍແຜ່, ລະບົບຈະສ້າງ redirect ຈາກທີ່ຢູ່ເກົ່າໄປທີ່ຢູ່ໃໝ່ໃຫ້ເອງ."
       },
       "album_referenced": {
         "title": "ສ່ວນທີ່ສະແດງອັນລະບັ້ມນີ້ຈະບໍ່ສະແດງຫຍັງ",
@@ -3042,6 +3042,16 @@
       "faq_group_referenced": {
         "title": "ສ່ວນທີ່ສະແດງກຸ່ມນີ້ຈະບໍ່ສະແດງຫຍັງ",
         "body": "{total_references, plural, other {ມີ # ບ່ອນ}}ທີ່ອ້າງເຖິງກຸ່ມນີ້. ມັນຈະບໍ່ຢູ່ເວັບໄຊ ໃນລະຫວ່າງທີ່ຖືກຖອນການເຜີຍແຜ່."
+      },
+      "auto_redirect_skipped": {
+        "title": "ບໍ່ໄດ້ສ້າງ redirect ອັດຕະໂນມັດໃຫ້ {source_path}{scope}",
+        "reason": {
+          "source_taken": "ມີ redirect ຂອງທີ່ຢູ່ເກົ່ານີ້ຢູ່ແລ້ວ, ຈຶ່ງບໍ່ປ່ຽນ. ລິ້ງເກົ່າໄປ {existing_target}. ຖ້າຢາກໃຫ້ໄປ {target}, ເປີດ Redirects ແລ້ວແກ້ເອງ.",
+          "loop": "redirect ນີ້ຈະວົນກັບ redirect ອື່ນ. ເປີດ Redirects, ແກ້ອັນທີ່ຊີ້ກັບ, ແລ້ວເພີ່ມ redirect ຈາກ {source_path} ໄປ {target}.",
+          "chain_too_long": "ລິ້ງເກົ່າຕ້ອງຜ່ານຫຼາຍຂັ້ນຕອນເກີນໄປ. ເປີດ Redirects ແລ້ວໃຫ້ redirect ເກົ່າຊີ້ໄປ {target} ໂດຍກົງ.",
+          "internal_error": "ເຊີບເວີສ້າງບໍ່ໄດ້. ລິ້ງເກົ່າຂອງ {source_path} ອາດໃຊ້ບໍ່ໄດ້. ເປີດ Redirects ແລ້ວເພີ່ມ redirect ຈາກ {source_path} ໄປ {target} ເອງ.",
+          "other": "ບໍ່ໄດ້ສ້າງ redirect. ລິ້ງເກົ່າຂອງ {source_path} ອາດໃຊ້ບໍ່ໄດ້. ເປີດ Redirects ແລ້ວເພີ່ມ redirect ຈາກ {source_path} ໄປ {target} ເອງ."
+        }
       }
     },
     "toast": {
@@ -3152,6 +3162,12 @@
         "gone": "ລິ້ງນີ້ບໍ່ມີແລ້ວ.",
         "failed": "ຍົກເລີກລິ້ງບໍ່ສຳເລັດ."
       }
+    },
+    "autoRedirect": {
+      "open": "ເປີດ Redirects",
+      "auto_redirect_created": "ລະບົບສ້າງ redirect ຈາກ {source_path} ໄປ {target}{scope} ໃຫ້ເອງແລ້ວ.",
+      "auto_redirect_updated": "ອັບເດດ redirect ອັດຕະໂນມັດຈາກ {source_path} ໄປ {target}{scope} ແລ້ວ.",
+      "auto_redirect_cleanup": "ລະບົບຈັດ redirect ອັດຕະໂນມັດເກົ່າຂອງ {source_path}{scope} ແລ້ວ. ລິ້ງເກົ່າໄປ {target} ໂດຍກົງ."
     }
   },
   "pages": {
@@ -3431,7 +3447,7 @@
         "pathHint": "ຕົວອັກສອນພິມນ້ອຍ, ຕົວເລກ ແລະ ຂີດຕໍ່ (-), ເລີ່ມຕົ້ນດ້ວຍ /.",
         "pathHome": "ໜ້າຫຼັກໃຊ້ທີ່ຢູ່ / ຕະຫຼອດ. ຖ້າຢາກປ່ຽນ ໃຫ້ຕັ້ງໜ້າອື່ນເປັນໜ້າຫຼັກ.",
         "pathLocked": "ທີ່ຢູ່ຂອງໜ້າບລັອກຖືກກຳນົດໄວ້ຄົງທີ່.",
-        "pathChangedPublished": "ໜ້ານີ້ເຄີຍເຜີຍແຜ່ທີ່ {path}. ຫຼັງຈາກເຜີຍແຜ່ທີ່ຢູ່ໃໝ່, ທີ່ຢູ່ເກົ່າຈະໃຊ້ບໍ່ໄດ້ ຈົນກວ່າຈະມີການປ່ຽນເສັ້ນທາງ (redirect) ເຊິ່ງວາງແຜນໄວ້ໃນເວີຊັນຕໍ່ໄປ.",
+        "pathChangedPublished": "ໜ້ານີ້ເຄີຍເຜີຍແຜ່ທີ່ {path}. ເມື່ອເຜີຍແຜ່ທີ່ຢູ່ໃໝ່, ລະບົບຈະສ້າງ redirect ຈາກທີ່ຢູ່ເກົ່າໄປທີ່ຢູ່ໃໝ່ໃຫ້ເອງ.",
         "template": "ແມ່ແບບ",
         "templateEmptyHint": "ປ່ຽນແມ່ແບບໄດ້ຕອນທີ່ໜ້າຍັງບໍ່ມີສ່ວນ.",
         "templateLocked": "ເມື່ອໜ້າມີສ່ວນແລ້ວ ປ່ຽນແມ່ແບບບໍ່ໄດ້.",
@@ -3627,7 +3643,7 @@
       "takenBy": "ຖືກ \"{title}\" ໃຊ້ແລ້ວ.",
       "taken": "ຖືກບົດຄວາມອື່ນໃຊ້ແລ້ວ.",
       "use": "ໃຊ້ {slug}",
-      "changedPublished": "ບົດຄວາມນີ້ເຄີຍເຜີຍແຜ່ດ້ວຍ slug {slug}. ຫຼັງຈາກເຜີຍແຜ່ slug ໃໝ່, ລິ້ງທີ່ໃຊ້ທີ່ຢູ່ເກົ່າຈະໃຊ້ບໍ່ໄດ້ ຈົນກວ່າຈະມີການປ່ຽນເສັ້ນທາງ (redirect) ເຊິ່ງວາງແຜນໄວ້ໃນເວີຊັນຕໍ່ໄປ."
+      "changedPublished": "ບົດຄວາມນີ້ເຄີຍເຜີຍແຜ່ດ້ວຍ slug {slug}. ເມື່ອເຜີຍແຜ່ slug ໃໝ່, ລະບົບຈະສ້າງ redirect ຈາກທີ່ຢູ່ເກົ່າໄປທີ່ຢູ່ໃໝ່ໃຫ້ເອງ."
     },
     "media": {
       "none": "ບໍ່ມີຮູບ",

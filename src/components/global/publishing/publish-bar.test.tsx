@@ -7,7 +7,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { PublishBar, type PublishBarProps } from "@/components/global/publishing/publish-bar";
 import { usePage, writeThroughPage } from "@/hooks/use-pages";
 import { getMockDb } from "@/mocks/mock-db";
-import { touchPageAsSomeoneElse } from "@/mocks/mock-pages";
+import { getPage, patchPage, touchPageAsSomeoneElse } from "@/mocks/mock-pages";
+import { getPost, patchPost } from "@/mocks/mock-posts";
 import { useMockApi } from "@/mocks/test-setup";
 import { server } from "@/test/msw-server";
 import { grants, renderApp } from "@/test/render-app";
@@ -18,10 +19,11 @@ const me = vi.hoisted(() => ({ current: { id: 6, roleID: 2, permissions: [] as P
 vi.mock("@/hooks/use-auth", () => ({ useFetchCurrentUser: () => ({ data: { data: me.current } }) }));
 vi.mock("next/navigation", () => ({
   usePathname: () => "/admin/pages/9",
-  useRouter: () => ({ push: vi.fn(), replace: vi.fn() }),
+  useRouter: () => ({ push, replace: vi.fn() }),
   useSearchParams: () => new URLSearchParams(),
 }));
 const toast = vi.hoisted(() => ({ success: vi.fn(), error: vi.fn(), info: vi.fn() }));
+const push = vi.hoisted(() => vi.fn());
 vi.mock("sonner", () => ({ toast }));
 
 const FULL = grants({ "cms.pages": ["read", "create", "update", "delete", "publish", "unpublish", "translate", "review"] });
@@ -489,5 +491,94 @@ describe("PublishBar: a kind with update_own (posts, 05 13.3.2)", () => {
     renderApp(<PublishBar resource="pages" entity={{ id: 8, status: "draft", has_unpublished_changes: false, owner_id: 6 }} etag='"1"' onSaveDraft={() => undefined} onResult={() => undefined} />);
     await screen.findByTestId("publish-bar");
     expect(screen.queryByRole("button", { name: "Save draft" })).not.toBeInTheDocument();
+  });
+});
+
+describe("PublishBar: the automatic redirects of a publish that moved an address (doc/05 14.12)", () => {
+  useMockApi();
+  const WITH_REDIRECTS = grants({
+    "cms.pages": ["read", "create", "update", "delete", "publish", "unpublish", "translate", "review"],
+    "cms.blog": ["read", "create", "update", "delete", "publish", "unpublish", "translate", "review"],
+    "cms.redirects": ["read"],
+  });
+  beforeEach(() => {
+    me.current = { id: 6, roleID: 2, permissions: WITH_REDIRECTS };
+    push.mockReset();
+  });
+
+  const publishPageNow = async (user: ReturnType<typeof userEvent.setup>) => {
+    await user.click(await button(/^Publish/));
+    const dialog = await screen.findByRole("dialog");
+    await user.click(within(dialog).getByRole("button", { name: /^Publish/ }));
+  };
+
+  it("a page that moved: a short toast says the redirect was created, with a link to Redirects, and no warning notice", async () => {
+    const user = userEvent.setup();
+    const db = getMockDb();
+    patchPage(db, "9", { path: "/happenings" }, getPage(db, "9").etag);
+    renderBar(9);
+    await publishPageNow(user);
+    await waitFor(() => expect(toast.info).toHaveBeenCalledTimes(1));
+    const [text, options] = toast.info.mock.calls[0];
+    expect(text).toBe("A redirect from /events to /happenings was created automatically.");
+    expect(options.action.label).toBe("Open Redirects");
+    options.action.onClick();
+    expect(push).toHaveBeenCalledWith("/admin/redirects");
+    expect(db.redirects.some((r) => r.source_path === "/events" && r.target === "/happenings" && r.status_code === 301)).toBe(true);
+    expect(screen.queryByTestId("notice-auto_redirect_skipped")).not.toBeInTheDocument();
+  });
+
+  it("a page whose old address is held by an editor's redirect: a clear warning with the reason (seed redirect /team), what to do and a link", async () => {
+    const user = userEvent.setup();
+    const db = getMockDb();
+    // the seed already has an editor redirect /team -> /about
+    patchPage(db, "10", { path: "/people" }, getPage(db, "10").etag);
+    renderBar(10);
+    await publishPageNow(user);
+    const notice = await screen.findByTestId("notice-auto_redirect_skipped");
+    expect(notice).toHaveTextContent("No automatic redirect was created for /team");
+    expect(notice).toHaveTextContent("Old links go to /about. If they should go to /people, open Redirects and change it.");
+    expect(within(notice).getByTestId("notice-open-redirects")).toHaveAttribute("href", "/admin/redirects");
+    expect(toast.info).not.toHaveBeenCalled();
+    expect(db.redirects.filter((r) => r.source_path === "/team" && !r.deleted_at)).toHaveLength(1);
+  });
+
+  it("an unknown skip reason still gets a plain generic text", async () => {
+    const user = userEvent.setup();
+    server.use(
+      http.post(`${API}/pages/10/publish`, async ({ request }) => {
+        if (new URL(request.url).searchParams.get("dry_run")) return undefined;
+        return HttpResponse.json(
+          { data: { aggregate: { entity_type: "cms.pages", id: 10, lock_version: 9, status: "published", has_unpublished_changes: false, updated_at: "2026-11-01T00:00:00Z" }, warnings: [{ path: "/path", code: "auto_redirect_skipped", params: { reason: "chain_too_long", hops: 5, max: 3, source_path: "/a", target: "/b", locale_code: null } }] } },
+          { headers: { ETag: '"9"' } }
+        );
+      })
+    );
+    patchPage(getMockDb(), "10", { path: "/people" }, getPage(getMockDb(), "10").etag);
+    renderBar(10);
+    await publishPageNow(user);
+    expect(await screen.findByTestId("notice-auto_redirect_skipped")).toHaveTextContent("Old links would need too many steps to reach the page.");
+  });
+
+  it("a post whose slug moved in one language: the toast names the /blog address and the language", async () => {
+    const user = userEvent.setup();
+    const db = getMockDb();
+    const patched = patchPost(db, "2", { translations: { en: { slug: "dawn-paddle" } } }, getPost(db, "2").etag);
+    renderApp(<PublishBar resource="posts" entity={{ id: 2, status: "published", has_unpublished_changes: true, owner_id: 6 }} etag={patched.etag} onResult={() => undefined} />);
+    await publishPageNow(user);
+    await waitFor(() => expect(toast.info).toHaveBeenCalledTimes(1));
+    expect(toast.info.mock.calls[0][0]).toBe("A redirect from /blog/sunrise-paddle-on-the-mekong to /blog/dawn-paddle (en) was created automatically.");
+    expect(db.redirects.some((r) => r.source_path === "/blog/sunrise-paddle-on-the-mekong" && r.locale_code === "en")).toBe(true);
+  });
+
+  it("without the right to read redirects the toast has no link and the notice has no link", async () => {
+    const user = userEvent.setup();
+    me.current = { id: 6, roleID: 2, permissions: FULL };
+    const db = getMockDb();
+    patchPage(db, "9", { path: "/happenings" }, getPage(db, "9").etag);
+    renderBar(9);
+    await publishPageNow(user);
+    await waitFor(() => expect(toast.info).toHaveBeenCalledTimes(1));
+    expect(toast.info.mock.calls[0][1]).toBeUndefined();
   });
 });

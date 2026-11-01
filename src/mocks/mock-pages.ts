@@ -64,6 +64,7 @@ import type {
   PageTranslationStatus,
   SectionSummary,
 } from "@/types/pages";
+import { autoRedirectWarnings, type PathMove } from "@/mocks/mock-auto-redirects";
 import type { AggregateStamp, PublishIssue } from "@/types/publishing";
 import type { RevisionSummary } from "@/types/revisions";
 import type { SaveLiveWarning } from "@/types/media";
@@ -1448,6 +1449,8 @@ export function publishPage(db: MockDb, id: string, params: Params, body: unknow
   const stamp = touch(db, root);
   const note = typeof input.change_note === "string" && input.change_note ? input.change_note : null;
   const draft = hasDraft(db, root) ? draftRowOf(db, root) : undefined;
+  const oldPath = root.live.page.path;
+  const wasPublished = root.status === "published" && Boolean(draft);
   let published: StoredRevision;
   if (draft) {
     // The draft's rows go live (not `key`, `is_home`, `is_system`), the draft row becomes the `published` row.
@@ -1465,7 +1468,10 @@ export function publishPage(db: MockDb, id: string, params: Params, body: unknow
   root.published_at = stamp;
   root.first_published_at ??= stamp;
   root.unpublished_at = null;
-  const result = { ...writeResult(db, root, warnings.map((w) => ({ path: w.path, code: w.code, params: w.params }))), published_revision: { id: published.id, version: published.version } };
+  // 14.12: a published page whose live path moved gets a 301 from the old path (all languages) - or says why not.
+  const moves: PathMove[] = wasPublished && oldPath !== root.live.page.path ? [{ warningPath: "/path", source: oldPath, target: root.live.page.path, localeCode: null, kind: "page" }] : [];
+  const autoWarnings = autoRedirectWarnings(db, moves);
+  const result = { ...writeResult(db, root, [...warnings, ...autoWarnings].map((w) => ({ path: w.path, code: w.code, params: w.params }))), published_revision: { id: published.id, version: published.version } };
   return { data: result, etag: etagOfPage(root) };
 }
 
