@@ -58,7 +58,10 @@ describe("MediaAPI.UploadFile / ReplaceFile (against the strict mock)", () => {
 
   it("rejects by magic bytes (415) and by size (413), whatever the name says", async () => {
     await expect(MediaAPI.UploadFile(new File(["hello"], "fake.png", { type: "image/png" }))).rejects.toMatchObject({ response: { status: 415 } });
-    const big = new File([new Uint8Array([...PNG, ...new Uint8Array(21 * 1024 * 1024)])], "big.png", { type: "image/png" });
+    // Allocate the 21 MB buffer directly: spreading it into an array literal built 21 million elements (seconds of CPU).
+    const bytes = new Uint8Array(21 * 1024 * 1024);
+    bytes.set(PNG);
+    const big = new File([bytes], "big.png", { type: "image/png" });
     await expect(MediaAPI.UploadFile(big)).rejects.toMatchObject({ response: { status: 413 } });
   });
 

@@ -41,8 +41,10 @@ describe("LinkField", () => {
     const address = screen.getByLabelText("Address");
     expect(address).not.toHaveAttribute("aria-invalid");
 
+    // Paste, not type: every keystroke re-validates the whole form, and ~70 of them made this test time out under load.
+    // `clear` leaves the field focused, so the paste lands in it.
     await u.clear(address);
-    await u.type(address, "//evil.test");
+    await u.paste("//evil.test");
     expect(await screen.findByText(/starts with \/\/ or \/\\ leaves the site/)).toBeInTheDocument();
     expect(address).toHaveAttribute("aria-invalid", "true");
     expect(address.getAttribute("aria-describedby")).toBeTruthy();
@@ -50,17 +52,17 @@ describe("LinkField", () => {
     expect(issueTexts(document.body).filter((t) => t.includes("required pattern"))).toEqual([]);
 
     await u.clear(address);
-    await u.type(address, "/\\evil.test");
+    await u.paste("/\\evil.test");
     expect(await screen.findByText(/leaves the site/)).toBeInTheDocument();
 
     for (const ok of ["https://example.test/a", "/about", "mailto:a@b.test", "tel:+8562012345"]) {
       await u.clear(address);
-      await u.type(address, ok);
+      await u.paste(ok);
       await waitFor(() => expect(address).not.toHaveAttribute("aria-invalid"));
       expect(screen.queryByText(/leaves the site/)).not.toBeInTheDocument();
     }
     await u.clear(address);
-    await u.type(address, "javascript:alert(1)");
+    await u.paste("javascript:alert(1)");
     expect(await screen.findByText(/Use https:\/\/, \/path/)).toBeInTheDocument();
   });
 
@@ -224,7 +226,9 @@ describe("ArrayField", () => {
 
     await u.click(screen.getByRole("button", { name: "Remove Three" }));
     expect(titles(onChange).slice(0, 3)).toEqual(["One", "Two", "Two"]);
-  });
+    // Six sequential user-event clicks, each re-validating a nested form: about 2 s alone but far over 15 s with the CPU
+    // shared by two suites, so this one test gets a larger budget instead of raising the global one again.
+  }, 30_000);
 
   it("keeps an item's identity when it moves (its collapsed state follows it)", async () => {
     const u = userEvent.setup();

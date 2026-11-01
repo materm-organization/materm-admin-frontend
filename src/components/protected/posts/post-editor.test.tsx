@@ -267,11 +267,14 @@ describe("PostEditor: the gallery (PUT /posts/{id}/media)", () => {
     expect(within(gallery).getByRole("button", { name: "Add pictures" })).toBeDisabled();
     expect(within(gallery).getByText("The gallery is full (60 pictures).")).toBeInTheDocument();
     const alt = within(gallery).getAllByLabelText(/^Alt text/)[0];
-    await u.type(alt, "Misty ridge");
+    await u.click(alt);
+    await u.paste("Misty ridge"); // one change event, not 11: each keystroke re-rendered all 60 rows
     await u.click(screen.getByRole("button", { name: "Save draft" }));
     // the order did not change: only the text goes, as media_translations of the existing row (no PUT)
     await waitFor(() => expect(root(3).live.media[0].translations.la?.alt).toBe("Misty ridge"));
-  });
+    // 60 gallery rows with their own inputs: about 1.5 s alone, far more with the CPU shared by two suites, so this one
+    // test gets a larger budget instead of raising the global one again.
+  }, 30_000);
 });
 
 describe("PostEditor: Details and SEO", () => {

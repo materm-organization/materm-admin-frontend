@@ -413,7 +413,9 @@ describe("PageEditor: Details, SEO and the publishing bar", () => {
     const title = await within(seo).findByLabelText(/^SEO title \(EN\)/);
     await user.type(title, "Summer trek in the hills");
     expect(within(seo).getByTestId("serp-preview")).toHaveTextContent("Summer trek in the hills");
-    await user.type(within(seo).getByLabelText(/^SEO description \(EN\)/), "d".repeat(170));
+    // Pasting, not typing: 170 single keystrokes re-rendered the whole form 170 times (about 3 s alone, over the 5 s limit under load).
+    await user.click(within(seo).getByLabelText(/^SEO description \(EN\)/));
+    await user.paste("d".repeat(170));
     expect(within(seo).getByText(/Longer than 160 characters/)).toBeInTheDocument();
     await user.click(within(seo).getByRole("switch", { name: "Hide this page from search engines" }));
     await user.click(screen.getByRole("button", { name: "Save draft" }));
