@@ -54,7 +54,7 @@ describe("Replace file (FR-MEDIA-08)", () => {
     const before = getMockDb().assets.find((a) => a.id === 2)!.updated_at;
     let seen: string | null = null;
     server.use(
-      http.post(`${API}/media/2/file`, ({ request }) => {
+      http.post(`${API}/media/assets/2/file`, ({ request }) => {
         seen = request.headers.get("If-Match");
         return undefined as never;
       })
@@ -74,7 +74,7 @@ describe("Replace file (FR-MEDIA-08)", () => {
 
   it("a stale ETag (409 CONFLICT_LOCK_VERSION) opens the ConflictDialog", async () => {
     server.use(
-      http.post(`${API}/media/2/file`, () =>
+      http.post(`${API}/media/assets/2/file`, () =>
         HttpResponse.json({ success: false, code: "CONFLICT_LOCK_VERSION", message: "changed" }, { status: 409 })
       )
     );
