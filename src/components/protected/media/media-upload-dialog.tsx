@@ -13,7 +13,7 @@ import { useMediaUpload } from "@/hooks/use-media-upload";
 import { useCan } from "@/hooks/use-permission";
 import { PERMISSION_ACTIONS, PERMISSION_KEYS } from "@/lib/constants/permissions";
 import { formatBytes } from "@/lib/media";
-import { MAX_FILES_PER_BATCH, acceptAttribute } from "@/lib/media-upload";
+import { MAX_FILES_PER_BATCH, acceptAttribute, matchesAccept } from "@/lib/media-upload";
 import type { UploadItem } from "@/lib/media-upload-queue";
 import { cn } from "@/lib/utils";
 
@@ -47,6 +47,7 @@ export function MediaUploadDialog({
   items,
   folderId,
   allowSvg,
+  accept,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -54,6 +55,8 @@ export function MediaUploadDialog({
   items: readonly UploadItem[];
   folderId: number | null;
   allowSvg: boolean;
+  // The media picker's mime filter: narrows the file chooser (the queue rejects the rest).
+  accept?: string;
 }) {
   const t = useTranslations("media.upload");
   const folders = useMediaFolders(open);
@@ -117,7 +120,10 @@ export function MediaUploadDialog({
             tabIndex={-1}
             aria-hidden
             data-testid="media-upload-input"
-            accept={acceptAttribute(allowSvg)}
+            accept={acceptAttribute(allowSvg)
+              .split(",")
+              .filter((mime) => matchesAccept({ name: "", type: mime }, accept))
+              .join(",")}
             onChange={(e) => {
               addFiles(e.target.files);
               // The same file can be chosen again after it was removed.

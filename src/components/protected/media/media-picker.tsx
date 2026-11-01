@@ -1,11 +1,13 @@
 "use client";
 
-import { CheckIcon, ChevronLeftIcon, ChevronRightIcon, FolderIcon, ImageIcon, SearchIcon } from "lucide-react";
+import { CheckIcon, ChevronLeftIcon, ChevronRightIcon, FolderIcon, ImageIcon, SearchIcon, UploadIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent } from "react";
 
 import { useDebouncedValue } from "@/components/schema-form/widgets/use-debounced";
 import { MediaThumb } from "@/components/protected/media/media-thumb";
+import { MediaUploadDialog } from "@/components/protected/media/media-upload-dialog";
+import { toMediaOption } from "@/components/schema-form/data/api-data";
 import { useMediaFolderOptions, useMediaPage } from "@/components/schema-form/data/provider";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -22,7 +24,10 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useLocales } from "@/hooks/use-locales";
+import { useMediaUpload } from "@/hooks/use-media-upload";
+import { useCan } from "@/hooks/use-permission";
 import { isNoPermissionError } from "@/lib/api-error";
+import { PERMISSION_ACTIONS, PERMISSION_KEYS } from "@/lib/constants/permissions";
 import { cn } from "@/lib/utils";
 import type { MediaAssetOption } from "@/types/cms";
 
@@ -147,6 +152,37 @@ function PickerContent({
     onOpenChange(false);
   };
 
+  // "Upload new": the same queue and dialog as the library. A file that ends up `done` (created, or the existing
+  // one after "Use existing file" on a duplicate) is selected at once - single: picked and closed; multiple: added
+  // to the selection (the footer's "Add selected" still confirms).
+  const canUpload = useCan(PERMISSION_KEYS.MEDIA_LIBRARY, PERMISSION_ACTIONS.CREATE);
+  const canSvg = useCan(PERMISSION_KEYS.MEDIA_LIBRARY, PERMISSION_ACTIONS.UPDATE);
+  const [uploadOpen, setUploadOpen] = useState(false);
+  const uploadFolder = folder !== ALL && folder !== ROOT ? Number(folder) : null;
+  const upload = useMediaUpload({ folderId: uploadFolder, allowSvg: canSvg, accept });
+  const handled = useRef(new Set<string>());
+  const pickRef = useRef<(asset: MediaAssetOption) => void>(() => undefined);
+  const uploadedPick = (asset: MediaAssetOption) => {
+    if (multiple) {
+      chosenById.current.set(asset.id, asset);
+      setSelectedSet((current) => (current.includes(asset.id) || current.length >= limit ? current : [...current, asset.id]));
+      return;
+    }
+    onSelect([asset]);
+    onOpenChange(false);
+  };
+  useEffect(() => {
+    pickRef.current = uploadedPick;
+  });
+  useEffect(() => {
+    for (const item of upload.items) {
+      if (item.status !== "done" || !item.asset || handled.current.has(item.id)) continue;
+      handled.current.add(item.id);
+      const option = toMediaOption(item.asset as unknown as Parameters<typeof toMediaOption>[0]);
+      if (option) pickRef.current(option);
+    }
+  }, [upload.items]);
+
   const confirm = () => {
     // An id that no longer resolves (deleted since) is left out; the others always have their row (see above).
     const rows = selectedSet
@@ -210,6 +246,12 @@ function PickerContent({
             }}
           />
         </div>
+        {canUpload ? (
+          <Button type="button" variant="outline" onClick={() => setUploadOpen(true)}>
+            <UploadIcon />
+            {t("upload")}
+          </Button>
+        ) : null}
         <div className="space-y-1.5">
           <Label htmlFor={kindId}>{t("kind")}</Label>
           <Select
@@ -383,6 +425,17 @@ function PickerContent({
           ) : null}
         </div>
       </DialogFooter>
+      {canUpload ? (
+        <MediaUploadDialog
+          open={uploadOpen}
+          onOpenChange={setUploadOpen}
+          queue={upload.queue}
+          items={upload.items}
+          folderId={uploadFolder}
+          allowSvg={canSvg}
+          accept={accept}
+        />
+      ) : null}
     </DialogContent>
   );
 }

@@ -28,7 +28,8 @@ export type UploadItem = {
 };
 
 // What the screen tells the queue and can change while files wait (the folder being browsed, the user's rights).
-export type UploadContext = { folderId: number | null; allowSvg: boolean };
+// `accept` = the media picker's mime filter (blank = anything).
+export type UploadContext = { folderId: number | null; allowSvg: boolean; accept?: string };
 
 export type UploadFn = (
   file: File,

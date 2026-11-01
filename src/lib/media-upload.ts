@@ -44,6 +44,7 @@ export type UploadErrorKind =
   | "unsupported" // 415 (or the client check)
   | "tooLarge" // 413 (or the client check)
   | "svgNotAllowed" // client check: SVG without `update`
+  | "notAccepted" // client check: the picker only takes some kinds (e.g. images)
   | "empty"
   | "busy" // 429 / 503 with Retry-After: the upload slots are full
   | "unavailable" // 503: the file service is down or not configured
@@ -51,6 +52,19 @@ export type UploadErrorKind =
   | "invalid" // 422 / 400
   | "network"
   | "unknown";
+
+// Does the file match a picker's `accept` list (`image/*`, `image/png`, `.png`, comma separated)? Blank = anything.
+export function matchesAccept(file: Pick<File, "name" | "type">, accept: string | undefined): boolean {
+  const rules = (accept ?? "").split(",").map((r) => r.trim().toLowerCase()).filter(Boolean);
+  if (rules.length === 0) return true;
+  const mime = guessMime(file);
+  const name = file.name.toLowerCase();
+  return rules.some((rule) => {
+    if (rule.startsWith(".")) return name.endsWith(rule);
+    if (rule.endsWith("/*")) return mime.startsWith(rule.slice(0, -1));
+    return mime === rule;
+  });
+}
 
 export type UploadError = {
   kind: UploadErrorKind;

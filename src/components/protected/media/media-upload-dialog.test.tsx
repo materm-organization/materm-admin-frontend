@@ -134,8 +134,7 @@ describe("Media upload dialog (FR-MEDIA-01/02/12)", () => {
     await user.click(within(dialog).getByRole("button", { name: "Clear finished files" }));
 
     await user.upload(input, [png("same-bytes.png", 5), png("same-again.png", 5)]);
-    const rows = await within(dialog).findAllByText(/is already in the library as orig.png/, undefined, { timeout: 3000 });
-    expect(rows).toHaveLength(2);
+    await waitFor(() => expect(within(dialog).getAllByText(/is already in the library as orig.png/)).toHaveLength(2), { timeout: 3000 });
     const assetsBefore = getMockDb().assets.length;
 
     const list = within(dialog).getAllByRole("listitem");

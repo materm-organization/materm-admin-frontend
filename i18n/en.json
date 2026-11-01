@@ -1784,7 +1784,8 @@
       "cancel": "Cancel",
       "addSelected": "Add selected",
       "notReady": "Not ready",
-      "noAlt": "No alt text"
+      "noAlt": "No alt text",
+      "upload": "Upload new"
     },
     "title": "Media library",
     "description": "Browse the images used on the website, describe them in every language and see where they are used. Uploading comes later.",
@@ -1951,6 +1952,7 @@
         "unsupported": "This file type is not allowed.",
         "tooLarge": "The file is too large.",
         "svgNotAllowed": "You are not allowed to upload SVG files.",
+        "notAccepted": "This kind of file is not accepted here.",
         "empty": "The file is empty.",
         "busy": "The server is busy. Try again in a moment.",
         "unavailable": "The file service is not available. Try again later.",
