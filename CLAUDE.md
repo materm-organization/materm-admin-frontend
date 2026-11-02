@@ -148,7 +148,7 @@ Screens and building blocks built so far (phase P1 milestone M1; contract `../do
 The admin's colours come from the user's four greens `#E8F5E9` (lightest), `#A5D6A7`, `#66BB6A`, `#1B5E20` (darkest); the brand orange `#f28a1f` is gone.
 All tokens are in `src/app/globals.css` (`:root` / `.dark`, hex values, so the contrast can be checked by hand). Light: primary `#1B5E20` + white text (7.87:1),
 secondary / accent `#E8F5E9`, sidebar `#F4FAF5`, border `#D4E5D6`, form-control border `--input` `#7A9880` (>= 3:1 on white), ring `#2E7D32`. Dark: primary `#66BB6A` +
-`#0A2610` text (6.84:1), background `#0D1610`, card / popover `#142019`, sidebar `#101A13`, ring `#81C784`. `#A5D6A7` is not a token of its own (it fails 3:1 on white);
+`#0A2610` text (6.84:1), background `#121413` (near-neutral, user asked for less green), card / popover `#1A1D1B`, sidebar `#161917`, ring `#81C784`. `#A5D6A7` is not a token of its own (it fails 3:1 on white);
 it is the tint family behind secondary / accent. chart-1..6 are one green plus five distinct hues (blue, purple, rose, teal, ochre). Rules: use the tokens
 (`bg-primary`, `text-primary`, `ring-ring`), never a hex; status colours (amber = warning / unsaved / pending, orange = archived, sky = in review, violet = scheduled,
 emerald = published / success, `destructive` = error) are deliberately NOT the brand green and stay Tailwind palette classes with `dark:` pairs; amber/orange classes in the
