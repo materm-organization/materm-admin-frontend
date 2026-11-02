@@ -316,6 +316,7 @@
       "attention": "Some updates failed to reach the website."
     },
     "attention": "Needs attention",
+    "nothingNeeded": "Nothing needs your attention right now.",
     "allClear": "All clear",
     "loading": "Loading the dashboard",
     "sections": {

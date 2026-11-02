@@ -130,7 +130,10 @@ function EmptyList({ icon, text }: { icon: ReactNode; text: string }) {
 }
 
 const KPI_GRID = "grid items-stretch gap-4 grid-cols-1 sm:grid-cols-2 xl:grid-cols-3";
-const DETAIL_GRID = "grid items-start gap-4 grid-cols-1 lg:grid-cols-2 xl:grid-cols-3";
+// Columns that pack: cards of any height sit under each other without holes (a grid would leave a blank under a short card).
+const SKELETON_GRID = "grid items-start gap-4 grid-cols-1 lg:grid-cols-2 xl:grid-cols-3";
+const DETAIL_GRID = "columns-1 gap-4 lg:columns-2 xl:columns-3 [&>*]:mb-4 [&>*]:break-inside-avoid";
+const ACTIVITY_ROWS = 5;
 const SKELETON = "motion-reduce:animate-none";
 
 // SCR-05 (doc/07 section 3.2, doc/05 13.8): the landing page. ONE request; the server leaves out the cards the person may not see, and the
@@ -172,7 +175,7 @@ export function DashboardView() {
             <Skeleton key={i} className={`h-32 w-full rounded-xl ${SKELETON}`} />
           ))}
         </div>
-        <div className={DETAIL_GRID} aria-hidden>
+        <div className={SKELETON_GRID} aria-hidden>
           {[0, 1, 2].map((i) => (
             <Skeleton key={i} className={`h-56 w-full rounded-xl ${SKELETON}`} />
           ))}
@@ -221,6 +224,13 @@ export function DashboardView() {
   }
 
   const hasKpi = Boolean(data.submissions_new || data.failed_jobs || data.media_missing_alt);
+  const kpis = [
+    data.submissions_new && { testId: "card-submissions-new", count: data.submissions_new.count, label: t("messages.label", { count: data.submissions_new.count }), href: href("/admin/forms/submissions?status=new"), open: t("messages.open") },
+    data.failed_jobs && { testId: "card-failed-jobs", count: data.failed_jobs.count, label: t("jobs.label", { count: data.failed_jobs.count }), href: href("/admin/system"), open: t("jobs.open") },
+    data.media_missing_alt && { testId: "card-missing-alt", count: data.media_missing_alt.count, label: t("alt.label", { count: data.media_missing_alt.count }), href: href("/admin/media?missing_alt=true"), open: t("alt.open") },
+  ].filter((k): k is NonNullable<typeof k> => Boolean(k));
+  // Nothing needs attention: one slim strip instead of three tall cards (or a blank where they would be).
+  const allClear = kpis.every((k) => k.count === 0);
   const attention = <Badge variant="outline">{t("attention")}</Badge>;
   const attentionDanger = <Badge variant="destructive">{t("attention")}</Badge>;
 
@@ -228,7 +238,29 @@ export function DashboardView() {
     <div className={page}>
       {header}
       <div className="space-y-6" data-testid="dashboard-cards">
-        {hasKpi ? (
+        {allClear ? (
+          <section aria-label={t("sections.glance")} data-testid="dashboard-all-clear" className="rounded-xl border bg-card px-4 py-3 text-card-foreground">
+            <p className="flex items-center gap-2 text-sm font-medium leading-snug">
+              <span aria-hidden className="grid size-7 shrink-0 place-items-center rounded-md bg-muted text-muted-foreground [&_svg]:size-4">
+                <CheckCircle2Icon />
+              </span>
+              {t("nothingNeeded")}
+            </p>
+            {kpis.length > 0 ? (
+              <ul className="mt-3 flex flex-wrap gap-x-8 gap-y-2 border-t pt-3">
+                {kpis.map((k) => (
+                  <li key={k.testId} data-testid={k.testId} className="flex flex-wrap items-baseline gap-x-2">
+                    <span className="text-xl font-semibold leading-none tabular-nums">{k.count}</span>
+                    <span className="text-sm leading-snug text-muted-foreground">{k.label}</span>
+                    <CardLink href={k.href}>{k.open}</CardLink>
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+          </section>
+        ) : null}
+
+        {hasKpi && !allClear ? (
           <section aria-label={t("sections.glance")} className={KPI_GRID}>
             {data.submissions_new ? (
               <DashCard
@@ -329,7 +361,7 @@ export function DashboardView() {
                 <EmptyList icon={<InboxIcon />} text={t("activity.none")} />
               ) : (
                 <ul className="divide-y">
-                  {data.recent_activity.map((row) => (
+                  {data.recent_activity.slice(0, ACTIVITY_ROWS).map((row) => (
                     <li key={row.id} className="relative py-2 ps-4 text-sm">
                       <span aria-hidden className="absolute start-0 top-[0.9rem] size-1.5 rounded-full bg-primary/60" />
                       <p className="break-words leading-snug">{row.summary}</p>
