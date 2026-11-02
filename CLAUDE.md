@@ -45,8 +45,9 @@ system Chrome installed OUTSIDE the project; the sign-in `Globe` needs `--use-an
 working folder.
 
 Env vars: `NEXT_PUBLIC_API_BASE_URL` in `.env.development` / `.env.production` (no secrets in this layer);
-`NEXT_PUBLIC_MEDIA_ORIGINS` (optional, comma separated origins, set in the deployment env) lets `img-src` of the CSP
-load media pictures from another origin (`media.staticBaseUrl` / the file service);
+the media origin for `img-src` of the CSP comes from the backend (public `GET {API base}/config` ->
+`data.media_origin`, read by `src/proxy.ts`, cached 5 min, failures 30 s); `NEXT_PUBLIC_MEDIA_ORIGINS` (optional,
+comma separated origins) is only an extra list and is no longer needed;
 `NEXT_PUBLIC_API_MOCKING=true` is for a SCRATCH CLONE only, on the command line (never an `.env` file): see "Mock API" below;
 `.env.development` also sets `NEXT_PUBLIC_DISABLE_AUTH_GUARD=true` (bypass user, dev only, never in `.env.production`).
 The backend allows only the origins in its `server.corsOrigins` (dev default `http://localhost:3000`): on another
@@ -245,8 +246,9 @@ differ). A public page goes under `src/app/auth/`.
   `ops.system:execute`. Tags are validated with the exact allow-list (`lib/cache-tags.ts`), `scope=all` needs a second
   confirmation, 429 (with `Retry-After`) / 403 / 503 / 422 `/tags/<i>` are explained in the dialog (the global toast also
   fires for 403/429/5xx), the answer lists the tags the server really queued. No `Idempotency-Key` (05 11.1.5).
-- **CSP**: pictures of another origin need `NEXT_PUBLIC_MEDIA_ORIGINS` (`lib/security/csp.ts` `mediaOriginsFromEnv`); only
-  `img-src` is widened, only for http(s) origins.
+- **CSP**: the media origin is read from the backend `/config` (`lib/security/media-origin.ts`, strictly validated, 1.5 s
+  timeout, cached 5 min / 30 s on failure); `NEXT_PUBLIC_MEDIA_ORIGINS` (`mediaOriginsFromEnv`) is an optional extra.
+  Only `img-src` is widened, only for http(s) origins.
 
 ## Save-live screens (T1.3.8)
 

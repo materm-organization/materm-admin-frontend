@@ -9,8 +9,10 @@
 //  - `style-src 'self' 'unsafe-inline'`: React inline `style=""` attributes (Radix, sonner, sidebar) cannot
 //    carry a nonce; style injection is a far smaller risk than script injection.
 //  - `img-src 'self' data: blob: <API origin> <media origins>`: media pictures are served by another origin
-//    (`media.staticBaseUrl` of the backend, e.g. the portal in dev, or the file service `file.path_ip`); list them
-//    in `NEXT_PUBLIC_MEDIA_ORIGINS` (comma separated origins). A picture whose origin is not listed is blocked by the
+//    (`media.staticBaseUrl` of the backend, e.g. the portal in dev, or the file service `file.path_ip`). The backend
+//    announces its media origin on the public `GET {API base}/config` (`lib/security/media-origin.ts`, fetched by
+//    `src/proxy.ts`, cached); `NEXT_PUBLIC_MEDIA_ORIGINS` (comma separated origins) is an optional extra list and
+//    is no longer needed. A picture whose origin is not listed is blocked by the
 //    browser and the media screens show their placeholder tile instead.
 //  - `connect-src 'self' <API origin>`: the browser may only call this app and the backend.
 //  - `frame-src 'none'`: preview opens in a new tab (decision Q-07-5); add the portal origin when an iframe
@@ -23,7 +25,7 @@ export type CspOptions = {
   isDev?: boolean;
   // Origin of the backend (`NEXT_PUBLIC_API_BASE_URL`), when it is not the app's own origin.
   apiOrigin?: string;
-  // Origins that serve media pictures (`NEXT_PUBLIC_MEDIA_ORIGINS`), allowed in `img-src` only.
+  // Origins that serve media pictures (from the backend `/config`, plus the optional `NEXT_PUBLIC_MEDIA_ORIGINS`), allowed in `img-src` only.
   mediaOrigins?: string[];
 };
 

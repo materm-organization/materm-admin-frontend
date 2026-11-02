@@ -6,18 +6,27 @@ import {
   generateNonce,
   mediaOriginsFromEnv,
 } from "@/lib/security/csp";
+import { getBackendMediaOrigin } from "@/lib/security/media-origin";
 
 // Sets the per-request Content-Security-Policy with a fresh nonce (doc/10 R-008; the policy is documented in
 // lib/security/csp.ts). This is NOT an auth gate — access control stays client-side in `(protected)`
 // (RoutePermissionGuard) and, for real, on the API. The nonce needs dynamic rendering; the root layout
 // already reads the locale cookie, so every page is dynamic anyway.
-export function proxy(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const nonce = generateNonce();
+  // Media origin comes from the backend (`GET /config`, cached, never throws); `NEXT_PUBLIC_MEDIA_ORIGINS` is an
+  // optional extra list. Both only reach `img-src`.
+  const backendMediaOrigin = await getBackendMediaOrigin();
   const csp = buildContentSecurityPolicy({
     nonce,
     isDev: process.env.NODE_ENV === "development",
     apiOrigin: apiOriginFromBaseUrl(process.env.NEXT_PUBLIC_API_BASE_URL),
-    mediaOrigins: mediaOriginsFromEnv(process.env.NEXT_PUBLIC_MEDIA_ORIGINS),
+    mediaOrigins: [
+      ...new Set([
+        ...(backendMediaOrigin ? [backendMediaOrigin] : []),
+        ...mediaOriginsFromEnv(process.env.NEXT_PUBLIC_MEDIA_ORIGINS),
+      ]),
+    ],
   });
 
   // Next reads the nonce from the CSP *request* header and applies it to its own scripts; `x-nonce` is for
