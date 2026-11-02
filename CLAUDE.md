@@ -138,7 +138,7 @@ Screens and building blocks built so far (phase P1 milestone M1; contract `../do
   the portal; the inherited `logo.png` is gone. Every list-screen filter chip popup (keyword, multi-select) shows its Search button that commits the
   choice (`instantApply` dropped, `4af2914`). Shadcn gotchas met in the sweep: `TableCell` / `TableHead` carry `whitespace-nowrap` (long text needs `whitespace-normal`
   on the cell, or the table overflows its card); `ToggleGroupItem` has `flex-1 min-w-0` in `ui/toggle-group.tsx`, so items share the group width equally. The Lao admin copy got a full review
-  (`ee31997`, 768 values); the Lao text still waits for a native reviewer (CSV `/Users/max/Desktop/materm-lao-review.csv`). Permission-matrix overflow fixed
+  (`ee31997`, 768 values); the user accepted the Lao text as translated (2026-10-30; no native review wanted). Permission-matrix overflow fixed
   and muted text reaches 4.5:1 contrast. Left as is: the brand orange `#f28a1f` has 2.29:1 contrast with white text (decision pending), role descriptions
   stay English in the Lao UI, the reset-password toast says "link sent" even when `email_delivery` is `logged_only`, and `.env.development` of this working
   copy sets `NEXT_PUBLIC_DISABLE_AUTH_GUARD=true` (the user's local file; never in `.env.production`).
@@ -516,7 +516,7 @@ the key is a letter first, `^[a-z][a-z0-9_-]{0,59}$`, immutable, suggested from 
 - **Tests**: `albums-list.test.tsx`, `album-editor.test.tsx`, `faq-list.test.tsx`, `faq-editor.test.tsx` (whole screens over the mock API), the two mock tests, `nav-main-items.test.ts`,
   `api-data.test.ts` (picker labels).
 - **Not built / assumptions**: no preview links (PT-18), no "language complete" filter, no per-picture "remove language", no autosave, no bulk delete of pictures, FAQ answers are not previewed as HTML;
-  the picture sheet and the FAQ question are not pointed at by a published-page "where used" link (only the list/blocked dialogs show usage); the Lao strings are placeholders for native review.
+  the picture sheet and the FAQ question are not pointed at by a published-page "where used" link (only the list/blocked dialogs show usage); the Lao strings are accepted as translated (user decision 2026-10-30, no native review wanted).
 
 ## Forms, inbox, dashboard (T1.5.7)
 
