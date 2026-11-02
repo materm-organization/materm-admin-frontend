@@ -315,6 +315,13 @@
       "neverSucceeded": "Nothing has been delivered yet.",
       "attention": "Some updates failed to reach the website."
     },
+    "attention": "Needs attention",
+    "allClear": "All clear",
+    "loading": "Loading the dashboard",
+    "sections": {
+      "glance": "At a glance",
+      "details": "Details"
+    },
     "updated": "Updated {when}"
   },
   "forms": {
