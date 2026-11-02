@@ -8,6 +8,7 @@ import { useMockApi } from "@/mocks/test-setup";
 import { getMockDb } from "@/mocks/mock-db";
 import { server } from "@/test/msw-server";
 import { renderApp } from "@/test/render-app";
+import { etagOf } from "@/mocks/mock-core";
 
 const API = "*/api/v1";
 const toast = vi.hoisted(() => ({ success: vi.fn(), error: vi.fn() }));
@@ -18,7 +19,7 @@ vi.mock("next/navigation", () => ({
   useSearchParams: () => new URLSearchParams(),
 }));
 
-const assetEtag = () => `"${getMockDb().assets.find((a) => a.id === 2)!.updated_at}"`;
+const assetEtag = () => etagOf(getMockDb().assets.find((a) => a.id === 2)!.updated_at);
 
 function renderTab(props: Partial<RevisionsTabProps> = {}) {
   const onRestored = vi.fn();

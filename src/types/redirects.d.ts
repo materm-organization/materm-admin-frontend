@@ -1,6 +1,6 @@
 // Redirects (SCR-42, doc/05 section 14, doc/07 section 3.26, FR-SEO-05/06). Save-live: a write is live at once; delete is a soft
 // delete into the 30-day trash (restore needs `cms.redirects:delete`). ETag = `"<updated_at>"` like the other save-live rows
-// (`etagOfRow`; the row also carries `etag`).
+// (`etagOfRow` converts the +07:00 `updated_at` to UTC micros; the row also carries `etag`).
 import type { ApiFieldError } from "@/types/api";
 import type { UserRef, SaveLiveWarning } from "@/types/media";
 

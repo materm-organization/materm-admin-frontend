@@ -19,6 +19,7 @@ import { MissingEtagError } from "@/lib/etag";
 import { getMockDb } from "@/mocks/mock-db";
 import { useMockApi } from "@/mocks/test-setup";
 import { server } from "@/test/msw-server";
+import { etagOf } from "@/mocks/mock-core";
 
 const API = "*/api/v1";
 
@@ -47,7 +48,7 @@ describe("media hooks", () => {
     const { wrapper } = setup();
     const detail = renderHook(() => useMediaAssetDetail(2), { wrapper });
     await waitFor(() => expect(detail.result.current.data).toBeDefined());
-    expect(detail.result.current.data?.etag).toBe(`"${getMockDb().assets[1].updated_at}"`);
+    expect(detail.result.current.data?.etag).toBe(etagOf(getMockDb().assets[1].updated_at));
     const usages = renderHook(() => useMediaUsages(15, { limit: 2 }), { wrapper });
     await waitFor(() => expect(usages.result.current.data?.data).toHaveLength(2));
     expect(usages.result.current.data?.meta.total).toBe(3);
@@ -71,12 +72,12 @@ describe("media hooks", () => {
       await expect(result.current.mutateAsync({ payload: { is_decorative: true }, etag: undefined })).rejects.toBeInstanceOf(MissingEtagError);
     });
     expect(called).toBe(0);
-    const etag = `"${getMockDb().assets[1].updated_at}"`;
+    const etag = etagOf(getMockDb().assets[1].updated_at);
     await act(async () => {
       await result.current.mutateAsync({ payload: { is_decorative: true }, etag });
     });
     const cached = queryClient.getQueryData<{ etag: string; data: { data: { is_decorative: boolean } } }>(mediaAssetKey(2));
-    expect(cached?.etag).toBe(`"${getMockDb().assets[1].updated_at}"`);
+    expect(cached?.etag).toBe(etagOf(getMockDb().assets[1].updated_at));
     expect(cached?.etag).not.toBe(etag);
     expect(cached?.data.data.is_decorative).toBe(true);
     expect(queryClient.getQueryState(["schema-form", "media", 2])?.isInvalidated).toBe(true);
@@ -86,17 +87,17 @@ describe("media hooks", () => {
     const { wrapper } = setup();
     const del = renderHook(() => useMutationDeleteMediaAsset(), { wrapper });
     await act(async () => {
-      await expect(del.result.current.mutateAsync({ id: 1, etag: `"${getMockDb().assets[0].updated_at}"` })).rejects.toMatchObject({
+      await expect(del.result.current.mutateAsync({ id: 1, etag: etagOf(getMockDb().assets[0].updated_at) })).rejects.toMatchObject({
         response: { status: 409, data: { code: "MEDIA_IN_USE", details: { total_usages: 1 } } },
       });
     });
     await act(async () => {
-      await del.result.current.mutateAsync({ id: 5, etag: `"${getMockDb().assets[4].updated_at}"` });
+      await del.result.current.mutateAsync({ id: 5, etag: etagOf(getMockDb().assets[4].updated_at) });
     });
     expect(getMockDb().assets[4].deleted_at).not.toBeNull();
     const restore = renderHook(() => useMutationRestoreMediaAsset(), { wrapper });
     await act(async () => {
-      await restore.result.current.mutateAsync({ id: 5, etag: `"${getMockDb().assets[4].updated_at}"` });
+      await restore.result.current.mutateAsync({ id: 5, etag: etagOf(getMockDb().assets[4].updated_at) });
     });
     expect(getMockDb().assets[4].deleted_at).toBeNull();
   });

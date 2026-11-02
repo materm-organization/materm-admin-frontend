@@ -235,7 +235,8 @@ function findRow(db: MockDb, id: string, params: Params): MockSubmission {
   const s = submissionsState(db).items.find((x) => String(x.id) === id);
   if (!s) throw notFound();
   const hint = params.get("created_at");
-  if (hint !== null && hint !== s.created_at) throw notFound();
+  // The server parses the hint as an instant, so the same moment in another offset (`Z` or `+07:00`) is the row's own.
+  if (hint !== null && !(Date.parse(hint) === Date.parse(s.created_at))) throw notFound();
   return s;
 }
 

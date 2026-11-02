@@ -28,7 +28,7 @@ export type SaveLiveWarning = {
 };
 
 // List rows and the detail share this shape; the detail adds `folder` + `variants`. `warnings` only comes back
-// with a write. The list carries no ETag: build it from `updated_at` (`"<updated_at>"`, doc/05 11.1.1).
+// with a write. The list carries no ETag: `updated_at` is +07:00 in the body, so convert it to UTC micros with `etagOfRow` / `toUtcMicros` (`"<utc updated_at>"`, doc/05 11.1.1).
 export type MediaAsset = {
   id: number;
   public_id: string;

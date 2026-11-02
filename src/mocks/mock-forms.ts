@@ -207,8 +207,8 @@ function seed(db: MockDb, state: FormsState) {
     is_system: slug === "contact",
     status,
     lock_version: 1,
-    published_at: status === "published" ? "2026-01-01T00:00:00.000000Z" : null,
-    first_published_at: status === "published" ? "2026-01-01T00:00:00.000000Z" : null,
+    published_at: status === "published" ? "2026-01-01T07:00:00.000000+07:00" : null,
+    first_published_at: status === "published" ? "2026-01-01T07:00:00.000000+07:00" : null,
     unpublished_at: null,
     created_by: createdBy,
     updated_by: createdBy,
@@ -297,7 +297,7 @@ function seed(db: MockDb, state: FormsState) {
       field("notes", "textarea", { max_length: 1000, pii: true }),
     ],
     snapshotOf(baseSettings("Trek booking", "nickname"), { la: text("Book a trek", "Send request"), en: text("Book a trek", "Send request") }, trekFieldTexts()),
-    { lock_version: 3, updated_at: micros(Date.UTC(2026, 9, 27, 7, 0, 0), 9), updated_by: MOCK_USER, published_at: "2026-09-01T03:00:00.000000Z", first_published_at: "2026-09-01T03:00:00.000000Z" }
+    { lock_version: 3, updated_at: micros(Date.UTC(2026, 9, 27, 7, 0, 0), 9), updated_by: MOCK_USER, published_at: "2026-09-01T10:00:00.000000+07:00", first_published_at: "2026-09-01T10:00:00.000000+07:00" }
   );
   trek.recipients = [
     { id: state.nextRecipientId++, email: "bookings@materm.example", kind: "to", topic_value: null, is_active: true },
@@ -308,8 +308,8 @@ function seed(db: MockDb, state: FormsState) {
   state.forms.push(contact, newsletter, trek);
 
   // history
-  pushRevision(db, "forms", 1, ENTITY, "published", structuredClone(contact.live), null, "2026-01-01T00:00:00.000000Z", SOMCHAI);
-  pushRevision(db, "forms", 3, ENTITY, "published", structuredClone(trek.live), null, "2026-09-01T03:00:00.000000Z", DARA);
+  pushRevision(db, "forms", 1, ENTITY, "published", structuredClone(contact.live), null, "2026-01-01T07:00:00.000000+07:00", SOMCHAI);
+  pushRevision(db, "forms", 3, ENTITY, "published", structuredClone(trek.live), null, "2026-09-01T10:00:00.000000+07:00", DARA);
   const older = structuredClone(trek.live);
   older.translations.forEach((t) => (t.submit_label = "Send"));
   pushRevision(db, "forms", 3, ENTITY, "history", older, "autosave", micros(Date.UTC(2026, 9, 20, 8, 0, 0), 3), DARA);

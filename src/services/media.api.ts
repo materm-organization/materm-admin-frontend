@@ -148,8 +148,8 @@ export const MediaAPI = {
 };
 
 // The ETag of a list row. The server sends it as `etag` on the rows that carry one (categories, tags, media, menus); use it
-// as is. Otherwise it is `"<updated_at>"` in UTC with the microseconds (doc/05 11.1.1 rule 1): a row's `updated_at` may be
-// written with the server's own offset (`2026-10-29T13:43:36.053927+07:00`), which is NOT the ETag, so the instant is
+// as is. Otherwise it is `"<updated_at>"` in UTC with the microseconds (doc/05 11.1.1 rule 1): a row's `updated_at` is
+// always written with the server's own offset (`2026-10-29T13:43:36.053927+07:00`), which is NOT the ETag, so the instant is
 // shifted to UTC here without touching the fraction (found by the real-backend run: DELETE /categories/{id} was a 409).
 export function etagOfRow(row: Pick<MediaAsset, "updated_at"> & { etag?: string | null }): string {
   if (row.etag) return row.etag;

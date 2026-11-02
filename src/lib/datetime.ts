@@ -1,6 +1,7 @@
 // Date/time conversion between what the admin sees and what the API takes (doc/07 section 6.2, BR-32):
 //  - the display zone is the FIXED `Asia/Vientiane` (UTC+7, no DST) — not the browser's zone;
-//  - every instant from/to the API is RFC 3339 UTC (`…Z`);
+//  - an instant SENT to the API is RFC 3339 UTC (`…Z`); one RECEIVED in a response body is RFC 3339 with the Vientiane offset and 6
+//    fraction digits (`…+07:00`); ETags stay UTC (build them with `etagOfRow` / `toUtcMicros`, services/media.api.ts);
 //  - a value a user picks (schedule time, a filter day) is read as wall-clock time IN Vientiane and converted
 //    to UTC before it is sent. `to` of a day range is EXCLUSIVE (00:00 of the day after the last day).
 // Pure functions (no React) built on `@date-fns/tz`.

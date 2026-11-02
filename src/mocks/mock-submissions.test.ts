@@ -111,7 +111,7 @@ describe("GET /submissions/summary and /{id}", () => {
 
   it("?created_at= must be the row's own, else 404; retention_overdue is computed", () => {
     const row = get(9).data;
-    expect(getSubmission(getMockDb(), "9", q(`created_at=${row.created_at}`)).data.id).toBe(9);
+    expect(getSubmission(getMockDb(), "9", q(`created_at=${encodeURIComponent(row.created_at)}`)).data.id).toBe(9);
     fails(() => getSubmission(getMockDb(), "9", q("created_at=2020-01-01T00:00:00.000000Z")), 404);
     fails(() => get(999), 404);
     expect(get(7).data.retention_overdue).toBe(true);

@@ -1,6 +1,7 @@
 // Shared plumbing of the in-memory API model (`mock-db.ts` and the save-live modules `mock-menus.ts`,
 // `mock-settings.ts`, `mock-ui-strings.ts`, `mock-taxonomy.ts`): the error envelope, the clock that makes ETags
 // unique and ordered, query helpers and the revision store. Kept apart so those modules do not import each other.
+import { toUtcMicros } from "@/services/media.api";
 import type { ApiFieldError } from "@/types/api";
 import type { MediaAssetDetail, MediaFolder, MediaUsage, UserRef } from "@/types/media";
 import type { MenuDetail } from "@/types/menus";
@@ -46,9 +47,11 @@ export const badRequest = () => fail(400, "BAD_REQUEST", "Malformed body.");
 // ---------------------------------------------------------------------------------------------------------------
 export const CLOCK_START = Date.UTC(2026, 9, 27, 3, 0, 0);
 
+// A body timestamp as the real server writes it: the Asia/Vientiane offset and exactly 6 fraction digits
+// (`2026-10-27T10:00:00.000417+07:00`). ETags are NOT this: they stay UTC with the microseconds (`etagOf` converts).
 export function micros(ms: number, extra = 0): string {
-  const iso = new Date(ms).toISOString(); // 2026-10-27T03:00:00.000Z
-  return iso.replace(/\.(\d{3})Z$/, (_m, milli: string) => `.${milli}${String(extra % 1000).padStart(3, "0")}Z`);
+  const local = new Date(ms + 7 * 3_600_000).toISOString(); // 2026-10-27T10:00:00.000Z (shifted: read as +07:00)
+  return local.replace(/\.(\d{3})Z$/, (_m, milli: string) => `.${milli}${String(extra % 1000).padStart(3, "0")}+07:00`);
 }
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -314,7 +317,8 @@ export function tick(db: { clock: number }): string {
 }
 
 export const keyOf = (resource: string, id: string | number) => `${resource}/${id}`;
-export const etagOf = (stamp: string) => `"${stamp}"`;
+// The ETag of a stamp is its UTC instant with the microseconds (doc/05 11.1.1), whatever offset the body carries.
+export const etagOf = (stamp: string) => `"${toUtcMicros(stamp)}"`;
 
 export function requireIfMatch(header: string | null, current: string) {
   if (!header) throw preconditionRequired();

@@ -113,10 +113,13 @@ await t.step('form editor History tab shows the audit rows (forms.manage reader 
 
 await t.step('dashboard: administrator sees the cards; the viewer role sees fewer', async () => {
   await open(page, '/admin'); const adminText = await mainText(page);
-  ok(/New messages/.test(adminText) && /My drafts/.test(adminText), 'admin cards: ' + adminText.slice(0, 120));
+  // The inbox entry is a full card while messages wait and a row of the slim all-clear strip when every count is 0 (earlier steps
+  // processed them all): the testid is the same, the text is "New messages" or "0 new messages".
+  const inboxEntries = await page.locator('[data-testid="card-submissions-new"]').count();
+  ok(inboxEntries === 1 && /new messages/i.test(adminText) && /My drafts/.test(adminText), 'admin cards: ' + adminText.slice(0, 120));
   const v = await newUser(root, 'viewer'); const V = await session(b, { user: v.username, pass: v.password });
   await open(V.page, '/admin'); const vt = await mainText(V.page);
-  ok(!/New messages/.test(vt), 'viewer has no inbox card'); await V.ctx.close();
+  ok((await V.page.locator('[data-testid="card-submissions-new"]').count()) === 0 && !/new messages/i.test(vt), 'viewer has no inbox card'); await V.ctx.close();
 });
 
 await t.done(b);

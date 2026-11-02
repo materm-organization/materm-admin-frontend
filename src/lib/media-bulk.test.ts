@@ -6,6 +6,7 @@ import { createMockDb } from "@/mocks/mock-db";
 import { MediaAPI } from "@/services/media.api";
 import { useMockApi } from "@/mocks/test-setup";
 import type { MediaBulkItem } from "@/types/media";
+import { etagOf } from "@/mocks/mock-core";
 
 const items = (n: number): MediaBulkItem[] => Array.from({ length: n }, (_, i) => ({ id: i + 1, etag: '"x"' }));
 const ok = (chunk: MediaBulkItem[]) => ({ updated: chunk.map((i) => ({ id: i.id })), skipped: [], counts: { updated: chunk.length, skipped: 0 } });
@@ -61,7 +62,7 @@ describe("the strict bulk mock (backend contract)", () => {
 
   it("answers per item through the API", async () => {
     const db = (await import("@/mocks/mock-db")).getMockDb();
-    const etag = (id: number) => `"${db.assets.find((a) => a.id === id)!.updated_at}"`;
+    const etag = (id: number) => etagOf(db.assets.find((a) => a.id === id)!.updated_at);
     const r = await MediaAPI.BulkDelete([
       { id: 5, etag: etag(5) },
       { id: 1, etag: etag(1) },

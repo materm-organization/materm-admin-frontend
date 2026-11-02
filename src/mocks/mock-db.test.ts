@@ -20,6 +20,7 @@ import {
   restoreRevision,
 } from "@/mocks/mock-db";
 import { SEED_MEDIA } from "@/mocks/media-seed";
+import { etagOf } from "@/mocks/mock-core";
 
 // The mock API stands in for endpoints that are written in parallel. These tests pin the CONTRACT it enforces
 // (doc/05 sections 11.6 - 11.8), so a screen that passes against it does not lean on leniency.
@@ -70,7 +71,7 @@ describe("GET /media/assets", () => {
     expect(listAssets(db, q("mime=image/*")).meta.total).toBe(24);
     expect(listAssets(db, q("unused=true")).meta.total).toBe(24 - Object.keys(db.usages).length);
     expect(listAssets(db, q("missing_alt=true")).data.map((a) => a.id)).toEqual([1, 10]);
-    db.assets[4].deleted_at = "2026-10-27T03:00:00.000Z";
+    db.assets[4].deleted_at = "2026-10-27T10:00:00.000000+07:00";
     expect(listAssets(db, q("trashed=true")).data.map((a) => a.id)).toEqual([5]);
     expect(listAssets(db, q("")).meta.total).toBe(23);
   });
@@ -231,7 +232,7 @@ describe("the browser adapter answers like the API (status, ETag header, errors 
   it("a GET carries data, meta and the ETag header", async () => {
     const res = await client.get("/media/assets/2");
     expect(res.status).toBe(200);
-    expect(res.headers.etag).toBe(`"${getMockDb().assets[1].updated_at}"`);
+    expect(res.headers.etag).toBe(etagOf(getMockDb().assets[1].updated_at));
     expect(res.data.data.id).toBe(2);
     const list = await client.get("/media/assets", { params: { limit: 3, kind: "image" } });
     expect(list.data.data).toHaveLength(3);

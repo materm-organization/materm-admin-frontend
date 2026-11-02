@@ -10,6 +10,7 @@ import { useMockApi } from "@/mocks/test-setup";
 import { server } from "@/test/msw-server";
 import { grants, renderApp } from "@/test/render-app";
 import type { PermissionGrant } from "@/types/user";
+import { etagOf } from "@/mocks/mock-core";
 
 const API = "*/api/v1";
 const me = vi.hoisted(() => ({ current: { id: 6, name: "Noy Keomany", roleID: 2, permissions: [] as PermissionGrant[] } }));
@@ -52,7 +53,7 @@ describe("SubmissionDetailView (SCR-32): what is shown", () => {
       return undefined;
     }));
     await open(11);
-    expect(new URLSearchParams(seen[0]).get("created_at")).toBe("2026-10-22T01:00:00.000111Z");
+    expect(new URLSearchParams(seen[0]).get("created_at")).toBe("2026-10-22T08:00:00.000111+07:00");
     expect(screen.getByRole("heading", { level: 1, name: "ສົມຊາຍ" })).toBeInTheDocument();
     const fields = screen.getByTestId("submission-fields");
     expect(within(fields).getAllByRole("term").map((t) => t.textContent)).toEqual(["Full name", "Email", "What is it about?", "Message", "legacy_field"]);
@@ -250,7 +251,7 @@ describe("SubmissionDetailView: notes", () => {
     expect(screen.getByLabelText("Add a note")).toHaveValue("");
     // the automatic "read" move may have moved the ETag; a note itself never does
     const after = queryClient.getQueryData<{ etag: string }>(["/submissions/9", row(9).created_at])?.etag;
-    expect(after === before || after === `"${row(9).updated_at}"`).toBe(true);
+    expect(after === before || after === etagOf(row(9).updated_at)).toBe(true);
   });
 
   it("an empty note and one over 2000 characters are refused before a request; the note's text is shown as text", async () => {

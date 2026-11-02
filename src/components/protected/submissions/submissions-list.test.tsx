@@ -72,7 +72,7 @@ describe("SubmissionsList (SCR-32)", () => {
     expect(within(first).getByText("Keo Manivong")).toBeInTheDocument();
     expect(within(first).getByTestId("submission-status")).toHaveTextContent("New");
     const link = within(first).getAllByRole("link")[0];
-    expect(link.getAttribute("href")).toMatch(/^\/admin\/forms\/submissions\/16\?created_at=2026-10-26T22%3A00%3A00\.000116Z$/);
+    expect(link.getAttribute("href")).toMatch(/^\/admin\/forms\/submissions\/16\?created_at=2026-10-27T05%3A00%3A00\.000116%2B07%3A00$/);
     // the preview is cut at 140 characters
     expect(within(first).getByText(/^x+/).textContent!.length).toBeLessThanOrEqual(140);
     expect(screen.queryByText("seo-deals")).not.toBeInTheDocument();

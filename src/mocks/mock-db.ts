@@ -220,7 +220,7 @@ export function createMockDb(): MockDb {
     path: f.name,
     asset_count: 0,
     child_count: 0,
-    etag: `"${stamp}"`,
+    etag: etagOf(stamp),
     created_by: null,
     updated_by: null,
     created_at: stamp,
@@ -263,7 +263,7 @@ export function recomputeFolders(db: MockDb) {
     f.depth = depth;
     f.asset_count = db.assets.filter((a) => a.folder_id === f.id && !a.deleted_at).length;
     f.child_count = db.folders.filter((c) => c.parent_id === f.id).length;
-    f.etag = `"${f.updated_at}"`;
+    f.etag = etagOf(f.updated_at);
   }
   db.folders.sort((a, b) => a.path.localeCompare(b.path) || a.sort_order - b.sort_order);
   for (const a of db.assets) {
@@ -562,7 +562,7 @@ export function createFolder(db: MockDb, body: unknown) {
     path: "",
     asset_count: 0,
     child_count: 0,
-    etag: `"${stamp}"`,
+    etag: etagOf(stamp),
     created_by: MOCK_USER,
     updated_by: MOCK_USER,
     created_at: stamp,

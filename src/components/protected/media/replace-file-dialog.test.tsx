@@ -9,6 +9,7 @@ import { useMockApi } from "@/mocks/test-setup";
 import { server } from "@/test/msw-server";
 import { grants, renderApp } from "@/test/render-app";
 import type { PermissionGrant } from "@/types/user";
+import { etagOf } from "@/mocks/mock-core";
 
 const API = "*/api/v1";
 const me = vi.hoisted(() => ({ current: { id: 6, roleID: 2, permissions: [] as PermissionGrant[] } }));
@@ -64,7 +65,7 @@ describe("Replace file (FR-MEDIA-08)", () => {
     await user.upload(within(dialog).getByLabelText("New file"), png("replacement.png", 7));
     await user.click(within(dialog).getByRole("button", { name: "Replace" }));
     await waitFor(() => expect(toast.success).toHaveBeenCalledWith("The file was replaced."));
-    expect(seen).toBe(`"${before}"`);
+    expect(seen).toBe(etagOf(before));
     const row = getMockDb().assets.find((a) => a.id === 2)!;
     expect(row.original_filename).toBe("replacement.png");
     expect(row.updated_at).not.toBe(before);

@@ -1,7 +1,7 @@
 // Blog categories and tags (doc/05-api-spec.md section 11.5, doc/api/openapi-admin.yaml: Category, Tag,
 // CategoryTranslation, TagTranslation, Create/Update requests). Save-live + soft delete (30 days in the trash).
 // ETag = `"<updated_at>"` (microseconds, UTC). A list row carries it as `etag` (use `etagOfRow`, services/media.api.ts, which falls back
-// to `updated_at` shifted to UTC: the row's own `updated_at` may carry the server's offset).
+// to `updated_at` shifted to UTC: the row's own `updated_at` carries the server's +07:00 offset, which is now the normal case).
 import type { ApiMeta } from "@/types/api";
 import type { SaveLiveWarning, UserRef } from "@/types/media";
 

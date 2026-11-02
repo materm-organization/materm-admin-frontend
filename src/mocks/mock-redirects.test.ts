@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 
-import { MockHttpError } from "@/mocks/mock-core";
+import { etagOf, MockHttpError } from "@/mocks/mock-core";
 import { createMockDb } from "@/mocks/mock-db";
 import { checkRedirect, createRedirect, deleteRedirect, exportRedirects, exportState, listRedirects, patchRedirect, redirectSnapshot, restoreRedirect, restoreRedirectFromTrash } from "@/mocks/mock-redirects";
 
@@ -60,34 +60,34 @@ describe("redirects mock (doc/05 section 14)", () => {
   });
 
   it("patches with If-Match, no-op keeps the ETag, trashed row is INVALID_STATE", () => {
-    const etag = `"${db.redirects[0].updated_at}"`;
+    const etag = etagOf(db.redirects[0].updated_at);
     expect(code(() => patchRedirect(db, "1", { note: "x" }, null))?.status).toBe(428);
     expect(code(() => patchRedirect(db, "1", { note: "x" }, '"nope"'))?.code).toBe("CONFLICT_LOCK_VERSION");
     expect(patchRedirect(db, "1", { note: "Blog moved in 2025" }, etag).etag).toBe(etag);
     const { data, etag: next } = patchRedirect(db, "1", { status_code: 308, locale_code: "en" }, etag);
     expect(data).toMatchObject({ status_code: 308, locale_code: "en", warnings: [] });
     expect(next).not.toBe(etag);
-    expect(code(() => patchRedirect(db, "7", { note: "x" }, `"${db.redirects[6].updated_at}"`))).toMatchObject({ status: 409, code: "INVALID_STATE" });
+    expect(code(() => patchRedirect(db, "7", { note: "x" }, etagOf(db.redirects[6].updated_at)))).toMatchObject({ status: 409, code: "INVALID_STATE" });
   });
 
   it("soft-deletes, frees the slot and restores with checks", () => {
-    const etag = `"${db.redirects[0].updated_at}"`;
+    const etag = etagOf(db.redirects[0].updated_at);
     expect(code(() => deleteRedirect(db, "1", null))?.status).toBe(428);
     deleteRedirect(db, "1", etag);
     const row = db.redirects.find((r) => r.id === 1)!;
     expect(row.deleted_at).toBeTruthy();
     expect(row.purge_at).toBeTruthy();
-    expect(code(() => restoreRedirectFromTrash(db, "2", `"${db.redirects[1].updated_at}"`))?.code).toBe("INVALID_STATE");
+    expect(code(() => restoreRedirectFromTrash(db, "2", etagOf(db.redirects[1].updated_at)))?.code).toBe("INVALID_STATE");
     createRedirect(db, { source_path: "/old-blog", target: "/gallery" });
-    expect(code(() => restoreRedirectFromTrash(db, "1", `"${row.updated_at}"`))).toMatchObject({ status: 409, code: "CONFLICT_DUPLICATE" });
-    const ok = restoreRedirectFromTrash(db, "7", `"${db.redirects[6].updated_at}"`);
+    expect(code(() => restoreRedirectFromTrash(db, "1", etagOf(row.updated_at)))).toMatchObject({ status: 409, code: "CONFLICT_DUPLICATE" });
+    const ok = restoreRedirectFromTrash(db, "7", etagOf(db.redirects[6].updated_at));
     expect(ok.data.deleted_at).toBeNull();
     expect(ok.data.warnings).toBeDefined();
   });
 
   it("revision restore reports errors with in:entity and the snapshot is flat", () => {
     const rev = { id: 1, version: 1, schema_version: 1, snapshot: { source_path: "/our-path", locale_code: null, target: "/about", status_code: 301, is_active: true, note: null } };
-    const err = code(() => restoreRedirect(db, "1", rev, "", `"${db.redirects[0].updated_at}"`));
+    const err = code(() => restoreRedirect(db, "1", rev, "", etagOf(db.redirects[0].updated_at)));
     expect(err?.errors?.[0]).toMatchObject({ code: "redirect_loop" });
     expect((err?.errors?.[0] as { in?: string }).in).toBe("entity");
     expect(Object.keys(redirectSnapshot(db.redirects[0]))).toEqual(["source_path", "locale_code", "target", "status_code", "is_active", "note"]);

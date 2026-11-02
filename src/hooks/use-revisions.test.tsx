@@ -8,6 +8,7 @@ import { MissingEtagError } from "@/lib/etag";
 import { getMockDb } from "@/mocks/mock-db";
 import { useMockApi } from "@/mocks/test-setup";
 import { createTestQueryClient } from "@/test/render-app";
+import { etagOf } from "@/mocks/mock-core";
 
 function setup() {
   const queryClient = createTestQueryClient();
@@ -55,7 +56,7 @@ describe("revisions hooks (generic over the entity)", () => {
     await act(async () => {
       await expect(result.current.mutateAsync({ revId: first.id, etag: undefined })).rejects.toBeInstanceOf(MissingEtagError);
     });
-    const etag = `"${getMockDb().assets[1].updated_at}"`;
+    const etag = etagOf(getMockDb().assets[1].updated_at);
     await act(async () => {
       await result.current.mutateAsync({ revId: first.id, etag, changeNote: "back to the start" });
     });

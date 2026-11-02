@@ -9,6 +9,7 @@ import { useMockApi } from "@/mocks/test-setup";
 import { server } from "@/test/msw-server";
 import { grants, renderApp } from "@/test/render-app";
 import type { PermissionGrant } from "@/types/user";
+import { etagOf } from "@/mocks/mock-core";
 
 const API = "*/api/v1";
 const me = vi.hoisted(() => ({ current: { id: 6, roleID: 2, permissions: [] as PermissionGrant[] } }));
@@ -124,7 +125,7 @@ describe("UiStringsPage (SCR-34)", () => {
     const user = userEvent.setup();
     const sent: Array<{ url: string; ifMatch: string | null; body: unknown }> = [];
     server.use(http.put(`${API}/ui-strings/:key/:locale`, async ({ request }) => { sent.push({ url: new URL(request.url).pathname, ifMatch: request.headers.get("If-Match"), body: await request.clone().json() }); return undefined; }));
-    const etag = `"${row("site.nav.closeMenu", "la")!.updated_at}"`;
+    const etag = etagOf(row("site.nav.closeMenu", "la")!.updated_at);
     // a language with no row yet (the bundle text is the effective one)
     getMockDb().uiRows = getMockDb().uiRows.filter((r) => !(r.key === "site.nav.openMenu" && r.locale === "en"));
     renderApp(<UiStringsPage />);

@@ -29,6 +29,7 @@ import { getMockDb } from "@/mocks/mock-db";
 import { useMockApi } from "@/mocks/test-setup";
 import { MediaAPI, parseDuplicate } from "@/services/media.api";
 import { server } from "@/test/msw-server";
+import { etagOf } from "@/mocks/mock-core";
 
 const PNG = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
 const pngFile = (name = "new.png", extra = 0) => new File([new Uint8Array([...PNG, extra])], name, { type: "image/png" });
@@ -43,7 +44,7 @@ describe("MediaAPI.UploadFile / ReplaceFile (against the strict mock)", () => {
     expect(result.kind).toBe("created");
     if (result.kind !== "created") return;
     expect(result.asset).toMatchObject({ original_filename: "fresh.png", folder_id: 1, status: "ready", mime_type: "image/png" });
-    expect(result.etag).toBe(`"${result.asset.updated_at}"`);
+    expect(result.etag).toBe(etagOf(result.asset.updated_at));
     expect(getMockDb().assets.some((a) => a.id === result.asset.id)).toBe(true);
   });
 
@@ -136,5 +137,10 @@ describe("duplicate upload against the strict mock (real shape)", () => {
   it("parseDuplicate reads the real details and never exposes it as a full asset", () => {
     const body = { success: false, code: "CONFLICT_DUPLICATE", details: { reason: "duplicate_checksum", duplicate_of: { id: 4, public_id: "p", original_filename: "a.png", kind: "image", mime_type: "image/png", etag: '"e"' } } };
     expect(parseDuplicate(body)).toMatchObject({ kind: "duplicate", existingId: 4, existing: { original_filename: "a.png", etag: '"e"' } });
+  });
+
+  it("builds the UTC validator from a +07:00 updated_at (the body offset is never the ETag)", () => {
+    expect(etagOfRow({ updated_at: "2026-11-02T14:10:31.000417+07:00" })).toBe('"2026-11-02T07:10:31.000417Z"');
+    expect(etagOfRow({ updated_at: "2026-11-02T00:30:00.123456+07:00" })).toBe('"2026-11-01T17:30:00.123456Z"');
   });
 });

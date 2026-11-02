@@ -9,6 +9,7 @@ import { useMockApi } from "@/mocks/test-setup";
 import { server } from "@/test/msw-server";
 import { grants, renderApp } from "@/test/render-app";
 import type { PermissionGrant } from "@/types/user";
+import { etagOf } from "@/mocks/mock-core";
 
 const API = "*/api/v1";
 const me = vi.hoisted(() => ({ current: { id: 6, roleID: 2, permissions: [] as PermissionGrant[] } }));
@@ -69,7 +70,7 @@ describe("MediaAssetSheet (SCR-36)", () => {
     expect(within(sheet).getByRole("button", { name: "Save" })).toBeEnabled();
     await user.click(within(sheet).getByRole("button", { name: "Save" }));
     await waitFor(() => expect(seen).not.toBeNull());
-    expect(seen).toEqual({ body: { translations: { en: { alt: "Climbers on ice" } } }, ifMatch: `"${asset(2).updated_at}"` });
+    expect(seen).toEqual({ body: { translations: { en: { alt: "Climbers on ice" } } }, ifMatch: etagOf(asset(2).updated_at) });
     await waitFor(() => expect(toast.success).toHaveBeenCalledWith("The file was saved."));
     // saved: nothing left to save
     await waitFor(() => expect(within(sheet).getByRole("button", { name: "Save" })).toBeDisabled());
@@ -254,7 +255,7 @@ describe("MediaAssetSheet (SCR-36)", () => {
     expect(await screen.findByText("Delete blog-card-1.jpg?")).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Move to trash" }));
     await waitFor(() => expect(onClose).toHaveBeenCalled());
-    expect(ifMatch).toBe(`"${asset(5).updated_at}"`);
+    expect(ifMatch).toBe(etagOf(asset(5).updated_at));
     expect(toast.success).toHaveBeenCalledWith("The file was moved to the trash.");
   });
 

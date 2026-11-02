@@ -9,6 +9,7 @@ import { useMockApi } from "@/mocks/test-setup";
 import { server } from "@/test/msw-server";
 import { grants, renderApp } from "@/test/render-app";
 import type { PermissionGrant } from "@/types/user";
+import { etagOf } from "@/mocks/mock-core";
 
 const API = "*/api/v1";
 const me = vi.hoisted(() => ({ current: { id: 6, roleID: 2, permissions: [] as PermissionGrant[] } }));
@@ -100,7 +101,7 @@ describe("RedirectsPage (SCR-42)", () => {
     await waitFor(() => expect(within(dialog).getByRole("button", { name: "Save" })).toBeEnabled(), { timeout: 3000 });
     await user.click(within(dialog).getByRole("button", { name: "Save" }));
     await waitFor(() => expect(toast.success).toHaveBeenCalledWith("Saved. It is live on the website."));
-    expect(seen[0].ifMatch).toBe(`"${before}"`);
+    expect(seen[0].ifMatch).toBe(etagOf(before));
     expect(seen[0].body).toEqual({ target: "/gallery" });
   });
 
