@@ -95,7 +95,7 @@ await t.step('menus: add an item, save, it shows on the website, move it, delete
   await page.getByRole('button', { name: 'Add item' }).click();
   const label = 'E2EM ' + TAG;
   await page.locator('input[id$="-label"]').fill(label);
-  await page.locator('button[id$="-page"]').click(); await page.getByRole('option', { name: /Our Path/ }).click();
+  await page.locator('button[id$="-page"]').click(); await page.getByRole('option', { name: /\(\/our-path\)/ }).click();
   await page.getByRole('button', { name: 'Add item', exact: true }).last().click();
   await page.getByRole('button', { name: new RegExp('^' + label) }).waitFor({ timeout: 10000 });
   await page.getByRole('button', { name: 'Move ' + label + ' up' }).click(); await page.waitForTimeout(300);
