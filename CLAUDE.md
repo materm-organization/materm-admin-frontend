@@ -139,9 +139,21 @@ Screens and building blocks built so far (phase P1 milestone M1; contract `../do
   choice (`instantApply` dropped, `4af2914`). Shadcn gotchas met in the sweep: `TableCell` / `TableHead` carry `whitespace-nowrap` (long text needs `whitespace-normal`
   on the cell, or the table overflows its card); `ToggleGroupItem` has `flex-1 min-w-0` in `ui/toggle-group.tsx`, so items share the group width equally. The Lao admin copy got a full review
   (`ee31997`, 768 values); the user accepted the Lao text as translated (2026-10-30; no native review wanted). Permission-matrix overflow fixed
-  and muted text reaches 4.5:1 contrast. Left as is: the brand orange `#f28a1f` has 2.29:1 contrast with white text (decision pending), role descriptions
+  and muted text reaches 4.5:1 contrast. The brand orange `#f28a1f` (2.29:1 with white) was replaced by the green system in A8 (see "Colour system" below). Left as is: role descriptions
   stay English in the Lao UI, the reset-password toast says "link sent" even when `email_delivery` is `logged_only`, and `.env.development` of this working
   copy sets `NEXT_PUBLIC_DISABLE_AUTH_GUARD=true` (the user's local file; never in `.env.production`).
+
+## Colour system (A8, 2026-11-02)
+
+The admin's colours come from the user's four greens `#E8F5E9` (lightest), `#A5D6A7`, `#66BB6A`, `#1B5E20` (darkest); the brand orange `#f28a1f` is gone.
+All tokens are in `src/app/globals.css` (`:root` / `.dark`, hex values, so the contrast can be checked by hand). Light: primary `#1B5E20` + white text (7.87:1),
+secondary / accent `#E8F5E9`, sidebar `#F4FAF5`, border `#D4E5D6`, form-control border `--input` `#7A9880` (>= 3:1 on white), ring `#2E7D32`. Dark: primary `#66BB6A` +
+`#0A2610` text (6.84:1), background `#0D1610`, card / popover `#142019`, sidebar `#101A13`, ring `#81C784`. `#A5D6A7` is not a token of its own (it fails 3:1 on white);
+it is the tint family behind secondary / accent. chart-1..6 are one green plus five distinct hues (blue, purple, rose, teal, ochre). Rules: use the tokens
+(`bg-primary`, `text-primary`, `ring-ring`), never a hex; status colours (amber = warning / unsaved / pending, orange = archived, sky = in review, violet = scheduled,
+emerald = published / success, `destructive` = error) are deliberately NOT the brand green and stay Tailwind palette classes with `dark:` pairs; amber/orange classes in the
+source are therefore status colours, not leftovers of the old brand. The `BorderBeam` on the sign-in card uses `#66bb6a -> #1b5e20`. Logo files in `public/brand/` are brand assets and untouched
+(dark-ink `materm-logo-dark.svg` on light surfaces, white `materm-logo-white.svg` on dark ones).
 
 To add a module, follow the feature-vertical pattern:
 `src/app/(protected)/(routes)/admin/<feature>/page.tsx` + `src/services/<feature>.api.ts` +

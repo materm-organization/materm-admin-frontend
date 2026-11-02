@@ -3,41 +3,49 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/*
+ * Colour system (A8, 2026-11-02). The palette is the user's four greens: #E8F5E9 (lightest), #A5D6A7, #66BB6A, #1B5E20
+ * (darkest). Light mode: primary = #1B5E20 with white text (7.87:1); the tints #E8F5E9 / #A5D6A7 carry the soft
+ * surfaces (secondary, accent, sidebar selection); #66BB6A is too light for text on white (2.2:1), so it is only a
+ * fill/chart colour there. Dark mode inverts the roles: primary = #66BB6A with a near-black green text, surfaces are a
+ * green-tinted near-black. Every foreground/background pair and every control boundary (--input, --ring) is >= AA
+ * (4.5:1 text, 3:1 UI); the numbers are in CLAUDE.md. Status colours (warning amber, destructive red, sky/violet
+ * chips) stay outside the brand green on purpose so they remain distinguishable from the primary.
+ */
 :root {
   --radius: 0.65rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.141 0.005 285.823);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.141 0.005 285.823);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.141 0.005 285.823);
-  /* Brand orange */
-  --primary: #f28a1f;
-  --primary-foreground: oklch(0.97 0.014 254.604);
-  --secondary: oklch(0.967 0.001 286.375);
-  --secondary-foreground: oklch(0.21 0.006 285.885);
-  --muted: oklch(0.967 0.001 286.375);
-  --muted-foreground: oklch(0.5 0.016 285.938);
-  --accent: oklch(0.967 0.001 286.375);
-  --accent-foreground: oklch(0.21 0.006 285.885);
+  --background: #ffffff;
+  --foreground: #0f1a12;
+  --card: #ffffff;
+  --card-foreground: #0f1a12;
+  --popover: #ffffff;
+  --popover-foreground: #0f1a12;
+  --primary: #1b5e20;
+  --primary-foreground: #ffffff;
+  --secondary: #e8f5e9;
+  --secondary-foreground: #12301a;
+  --muted: #f1f7f2;
+  --muted-foreground: #4a5f4e;
+  --accent: #e8f5e9;
+  --accent-foreground: #14401a;
   --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.92 0.004 286.32);
-  --input: oklch(0.92 0.004 286.32);
-  --ring: #f2a44a;
-  --chart-1: #f28a1f;
-  --chart-2: #fbbf24;
-  --chart-3: #0fa8a3;
-  --chart-4: #fb7185;
-  --chart-5: #8b5cf6;
-  --chart-6: #14b8a6;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.141 0.005 285.823);
-  --sidebar-primary: #f28a1f;
-  --sidebar-primary-foreground: oklch(0.97 0.014 254.604);
-  --sidebar-accent: oklch(0.967 0.001 286.375);
-  --sidebar-accent-foreground: oklch(0.21 0.006 285.885);
-  --sidebar-border: oklch(0.92 0.004 286.32);
-  --sidebar-ring: oklch(0.708 0 0);
+  --border: #d4e5d6;
+  --input: #7a9880;
+  --ring: #2e7d32;
+  --chart-1: #2e7d32;
+  --chart-2: #1565c0;
+  --chart-3: #7b1fa2;
+  --chart-4: #c2185b;
+  --chart-5: #00838f;
+  --chart-6: #a16207;
+  --sidebar: #f4faf5;
+  --sidebar-foreground: #0f1a12;
+  --sidebar-primary: #1b5e20;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #e1f0e3;
+  --sidebar-accent-foreground: #12301a;
+  --sidebar-border: #d4e5d6;
+  --sidebar-ring: #2e7d32;
 }
 
 @theme inline {
@@ -82,39 +90,38 @@
 }
 
 .dark {
-  --background: oklch(0.141 0.005 285.823);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.21 0.006 285.885);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.21 0.006 285.885);
-  --popover-foreground: oklch(0.985 0 0);
-  /* Brand orange from logo, bright enough for dark surfaces */
-  --primary: #f6a84a;
-  --primary-foreground: #2f1a00;
-  --secondary: oklch(0.274 0.006 286.033);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.274 0.006 286.033);
-  --muted-foreground: oklch(0.705 0.015 286.067);
-  --accent: oklch(0.274 0.006 286.033);
-  --accent-foreground: oklch(0.985 0 0);
+  --background: #0d1610;
+  --foreground: #e9f3eb;
+  --card: #142019;
+  --card-foreground: #e9f3eb;
+  --popover: #142019;
+  --popover-foreground: #e9f3eb;
+  --primary: #66bb6a;
+  --primary-foreground: #0a2610;
+  --secondary: #1d2c21;
+  --secondary-foreground: #e9f3eb;
+  --muted: #1d2c21;
+  --muted-foreground: #a6bcaa;
+  --accent: #223a28;
+  --accent-foreground: #e8f5e9;
   --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: #f6a84a;
-  --chart-1: #f6a84a;
-  --chart-2: #fcd34d;
-  --chart-3: #2fc6bf;
-  --chart-4: #f472b6;
-  --chart-5: #a78bfa;
-  --chart-6: #5eead4;
-  --sidebar: oklch(0.21 0.006 285.885);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: #f6a84a;
-  --sidebar-primary-foreground: #2f1a00;
-  --sidebar-accent: oklch(0.274 0.006 286.033);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.439 0 0);
+  --border: #2c4132;
+  --input: #4f6d55;
+  --ring: #81c784;
+  --chart-1: #66bb6a;
+  --chart-2: #64b5f6;
+  --chart-3: #ba68c8;
+  --chart-4: #f06292;
+  --chart-5: #4dd0e1;
+  --chart-6: #d4a72c;
+  --sidebar: #101a13;
+  --sidebar-foreground: #e9f3eb;
+  --sidebar-primary: #66bb6a;
+  --sidebar-primary-foreground: #0a2610;
+  --sidebar-accent: #1d2c21;
+  --sidebar-accent-foreground: #e9f3eb;
+  --sidebar-border: #2c4132;
+  --sidebar-ring: #81c784;
 }
 
 @layer base {
