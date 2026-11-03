@@ -163,6 +163,16 @@ export const API_ENDPOINTS = {
     DETAIL: (id: number | string) => `/authors/${id}`,
     RESTORE: (id: number | string) => `/authors/${id}/restore`,
   },
+  // External webhooks (doc/05 section 16), key `ops.webhooks`, super_admin only.
+  WEBHOOKS: {
+    LIST: "/webhooks",
+    DETAIL: (id: number | string) => `/webhooks/${id}`,
+    ROTATE_SECRET: (id: number | string) => `/webhooks/${id}/rotate-secret`,
+    TEST: (id: number | string) => `/webhooks/${id}/test`,
+    DELIVERIES: (id: number | string) => `/webhooks/${id}/deliveries`,
+    // POST; not under `/webhooks/{id}`.
+    RETRY_DELIVERY: (deliveryId: number | string) => `/webhook-deliveries/${deliveryId}/retry`,
+  },
   TAGS: {
     LIST: "/tags",
     DETAIL: (id: number | string) => `/tags/${id}`,

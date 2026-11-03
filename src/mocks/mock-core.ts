@@ -10,6 +10,7 @@ import type { RevisionDetail, RevisionKind } from "@/types/revisions";
 import type { CachePurgeResult } from "@/types/system";
 import type { Author } from "@/types/authors";
 import type { Redirect } from "@/types/redirects";
+import type { MockWebhookState } from "@/mocks/mock-webhooks";
 import type { Category, Tag } from "@/types/taxonomy";
 
 export const MOCK_USER = { id: 6, name: "Noy Keomany" } as const;
@@ -308,6 +309,8 @@ export type MockDb = {
   // Authors (doc/05 15): save-live rows, ETag = `"<updated_at>"`.
   authors: Author[];
   nextAuthorId: number;
+  // External webhooks (doc/05 16): rows, deliveries, the rate window of the test button, `unconfigured` = no secret key (503).
+  webhooks: MockWebhookState;
   // --- T1.4.4 preview links ---------------------------------------------------------------------------------
   previewLinks: MockPreviewLink[];
   nextPreviewLinkId: number;

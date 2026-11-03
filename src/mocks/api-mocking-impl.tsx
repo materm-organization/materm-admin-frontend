@@ -47,6 +47,10 @@ export default function ApiMockingImpl({ children }: { children: ReactNode }) {
       exhaustPreviewRate: () => exhaustPreviewRate(getMockDb()),
       fillPreviewLinks: (pageId: number, count: number) => fillPreviewLinks(getMockDb(), pageId, count),
       previewLinks: () => previewLinkSummary(getMockDb()),
+      // Webhooks (SCR-43): `setWebhooksUnconfigured(true)` = the server has no `security.webhookSecretKey` (create / rotate / test answer 503).
+      setWebhooksUnconfigured: (on: boolean) => {
+        getMockDb().webhooks.unconfigured = on;
+      },
       pages: () => getMockDb().pages.map((p) => ({ id: p.id, status: p.status, lock_version: p.lock_version, deleted_at: p.deleted_at })),
       // "I am a translator": the model acts as a translate-only writer (403 rules of 05 12.3.3 / 12.5.6 / 13.3.3) AND the signed-in
       // user keeps only `read` + `translate` on pages / sections / seo / blog, so the editors show their translator mode.

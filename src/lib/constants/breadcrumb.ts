@@ -20,6 +20,7 @@ export const BREADCRUMB_CONFIG: Record<string, string> = {
   "/admin/ui-strings": "breadcrumb.uiStrings",
   "/admin/locales": "breadcrumb.locales",
   "/admin/system": "breadcrumb.system",
+  "/admin/webhooks": "breadcrumb.webhooks",
   "/admin/forms": "breadcrumb.forms",
   "/admin/forms/submissions": "breadcrumb.submissions",
   "/admin/profile": "breadcrumb.profile",

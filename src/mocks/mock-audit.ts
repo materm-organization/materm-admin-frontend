@@ -21,6 +21,7 @@ export const AUDIT_ENTITY_PERMISSION: Record<string, string> = {
   "cms.post": "cms.posts",
   "cms.album": "cms.albums",
   "cms.author": "cms.blog",
+  "ops.webhook": "ops.webhooks",
   "cms.faq_group": "cms.faq",
   "forms.form": "cms.forms",
   "cms.locale": "cms.locales",
@@ -73,6 +74,12 @@ const ROWS: AuditLogEntry[] = [
   entry(9, 27, { action: "cms.ui_string.bundle_synced", entity_type: "cms.ui_string", entity_id: null, summary: "bundle 3f9c2ab: inserted=2 source_updated=1 kept_override=4", has_changes: false }),
   entry(10, 27, { action: "cms.ui_strings_bundle.synced", entity_type: "cms.ui_strings_bundle", entity_id: null, summary: "bundle 3f9c2ab: inserted=2 source_updated=1 kept_override=4", has_changes: false }),
   entry(11, 30, { action: "cms.author.created", entity_type: "cms.author", entity_id: 1, summary: "Author Somchai Vongsa created" }),
+  // Webhooks (doc/05 16.9): the audit `after` never holds the secret; `disabled` is written by the system.
+  entry(12, 33, { action: "ops.webhook.created", entity_type: "ops.webhook", entity_id: 1, summary: "Webhook CRM sync created" }),
+  entry(13, 36, { action: "ops.webhook.updated", entity_type: "ops.webhook", entity_id: 1, summary: "events changed" }),
+  entry(14, 39, { action: "ops.webhook.tested", entity_type: "ops.webhook", entity_id: 1, summary: "test sent: ok" }),
+  entry(15, 42, { action: "ops.webhook.secret_rotated", entity_type: "ops.webhook", entity_id: 1, summary: "secret rotated", has_changes: false }),
+  entry(16, 45, { action: "ops.webhook.disabled", entity_type: "ops.webhook", entity_id: 2, actor_type: "system", actor_user_id: null, actor_name: null, actor_role_key: null, summary: "switched off: auto_24h_failure", ip: null, user_agent: null }),
 ];
 
 export function listAuditLogs(db: MockDb, params: Params) {

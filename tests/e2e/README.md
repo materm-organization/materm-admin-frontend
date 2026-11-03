@@ -1,7 +1,7 @@
 # Admin E2E suite (real backend, no mocks)
 
 Drives a **production build** of this repo in system Chrome (`playwright-core`) against the real admin backend, portal backend and portal
-frontend, all started on scratch infrastructure by the scripts of `../../../e2e-cross-system/` (used as they are, never edited). Not part of
+frontend, all started on scratch infrastructure by the scripts of `../../../e2e-cross-system/` (used as they are, except one scratch-only line: `export SECURITY_WEBHOOKSECRETKEY=...` in `02-backends.sh` and `05-restart-admin.sh`, a throw-away key the webhooks spec needs). Not part of
 `npm test` (Vitest excludes `tests/e2e`).
 
 ## Run
@@ -31,6 +31,7 @@ proxy 56390. Only one stack at a time (`e2e-cross-system/.work-path`). Never tou
 | 50-forms-inbox-dashboard | recipients, public contact form -> inbox, open -> read, note, replied, archive, bulk, spam, CSV export (BOM), form History, dashboard per role |
 | 60-permission-modes | viewer read-only, translator text-only, editor without iam, API 403s, not-found route |
 | 70-redirects-import-authors | redirects CSV import (dry run with a row error, apply, update with previous value, export -> import all `unchanged`, refused apply 422 `details.report`); authors (create, assign in the post editor, delete blocked `author_has_posts`, switched-off author 422, trash / restore, Versions + Activity tabs, duplicate account link 409). Uses a fresh editor: the import limit is 20 per hour per user and dry runs count |
+| 80-webhooks | external webhooks (super_admin only): create refusals (http, private / metadata / loopback address, localhost, port, credentials), create with a public IP literal switched off, the one-time secret, edit with If-Match from `etag`, 409 in two views, rotate, list filters, Test dialog opened (never run), deliveries drawer, History, delete, admin / viewer denied. Needs `SECURITY_WEBHOOKSECRETKEY` in the harness. No real delivery |
 
 Not covered here (covered by the cross-system flows, run with `XFLOWS`): preview-link 20-cap + Lao message + unsaved-edit warning (55), notifier mail /
 outbox (80), Redis outage and cache timings (60, 70), portal propagation latency (30, 40, 45).

@@ -135,6 +135,7 @@ describe("W1 iam/ops routes (T1.1.10)", () => {
       "/admin/roles",
       "/admin/audit",
       "/admin/system",
+      "/admin/webhooks",
     ]);
   });
 });
@@ -214,5 +215,29 @@ describe("T1.4.7 pages route (SCR-19)", () => {
     const urls = (keys: string[]) => buildNavMainItemsForUser(keys).flatMap((g) => (g.items ? g.items.map((i) => i.url) : [g.url]));
     expect(urls([PERMISSION_KEYS.CMS_PAGES, PERMISSION_KEYS.CMS_MENUS])).toEqual(["/admin", "/admin/pages", "/admin/menus"]);
     expect(urls([PERMISSION_KEYS.CMS_MENUS])).not.toContain("/admin/pages");
+  });
+});
+
+describe("external webhooks route (SCR-43)", () => {
+  const urls = (keys: string[]) => buildNavMainItemsForUser(keys).flatMap((g) => (g.items ? g.items.map((i) => i.url) : [g.url]));
+
+  it("/admin/webhooks needs read on ops.webhooks, and so does anything below it", () => {
+    const expected = { kind: "requires", keys: [PERMISSION_KEYS.OPS_WEBHOOKS] };
+    expect(getPermissionsForPath("/admin/webhooks")).toEqual(expected);
+    expect(getPermissionsForPath("/admin/webhooks/3")).toEqual(expected);
+    expect(getPermissionsForPath("/admin/webhooksx")).toEqual({ kind: "unknown" });
+  });
+
+  it("is an entry of the Operations group, hidden from everyone without ops.webhooks (the seed gives it to super_admin only)", () => {
+    const ops = buildNavMainItemsForUser([PERMISSION_KEYS.OPS_AUDIT, PERMISSION_KEYS.OPS_WEBHOOKS]).find((g) => g.title === "nav.ops");
+    expect(ops?.items?.map((i) => i.url)).toEqual(["/admin/audit", "/admin/webhooks"]);
+    expect(urls([PERMISSION_KEYS.OPS_AUDIT, PERMISSION_KEYS.OPS_SYSTEM, PERMISSION_KEYS.CMS_PAGES])).not.toContain("/admin/webhooks");
+    expect(urls([PERMISSION_KEYS.OPS_WEBHOOKS])).toEqual(["/admin", "/admin/webhooks"]);
+  });
+
+  it("the route is denied without the key", () => {
+    const access = getPermissionsForPath("/admin/webhooks");
+    expect(isRouteAllowed(access, [PERMISSION_KEYS.OPS_AUDIT])).toBe(false);
+    expect(isRouteAllowed(access, [PERMISSION_KEYS.OPS_WEBHOOKS])).toBe(true);
   });
 });

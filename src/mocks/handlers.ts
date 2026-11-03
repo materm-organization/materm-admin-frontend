@@ -103,6 +103,17 @@ import {
   patchTaxonomy,
   restoreTaxonomyRow,
 } from "@/mocks/mock-taxonomy";
+import {
+  createWebhook,
+  deleteWebhook,
+  getWebhook,
+  listWebhookDeliveries,
+  listWebhooks,
+  patchWebhook,
+  retryWebhookDelivery,
+  rotateWebhookSecret,
+  testWebhook,
+} from "@/mocks/mock-webhooks";
 import { createAuthor, deleteAuthor, getAuthor, listAuthors, listUsersForPicker, patchAuthor, restoreAuthorFromTrash } from "@/mocks/mock-authors";
 import { importRedirects } from "@/mocks/mock-redirects-import";
 import { checkRedirect, createRedirect, deleteRedirect, exportRedirects, getRedirect, listRedirects, patchRedirect, restoreRedirectFromTrash } from "@/mocks/mock-redirects";
@@ -773,6 +784,40 @@ const authorHandlers: HttpHandler[] = [
   })),
 ];
 
+// SCR-43 (doc/05 section 16): external webhooks. The secret is in the answers of create and rotate-secret only. Fixed segments before `:id`.
+const webhookHandlers: HttpHandler[] = [
+  http.get(P("/webhooks"), guard(({ request }) => {
+    const { data, meta } = listWebhooks(getMockDb(), searchOf(request));
+    return ok(data, { meta });
+  })),
+  http.post(P("/webhooks"), guard(async ({ request }) => {
+    const { data, etag } = createWebhook(getMockDb(), await jsonBody(request), request.headers.get("Idempotency-Key"));
+    return ok(data, { status: 201, etag });
+  })),
+  http.get(P("/webhooks/:id"), guard(({ params }) => {
+    const { data, etag } = getWebhook(getMockDb(), param(params, "id"));
+    return ok(data, { etag });
+  })),
+  http.patch(P("/webhooks/:id"), guard(async ({ request, params }) => {
+    const { data, etag } = patchWebhook(getMockDb(), param(params, "id"), await jsonBody(request), request.headers.get("If-Match"));
+    return ok(data, { etag });
+  })),
+  http.delete(P("/webhooks/:id"), guard(({ request, params }) => {
+    deleteWebhook(getMockDb(), param(params, "id"), request.headers.get("If-Match"));
+    return ok(null);
+  })),
+  http.post(P("/webhooks/:id/rotate-secret"), guard(({ request, params }) => {
+    const { data, etag } = rotateWebhookSecret(getMockDb(), param(params, "id"), request.headers.get("If-Match"));
+    return ok(data, { etag });
+  })),
+  http.post(P("/webhooks/:id/test"), guard(({ params }) => ok(testWebhook(getMockDb(), param(params, "id"))))),
+  http.get(P("/webhooks/:id/deliveries"), guard(({ request, params }) => {
+    const { data, meta } = listWebhookDeliveries(getMockDb(), param(params, "id"), searchOf(request));
+    return ok(data, { meta });
+  })),
+  http.post(P("/webhook-deliveries/:id/retry"), guard(({ params }) => ok(retryWebhookDelivery(getMockDb(), param(params, "id"))))),
+];
+
 export const saveLiveApiHandlers: HttpHandler[] = [
   ...menuHandlers,
   ...pageHandlers,
@@ -787,6 +832,7 @@ export const saveLiveApiHandlers: HttpHandler[] = [
   ...taxonomyHandlers("tags"),
   ...redirectHandlers,
   ...authorHandlers,
+  ...webhookHandlers,
 ];
 
 

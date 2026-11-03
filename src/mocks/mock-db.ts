@@ -37,6 +37,7 @@ import { seedPreviewLinks } from "@/mocks/mock-preview";
 import { SEED_SETTINGS_UPDATED, restoreSettings, seedSettings, seedSettingsRevisions } from "@/mocks/mock-settings";
 import { seedPostRevisions, seedPosts } from "@/mocks/mock-posts";
 import { restoreAuthor, seedAuthorRevisions, seedAuthors } from "@/mocks/mock-authors";
+import { emptyWebhookState, seedWebhooks } from "@/mocks/mock-webhooks";
 import { restoreRedirect, seedRedirectRevisions, seedRedirects } from "@/mocks/mock-redirects";
 import { restoreTaxonomy, seedTaxonomy, seedTaxonomyRevisions } from "@/mocks/mock-taxonomy";
 import { restoreUiString, seedUiStringRevisions, seedUiStrings, uiStringKnown } from "@/mocks/mock-ui-strings";
@@ -207,6 +208,7 @@ export function createMockDb(): MockDb {
     nextRedirectId: 1,
     authors: [],
     nextAuthorId: 1,
+    webhooks: emptyWebhookState(),
     previewLinks: [],
     nextPreviewLinkId: 1,
     previewIssued: [],
@@ -238,6 +240,7 @@ export function createMockDb(): MockDb {
   seedTaxonomy(db);
   seedRedirects(db);
   seedAuthors(db);
+  seedWebhooks(db);
   seedRevisions(db);
   seedPageRevisions(db);
   seedPostRevisions(db);

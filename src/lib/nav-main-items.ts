@@ -107,7 +107,7 @@ export const NAV_MAIN_CONFIG: NavMainGroupConfig[] = [
       { title: "nav.roles", url: "/admin/roles", anyPermission: [PERMISSION_KEYS.IAM_ROLES] },
     ],
   },
-  // Operations: audit log + system status.
+  // Operations: audit log, system status, external webhooks.
   {
     title: "nav.ops",
     url: "#",
@@ -115,6 +115,8 @@ export const NAV_MAIN_CONFIG: NavMainGroupConfig[] = [
     items: [
       { title: "nav.audit", url: "/admin/audit", anyPermission: [PERMISSION_KEYS.OPS_AUDIT] },
       { title: "nav.system", url: "/admin/system", anyPermission: [PERMISSION_KEYS.OPS_SYSTEM] },
+      // External webhooks (SCR-43): super_admin only (the backend seed grants `ops.webhooks` to no other role).
+      { title: "nav.webhooks", url: "/admin/webhooks", anyPermission: [PERMISSION_KEYS.OPS_WEBHOOKS] },
     ],
   },
 ];

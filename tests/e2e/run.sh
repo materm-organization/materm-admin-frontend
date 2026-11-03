@@ -9,7 +9,7 @@
 set -uo pipefail
 HERE="$(cd "$(dirname "$0")" && pwd)"
 FE="$(cd "$HERE/../.." && pwd)"
-X="$(cd "$FE/../e2e-cross-system" && pwd)"      # existing cross-system harness: used, never edited
+X="$(cd "$FE/../e2e-cross-system" && pwd)"      # existing cross-system harness: used; only edit = the scratch SECURITY_WEBHOOKSECRETKEY line in 02/05
 cmd="${1:-all}"
 
 up() {

@@ -223,7 +223,8 @@
     "galleries": "Galleries",
     "faq": "FAQ",
     "redirects": "Redirects",
-    "authors": "Authors"
+    "authors": "Authors",
+    "webhooks": "Webhooks"
   },
   "breadcrumb": {
     "forms": "Forms",
@@ -247,7 +248,8 @@
     "galleries": "Galleries",
     "faq": "FAQ",
     "redirects": "Redirects",
-    "authors": "Authors"
+    "authors": "Authors",
+    "webhooks": "Webhooks"
   },
   "dashboard": {
     "title": "Dashboard",
@@ -4427,6 +4429,252 @@
     },
     "activity": {
       "empty": "Nothing has been recorded for this author yet."
+    }
+  },
+  "webhooks": {
+    "title": "Webhooks",
+    "description": "Send events from the website to other systems. Every message is signed, and addresses on private networks are refused.",
+    "searchPlaceholder": "Search by name or address",
+    "create": "New webhook",
+    "empty": "No webhooks yet.",
+    "emptyHelp": "Create one to tell another system when content is published or a form is sent.",
+    "active": "Active",
+    "inactive": "Switched off",
+    "autoDisabled": "Switched off after 24 hours of failures",
+    "never": "Never",
+    "notConfigured": "Webhooks are not configured on the server. Ask whoever runs the server to set the webhook secret key and switch webhooks on.",
+    "filters": {
+      "status": "Status",
+      "event": "Event"
+    },
+    "events": {
+      "contentPublished": "Content published",
+      "contentUnpublished": "Content unpublished",
+      "formSubmitted": "Form submitted",
+      "mediaReady": "File ready",
+      "userCreated": "User created",
+      "webhookTest": "Test message"
+    },
+    "eventHints": {
+      "contentPublished": "A page, post, gallery, FAQ or form went live.",
+      "contentUnpublished": "Something was taken off the website or moved to the trash.",
+      "formSubmitted": "Someone sent a form. Only counts and names are sent, never what they typed.",
+      "mediaReady": "A file was uploaded or replaced in the media library.",
+      "userCreated": "An administrator created a user account.",
+      "webhookTest": "Sent by the Test button."
+    },
+    "deliveryStatus": {
+      "pending": "Waiting",
+      "delivering": "Sending",
+      "succeeded": "Delivered",
+      "failed": "Failed, will retry",
+      "dead": "Gave up"
+    },
+    "errorClass": {
+      "blocked_address": "The address is not allowed (private or internal network).",
+      "dns_failed": "The address could not be found.",
+      "timeout": "The receiver did not answer in time.",
+      "tls_failed": "The secure connection could not be set up.",
+      "connect_failed": "Could not connect to the receiver.",
+      "http_status": "The receiver answered with an error.",
+      "secret_unavailable": "The signing secret cannot be read. Rotate the secret.",
+      "payload_too_large": "The message was too large to send.",
+      "canceled": "The send was cancelled.",
+      "webhook_inactive": "The webhook was switched off or deleted.",
+      "other": "The send failed."
+    },
+    "columns": {
+      "name": "Webhook",
+      "events": "Events",
+      "status": "Status",
+      "failures": "Failures in a row",
+      "lastSuccess": "Last success",
+      "actions": "Actions"
+    },
+    "actions": {
+      "edit": "Edit {name}",
+      "editShort": "Edit",
+      "deliveries": "Deliveries of {name}",
+      "deliveriesShort": "Deliveries",
+      "test": "Send a test to {name}",
+      "testShort": "Test",
+      "rotate": "Rotate the secret of {name}",
+      "rotateShort": "Rotate secret",
+      "delete": "Delete {name}",
+      "deleteShort": "Delete",
+      "turnOn": "Turn {name} back on",
+      "turnOnShort": "Turn back on"
+    },
+    "toast": {
+      "deleted": "Webhook deleted.",
+      "stale": "Someone else changed this webhook. The list was reloaded.",
+      "deleteFailed": "It could not be deleted.",
+      "rotateFailed": "The secret could not be rotated.",
+      "turnedOn": "Webhook turned back on.",
+      "turnOnFailed": "It could not be turned on."
+    },
+    "delete": {
+      "title": "Delete webhook \"{name}\"?",
+      "description": "Nothing more is sent to this address, and messages still waiting are dropped. There is no trash: this cannot be undone.",
+      "confirm": "Delete webhook"
+    },
+    "rotate": {
+      "title": "Rotate the secret of \"{name}\"?",
+      "description": "A new secret is created and shown once. The old secret stops working at once, so the receiver must be updated or it will refuse the messages.",
+      "confirm": "Rotate secret"
+    },
+    "secret": {
+      "createdTitle": "Webhook secret",
+      "rotatedTitle": "New webhook secret",
+      "description": "The receiver of \"{name}\" uses this secret to check the signature of each message. Copy it now.",
+      "label": "Signing secret",
+      "onceWarning": "This secret is shown only once and cannot be read again. If you lose it, rotate the secret to get a new one.",
+      "unavailable": "The secret was already shown and cannot be displayed again. Use Rotate secret to get a new one."
+    },
+    "dialog": {
+      "createTitle": "New webhook",
+      "createDescription": "Choose where to send messages and which events to send.",
+      "editTitle": "Edit webhook",
+      "editDescription": "Changes are saved when you press Save.",
+      "name": "Name",
+      "nameHelp": "A label for you, for example the name of the other system.",
+      "url": "Address (URL)",
+      "urlHelp": "Must start with https://. Addresses on private or internal networks are refused.",
+      "events": "Events",
+      "eventsHelp": "Choose at least one.",
+      "timeout": "Time to wait for an answer (milliseconds)",
+      "timeoutHelp": "From {min} to {max}. The default is 5000.",
+      "active": "Active",
+      "activeHelp": "A switched-off webhook sends nothing.",
+      "secret": "Signing secret",
+      "secretHint": "Ends in",
+      "secretHelp": "The secret was shown once when the webhook was created. Rotate it to get a new one.",
+      "test": "Send a test",
+      "rotate": "Rotate secret",
+      "saveFirst": "Save your changes first.",
+      "status": "Status",
+      "failures": "Failures in a row",
+      "lastSuccess": "Last success",
+      "never": "Never",
+      "close": "Close",
+      "create": "Create webhook",
+      "save": "Save",
+      "created": "Webhook created.",
+      "saved": "Saved.",
+      "saveFailed": "It could not be saved.",
+      "turnedOn": "Webhook turned back on.",
+      "turnBackOn": "Turn back on",
+      "autoDisabledTitle": "Switched off after 24 hours of failures",
+      "autoDisabledText": "Every send failed for 24 hours ({count} failures in a row), so the system switched this webhook off. Fix the receiver, then turn it back on.",
+      "tabs": {
+        "details": "Details",
+        "history": "History"
+      }
+    },
+    "fieldErrors": {
+      "name": {
+        "required": "Enter a name.",
+        "too_long": "The name is too long (at most {max} characters)."
+      },
+      "url": {
+        "required": "Enter the address.",
+        "too_long": "The address is too long (at most {max} characters).",
+        "invalid_url": "This is not a valid web address.",
+        "scheme_not_allowed": "Only addresses that start with https:// are allowed.",
+        "credentials_not_allowed": "The address must not contain a user name or password.",
+        "port_not_allowed": "This port is not allowed. Allowed: {allowed}.",
+        "host_not_allowed": "This name cannot be used (for example localhost or an internal name).",
+        "address_not_allowed": "This address points to a private or internal network and cannot be used.",
+        "unresolvable_host": "This address could not be found. Check the spelling."
+      },
+      "events": {
+        "required": "Choose at least one event.",
+        "unknown_value": "One of the events is not valid. Choose from the list.",
+        "duplicate": "An event was chosen twice."
+      },
+      "timeout_ms": {
+        "invalid_type": "Enter a whole number.",
+        "out_of_range": "Enter a number from {min} to {max}."
+      }
+    },
+    "test": {
+      "title": "Send a test to \"{name}\"",
+      "description": "A signed test message is sent to this address now, once. It is not retried and does not count towards the 24-hour switch-off.",
+      "inactiveNote": "This webhook is switched off. You can still test it.",
+      "notConfigured": "Webhooks are not configured on the server, so nothing was sent. Ask whoever runs the server to set the webhook secret key and switch webhooks on.",
+      "rateLimited": "Too many tests. Wait a moment and try again.",
+      "rateLimitedRetry": "Too many tests. Try again in {seconds} seconds.",
+      "unavailable": "The service is not available right now. Try again later.",
+      "failed": "The test could not be run.",
+      "okTitle": "The receiver accepted the message",
+      "okText": "It answered with a success code.",
+      "notOkTitle": "The test failed",
+      "notOkText": "The receiver did not accept the message.",
+      "statusCode": "Status code",
+      "latency": "Time",
+      "ms": "{value} ms",
+      "reason": "Reason",
+      "response": "What the receiver answered (plain text)",
+      "noResponse": "The receiver sent no text.",
+      "seeDeliveries": "See deliveries",
+      "close": "Close",
+      "send": "Send test",
+      "again": "Send again"
+    },
+    "deliveries": {
+      "title": "Deliveries of \"{name}\"",
+      "description": "Newest first. A message is tried up to {max} times, then given up.",
+      "filters": {
+        "status": "Status",
+        "event": "Event"
+      },
+      "refresh": "Refresh",
+      "empty": "Nothing has been sent yet.",
+      "emptyFiltered": "No deliveries match these filters.",
+      "columns": {
+        "event": "Event",
+        "status": "Status",
+        "attempt": "Attempt",
+        "next": "Next try",
+        "code": "Code",
+        "error": "Problem",
+        "ms": "ms",
+        "actions": "Actions"
+      },
+      "attemptOf": "{attempt} / {max}",
+      "retry": "Retry",
+      "retryRow": "Retry delivery {id}",
+      "retried": "Queued to be sent again.",
+      "retryFailed": "It could not be queued.",
+      "retryRefused": {
+        "pending": "It is already waiting to be sent.",
+        "delivering": "It is being sent right now.",
+        "succeeded": "It was already delivered.",
+        "test_delivery": "A test message cannot be retried. Send a new test.",
+        "webhook_inactive": "The webhook is switched off. Turn it on first.",
+        "unknown": "It cannot be retried in its current state."
+      },
+      "expand": "Show details of delivery {id}",
+      "collapse": "Hide details of delivery {id}",
+      "detail": {
+        "eventId": "Event ID",
+        "delivered": "Delivered",
+        "response": "What the receiver answered (plain text)",
+        "noBody": "No text was received."
+      }
+    },
+    "activity": {
+      "empty": "Nothing has been recorded for this webhook yet.",
+      "systemActor": "System",
+      "actions": {
+        "created": "Created",
+        "updated": "Changed",
+        "deleted": "Deleted",
+        "secret_rotated": "Secret rotated",
+        "tested": "Test sent",
+        "retried": "Delivery retried",
+        "disabled": "Switched off by the system"
+      }
     }
   }
 }

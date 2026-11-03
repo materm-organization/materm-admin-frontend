@@ -601,6 +601,16 @@ Contract: `doc/05` 14.13 (import), 15 (authors, `author_id` / `author_name` of p
   (`post-field-author_id`, active authors, `limit 100`; an author switched off after being chosen stays shown "(switched off)" and is not re-sent; `author_inactive` / `unknown_reference` come back at the field); the posts list column
   shows `author_name`. Mocks: `mock-authors.ts`, `mock-redirects-import.ts` (strict; knobs `importState`), the posts mock accepts `author_id` (checked only when it changes).
 
+## External webhooks (SCR-43, backend `e856e35`)
+
+Contract: `doc/05` section 16, `doc/07` 3.27. `/admin/webhooks` (Operations group, key `ops.webhooks`, super_admin only: the seed gives it to no other role; it is `/admin/webhooks` like the other ops screens, not `/admin/operations/webhooks`). Code `protected/webhooks/`, `services/webhooks.api.ts`, `hooks/use-webhooks.ts`, `lib/webhooks.ts` (pure), `types/webhooks.d.ts`, mock `mocks/mock-webhooks.ts`.
+
+- **ETag = the `etag` field / header (a hash of the editable fields), never `updated_at`** (`etagOfWebhook`; a list row carries it too). A worker statistic does not move it.
+- **The secret (`whsec_` + 43) is cut off in the service** (`splitSecret`): create and rotate-secret hand it to an `onSecret` callback and return the webhook without it, so React Query's query and mutation caches never hold it (`gcTime: 0`); the page keeps it in `issued` only while `OneTimeSecretDialog` is open (Esc / outside click do not dismiss). Afterwards only `secret_hint` (last 4) is shown. A replayed create (`secret: null`) says it was already shown. Tests dump both caches and the DOM.
+- 503 with `details.dependency` `security.webhookSecretKey` / `webhooks.enabled` = "not configured on the server" (create, rotate, test: `isNotConfigured`); 429 on Test uses `Retry-After`; retry 409 `INVALID_STATE` `details.reason` has one text each. Test never sends anything until its button is pressed. Server strings (response body / snippet, names, URLs) are plain text in `<pre>` / React text.
+- Mock knobs: host `failing` answers 500, `slow` times out, `private.*` is blocked; `db.webhooks.unconfigured = true` (browser: `__MATERM_MOCK__.setWebhooksUnconfigured(true)`).
+- E2E `80-webhooks.mjs` needs `SECURITY_WEBHOOKSECRETKEY` in the harness (`e2e-cross-system/02-backends.sh` and `05-restart-admin.sh`, throw-away scratch value). It creates only SWITCHED-OFF webhooks on a public IP literal and never presses Test: no real delivery is made. Not covered by the real backend: Test result, deliveries rows, retry, auto switch-off (Vitest over the mock only).
+
 ## Preview links (T1.4.4 UI)
 
 Contract: `doc/05` section 12.9, `doc/api/openapi-admin.yaml` (CreatePreviewLinkRequest, PreviewLinkCreated, PreviewLinkItem, PreviewLinkRevoked); the

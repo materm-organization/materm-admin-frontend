@@ -74,7 +74,7 @@ export function OneTimeSecretDialog({
     <Dialog open onOpenChange={() => {}}>
       <DialogContent
         showCloseButton={false}
-        className="md:max-w-md"
+        className="md:max-w-xl"
         onEscapeKeyDown={(e) => e.preventDefault()}
         onInteractOutside={(e) => e.preventDefault()}
         onCloseAutoFocus={(e) => e.preventDefault()}
