@@ -30,6 +30,7 @@ proxy 56390. Only one stack at a time (`e2e-cross-system/.work-path`). Never tou
 | 40-posts-albums-faq | author vs editor rights on posts (no Publish, 403, read-only on others' posts), editor publish + draft edit, galleries (pictures, publish, referenced 409), FAQ (question + answer, publish) |
 | 50-forms-inbox-dashboard | recipients, public contact form -> inbox, open -> read, note, replied, archive, bulk, spam, CSV export (BOM), form History, dashboard per role |
 | 60-permission-modes | viewer read-only, translator text-only, editor without iam, API 403s, not-found route |
+| 70-redirects-import-authors | redirects CSV import (dry run with a row error, apply, update with previous value, export -> import all `unchanged`, refused apply 422 `details.report`); authors (create, assign in the post editor, delete blocked `author_has_posts`, switched-off author 422, trash / restore, Versions + Activity tabs, duplicate account link 409). Uses a fresh editor: the import limit is 20 per hour per user and dry runs count |
 
 Not covered here (covered by the cross-system flows, run with `XFLOWS`): preview-link 20-cap + Lao message + unsaved-edit warning (55), notifier mail /
 outbox (80), Redis outage and cache timings (60, 70), portal propagation latency (30, 40, 45).

@@ -68,6 +68,9 @@ export type PostListItem = PublishableMeta & {
   title_locale: string | null;
   slug: string | null;
   category: PostCategoryRef;
+  // The byline (doc/05 15.8): the working copy's author (the draft's when there is one); `author_name` also when the author is in the trash.
+  author_id: number | null;
+  author_name: string | null;
   tag_count: number;
   hero_media_id: number | null;
   teaser_media_id: number | null;
@@ -101,6 +104,8 @@ export type PostMediaResult = { media: PostMediaItem[]; aggregate: AggregateStam
 export type CreatePostPayload = {
   translations: Record<string, PostTranslation>;
   category_id?: number | null;
+  // An active author (422 `author_inactive` / `unknown_reference`).
+  author_id?: number | null;
   tag_ids?: number[];
   hero_media_id?: number | null;
   teaser_media_id?: number | null;
@@ -113,6 +118,8 @@ export type UpdatePostPayload = {
   // `{ "<post_media_id>": { "<locale>": { alt, caption } } }`
   media_translations?: Record<string, Record<string, PostMediaTranslation>>;
   category_id?: number | null;
+  // `null` clears. Checked only when the value changes (an author switched off later stays on the post).
+  author_id?: number | null;
   // Replaces the whole set (<= 10).
   tag_ids?: number[];
   hero_media_id?: number | null;

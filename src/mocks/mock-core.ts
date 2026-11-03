@@ -8,6 +8,7 @@ import type { MenuDetail } from "@/types/menus";
 import type { PublishableStatus } from "@/types/publishing";
 import type { RevisionDetail, RevisionKind } from "@/types/revisions";
 import type { CachePurgeResult } from "@/types/system";
+import type { Author } from "@/types/authors";
 import type { Redirect } from "@/types/redirects";
 import type { Category, Tag } from "@/types/taxonomy";
 
@@ -171,6 +172,8 @@ export type MockPostTranslation = {
 export type MockPostSnapshot = {
   post: {
     category_id: number | null;
+    // Absent on the older seeds (read as `null`).
+    author_id?: number | null;
     hero_media_id: number | null;
     teaser_media_id: number | null;
     is_featured: boolean;
@@ -302,6 +305,9 @@ export type MockDb = {
   // SCR-42 redirects (doc/05 6.10): save-live rows, ETag = `"<updated_at>"`.
   redirects: Redirect[];
   nextRedirectId: number;
+  // Authors (doc/05 15): save-live rows, ETag = `"<updated_at>"`.
+  authors: Author[];
+  nextAuthorId: number;
   // --- T1.4.4 preview links ---------------------------------------------------------------------------------
   previewLinks: MockPreviewLink[];
   nextPreviewLinkId: number;

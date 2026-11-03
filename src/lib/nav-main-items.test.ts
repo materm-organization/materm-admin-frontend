@@ -121,6 +121,8 @@ describe("W1 iam/ops routes (T1.1.10)", () => {
       "/admin/menus",
       "/admin/blog/categories",
       "/admin/blog/tags",
+      // T3 authors
+      "/admin/blog/authors",
       "/admin/settings",
       "/admin/seo",
       "/admin/redirects",
@@ -183,6 +185,7 @@ describe("T1.3.8 save-live routes", () => {
     ["/admin/redirects", PERMISSION_KEYS.CMS_REDIRECTS],
     ["/admin/blog/categories", PERMISSION_KEYS.CMS_CATEGORIES],
     ["/admin/blog/tags", PERMISSION_KEYS.CMS_CATEGORIES],
+    ["/admin/blog/authors", PERMISSION_KEYS.CMS_BLOG],
     ["/admin/ui-strings", PERMISSION_KEYS.CMS_UI_STRINGS],
   ])("%s needs read on %s", (path, key) => {
     expect(getPermissionsForPath(path)).toEqual({ kind: "requires", keys: [key] });

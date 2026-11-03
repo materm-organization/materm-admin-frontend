@@ -474,7 +474,7 @@ from the list's dialog (title in the default language, optional category, the au
   `setTranslateOnly(true)` covers `cms.blog`, `touchPost(id)` (-> 409), `posts()`, `post(id)`.
 - **Tests**: `post-draft.test.ts`, `posts-list.test.tsx`, `post-editor.test.tsx` (whole editor over the mock API), `mocks/mock-posts.test.ts`, owner cases in `publish-bar.test.tsx`.
 - **Not built / assumptions**: no "language complete" filter and no published-date range filter (the API has neither / not built); posts have no noindex / in_sitemap;
-  `author_id` is never sent (422 `not_applicable`), the author is `created_by`; the author filter offers "Mine" and, with `iam.users:read`, the users.
+  (superseded by the authors feature, see "Redirects import and authors": `author_id` is now chosen in the Details tab); the "author" filter of the list is still `created_by` (the API has no `author_id` filter): "Mine" and, with `iam.users:read`, the users.
 
 ## Galleries and FAQ (T1.5.6)
 
@@ -582,6 +582,24 @@ lit on the inbox). Code: `components/protected/{forms,submissions,dashboard}/`, 
   `dashboard-view.test.tsx`, `components/navbar/nav-badge.test.tsx`, `lib/{nav-forms,blob-error}.test.ts`, `mocks/mock-{forms,submissions}.test.ts` (the dashboard mock is in the second).
 - **Not built / assumptions**: no autosave in the form editor; no "preview" tab and no field builder (P2); no assignee / data-requests (P2); the `/admin/forms/submissions/data-requests`
   route does not exist; the topic filter needs `forms.manage:read`; the dashboard shape beyond 05 13.8 is a proposal.
+
+## Redirects import and authors (T3, backend `aea591b` / `53cc0c1`)
+
+Contract: `doc/05` 14.13 (import), 15 (authors, `author_id` / `author_name` of posts), `doc/07` 3.16 / 3.26.
+
+- **Redirects CSV import** (`protected/redirects/redirect-import-dialog.tsx`, pure helpers `redirect-import.ts`, `RedirectsAPI.Import`, `useMutationImportRedirects`; key `cms.redirects:import`):
+  choose a file (client refuses > 8 MiB before any request: a 413 would still use one of the 20 imports per hour, dry runs included), **Check file = dry run (`dry_run=true` always sent
+  explicitly)**, the per-row report, **Apply = the SAME file again with `dry_run=false`**, enabled only when the dry run was `valid` and has something to write; choosing another file drops the report.
+  A 422 on the apply carries the full report in `details.report` (shown as "refused", nothing written). File-level errors (`/file` codes, 413, 415, 400, 403, 429 with `Retry-After`, 503) are
+  explained inline (`redirects.import.failure.*`); the global toast also fires for 429 / 503. Row errors are `{field, code, params}`: `importErrorText` prefers the CSV-specific text for the code, then the
+  generic `errors.fields.*`, then the server's English `message`. Cells are echoed text (React escapes them; never `dangerouslySetInnerHTML`). **A report may hold 50,000 rows: it is paginated client side
+  (100 per page, filter errors / warnings / result), never rendered whole.** Help text says the export has no locale column (a per-language redirect comes back as an "every language" row).
+- **Authors** (`/admin/blog/authors`, nav entry in the Content group after Tags, key `cms.blog`; `protected/authors/`): list (search, state, has account, sort, trash switch, post counts),
+  a dialog for create / edit with tabs Details, Versions (`RevisionsTab`, resource `authors`) and Activity (audit `entity_type=cms.author`). Save-live with `If-Match`; a translate-only caller edits only the bio / job title of
+  non-default languages (field-level `null`, never a whole-language `null`). The account picker needs `iam.users:read`; without it the linked user is shown read-only. 409 `CONFLICT_DUPLICATE` at `/user_id` is a field error.
+  Delete: 409 `ENTITY_REFERENCED` with `details.reason = author_has_posts` + `post_count` opens an explanation (no post filter by author exists to link to). **Post editor**: Details tab has an Author select
+  (`post-field-author_id`, active authors, `limit 100`; an author switched off after being chosen stays shown "(switched off)" and is not re-sent; `author_inactive` / `unknown_reference` come back at the field); the posts list column
+  shows `author_name`. Mocks: `mock-authors.ts`, `mock-redirects-import.ts` (strict; knobs `importState`), the posts mock accepts `author_id` (checked only when it changes).
 
 ## Preview links (T1.4.4 UI)
 

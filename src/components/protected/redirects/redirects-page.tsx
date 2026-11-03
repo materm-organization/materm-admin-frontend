@@ -1,7 +1,7 @@
 "use client";
 
 import type { ColumnDef } from "@tanstack/react-table";
-import { DownloadIcon, PencilIcon, PlusIcon, RotateCcwIcon, Trash2Icon } from "lucide-react";
+import { DownloadIcon, PencilIcon, UploadIcon, PlusIcon, RotateCcwIcon, Trash2Icon } from "lucide-react";
 import { useFormatter, useTranslations } from "next-intl";
 import { useMemo, useState, type SetStateAction } from "react";
 import { toast } from "sonner";
@@ -11,6 +11,7 @@ import { ConfirmDialog } from "@/components/global/confirm-dialog";
 import { ListPage } from "@/components/global/list/list-page";
 import { SingleSelectFilter, type SelectedType } from "@/components/global/single-select-filter";
 import { saveBlob } from "@/components/protected/submissions/submissions-export-dialog";
+import { RedirectImportDialog } from "@/components/protected/redirects/redirect-import-dialog";
 import { RedirectDialog } from "@/components/protected/redirects/redirect-dialog";
 import { redirectErrorText, redirectWarningText } from "@/components/protected/redirects/redirect-errors";
 import { Badge } from "@/components/ui/badge";
@@ -69,12 +70,14 @@ export function RedirectsPage() {
   const canUpdate = useCan(PERMISSION_KEYS.CMS_REDIRECTS, "update");
   const canDelete = useCan(PERMISSION_KEYS.CMS_REDIRECTS, "delete");
   const canExport = useCan(PERMISSION_KEYS.CMS_REDIRECTS, "export");
+  const canImport = useCan(PERMISSION_KEYS.CMS_REDIRECTS, "import");
   const trashed = filters.trashed === "true";
 
   const deleteRedirect = useMutationDeleteRedirect();
   const restoreRedirect = useMutationRestoreRedirect();
   const exporter = useMutationExportRedirects();
   const [dialog, setDialog] = useState<{ id: number } | "new" | null>(null);
+  const [importing, setImporting] = useState(false);
   const [toDelete, setToDelete] = useState<Redirect | null>(null);
 
   const rows = query.data?.data ?? [];
@@ -255,10 +258,19 @@ export function RedirectsPage() {
           </div>
         }
         toolbarActions={
-          canExport && !trashed ? (
-            <Button type="button" variant="outline" onClick={() => void doExport()} disabled={exporter.isPending}>
-              {exporter.isPending ? <Spinner /> : <DownloadIcon />} {t("export")}
-            </Button>
+          !trashed && (canExport || canImport) ? (
+            <div className="flex flex-wrap gap-2">
+              {canImport ? (
+                <Button type="button" variant="outline" onClick={() => setImporting(true)}>
+                  <UploadIcon /> {t("import.button")}
+                </Button>
+              ) : null}
+              {canExport ? (
+                <Button type="button" variant="outline" onClick={() => void doExport()} disabled={exporter.isPending}>
+                  {exporter.isPending ? <Spinner /> : <DownloadIcon />} {t("export")}
+                </Button>
+              ) : null}
+            </div>
           ) : undefined
         }
         primaryAction={
@@ -272,6 +284,8 @@ export function RedirectsPage() {
       />
 
       {dialog ? <RedirectDialog target={dialog} locales={activeLocales.map((l) => ({ code: l.code, name: `${l.native_name} (${l.code})` }))} canEdit={dialog === "new" ? canCreate : canUpdate} canRestore={canUpdate} onClose={() => setDialog(null)} /> : null}
+
+      {importing ? <RedirectImportDialog onClose={() => setImporting(false)} /> : null}
 
       <ConfirmDialog
         open={toDelete !== null}

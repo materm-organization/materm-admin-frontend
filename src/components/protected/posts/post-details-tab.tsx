@@ -12,6 +12,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { useAuthors } from "@/hooks/use-authors";
 import { useCategories } from "@/hooks/use-taxonomy";
 
 const NONE = "__none__";
@@ -33,6 +34,8 @@ export function PostDetailsTab({ post, draft, onChange, problems, locales, defau
   const format = useFormatter();
   const ui = useLocale();
   const categories = useCategories({ limit: 100 });
+  const authors = useAuthors({ is_active: true, limit: 100 });
+  const authorRows = authors.data?.data ?? [];
   const full = mode === "full";
   const rows = (categories.data?.data ?? []).filter((c) => !c.deleted_at);
   const name = (c: (typeof rows)[number]) => c.translations[ui]?.name ?? c.translations[defaultLocale]?.name ?? c.key;
@@ -78,10 +81,27 @@ export function PostDetailsTab({ post, draft, onChange, problems, locales, defau
           {t("publishing")}
         </h2>
         <div className="grid items-start gap-x-8 gap-y-5 lg:grid-cols-2">
-          <PostField id="post-field-author" label={t("author")} hint={t("authorHint")}>
-            <p id="post-field-author" className="flex h-9 items-center text-sm" data-testid="post-author">
-              {post.created_by?.name ?? t("authorNone")}
-            </p>
+          <PostField id="post-field-author_id" label={t("author")} hint={t("authorHint")} error={problem("author_id")}>
+            <Select value={draft.author_id === null ? NONE : String(draft.author_id)} disabled={!full} onValueChange={(v) => set({ author_id: v === NONE ? null : Number(v) })}>
+              <SelectTrigger id="post-field-author_id" className="w-full" data-testid="post-author">
+                <SelectValue placeholder={t("authorNone")} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={NONE}>{t("authorNone")}</SelectItem>
+                {/* The author the post has stays shown when it is switched off (or not in the first 100): a switched-off author can be kept, not chosen. */}
+                {draft.author_id !== null && !authorRows.some((a) => a.id === draft.author_id) ? (
+                  <SelectItem value={String(draft.author_id)}>
+                    {(draft.author_id === post.author_id ? post.author_name : null) ?? `#${draft.author_id}`}
+                    {` (${t("authorInactive")})`}
+                  </SelectItem>
+                ) : null}
+                {authorRows.map((a) => (
+                  <SelectItem key={a.id} value={String(a.id)}>
+                    {a.display_name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </PostField>
 
           {/* The display date is NOT part of the draft: it has its own save (a PATCH that carries nothing else), and on a published

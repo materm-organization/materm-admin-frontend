@@ -103,6 +103,8 @@ import {
   patchTaxonomy,
   restoreTaxonomyRow,
 } from "@/mocks/mock-taxonomy";
+import { createAuthor, deleteAuthor, getAuthor, listAuthors, listUsersForPicker, patchAuthor, restoreAuthorFromTrash } from "@/mocks/mock-authors";
+import { importRedirects } from "@/mocks/mock-redirects-import";
 import { checkRedirect, createRedirect, deleteRedirect, exportRedirects, getRedirect, listRedirects, patchRedirect, restoreRedirectFromTrash } from "@/mocks/mock-redirects";
 import { bundleSync, deleteUiString, listUiStrings, putUiString, uiStringKeyEtag } from "@/mocks/mock-ui-strings";
 import {
@@ -235,6 +237,7 @@ export const revisionApiHandlers: HttpHandler[] = [
   ...revisionHandlers("categories", "/categories/:id", "id"),
   ...revisionHandlers("tags", "/tags/:id", "id"),
   ...revisionHandlers("redirects", "/redirects/:id", "id"),
+  ...revisionHandlers("authors", "/authors/:id", "id"),
 ];
 
 export const systemApiHandlers: HttpHandler[] = [
@@ -715,6 +718,7 @@ const redirectHandlers: HttpHandler[] = [
       headers: { "Content-Type": "text/csv; charset=utf-8", "Content-Disposition": 'attachment; filename="redirects-20261101T090000Z.csv"' },
     })
   )),
+  http.post(P("/redirects/import"), guard(async ({ request }) => ok(await importRedirects(getMockDb(), request, searchOf(request))))),
   http.post(P("/redirects"), guard(async ({ request }) => {
     const { data, etag } = createRedirect(getMockDb(), await jsonBody(request));
     return ok(data, { status: 201, etag });
@@ -737,6 +741,38 @@ const redirectHandlers: HttpHandler[] = [
   })),
 ];
 
+// SCR-27 (doc/05 section 15) and the users the author form's picker lists.
+const authorHandlers: HttpHandler[] = [
+  http.get(P("/users"), guard(({ request }) => {
+    const { data, meta } = listUsersForPicker(searchOf(request));
+    return ok(data, { meta });
+  })),
+  http.get(P("/authors"), guard(({ request }) => {
+    const { data, meta } = listAuthors(getMockDb(), searchOf(request));
+    return ok(data, { meta });
+  })),
+  http.post(P("/authors"), guard(async ({ request }) => {
+    const { data, etag } = createAuthor(getMockDb(), await jsonBody(request));
+    return ok(data, { status: 201, etag });
+  })),
+  http.get(P("/authors/:id"), guard(({ params }) => {
+    const { data, etag } = getAuthor(getMockDb(), param(params, "id"));
+    return ok(data, { etag });
+  })),
+  http.patch(P("/authors/:id"), guard(async ({ request, params }) => {
+    const { data, etag } = patchAuthor(getMockDb(), param(params, "id"), await jsonBody(request), request.headers.get("If-Match"));
+    return ok(data, { etag });
+  })),
+  http.delete(P("/authors/:id"), guard(({ request, params }) => {
+    deleteAuthor(getMockDb(), param(params, "id"), request.headers.get("If-Match"));
+    return ok(null);
+  })),
+  http.post(P("/authors/:id/restore"), guard(({ request, params }) => {
+    const { data, etag } = restoreAuthorFromTrash(getMockDb(), param(params, "id"), request.headers.get("If-Match"));
+    return ok(data, { etag });
+  })),
+];
+
 export const saveLiveApiHandlers: HttpHandler[] = [
   ...menuHandlers,
   ...pageHandlers,
@@ -750,6 +786,7 @@ export const saveLiveApiHandlers: HttpHandler[] = [
   ...taxonomyHandlers("categories"),
   ...taxonomyHandlers("tags"),
   ...redirectHandlers,
+  ...authorHandlers,
 ];
 
 

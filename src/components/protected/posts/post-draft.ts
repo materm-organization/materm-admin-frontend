@@ -55,6 +55,7 @@ export type GalleryRowDraft = {
 
 export type PostDraft = {
   category_id: number | null;
+  author_id: number | null;
   tag_ids: number[];
   hero_media_id: number | null;
   teaser_media_id: number | null;
@@ -126,6 +127,7 @@ export function draftFromPost(post: PostDetail, localeCodes: string[]): PostDraf
     }));
   return {
     category_id: post.category?.id ?? null,
+    author_id: post.author_id ?? null,
     tag_ids: [...post.tag_ids],
     hero_media_id: post.hero_media_id,
     teaser_media_id: post.teaser_media_id,
@@ -248,6 +250,7 @@ export function buildPostPatch(
   const payload: UpdatePostPayload = {};
   if (mode === "full") {
     if (draft.category_id !== baseline.category_id) payload.category_id = draft.category_id;
+    if (draft.author_id !== baseline.author_id) payload.author_id = draft.author_id;
     if (JSON.stringify(draft.tag_ids) !== JSON.stringify(baseline.tag_ids)) payload.tag_ids = draft.tag_ids;
     if (draft.hero_media_id !== baseline.hero_media_id) payload.hero_media_id = draft.hero_media_id;
     if (draft.teaser_media_id !== baseline.teaser_media_id) payload.teaser_media_id = draft.teaser_media_id;
@@ -304,7 +307,7 @@ export type PostTab = "content" | "details" | "seo";
 // Which tab a pointer of the server (`/category_id`, `/translations/la/seo_title`, `/media/12/media_id` ...) belongs to.
 export function postPointerTab(pointer: string): PostTab | null {
   if (/^\/translations\/[^/]+\/(seo_title|seo_description|og_image_id)$/.test(pointer)) return "seo";
-  if (/^\/(category_id|tag_ids|published_at|is_featured)(\/.*)?$/.test(pointer)) return "details";
+  if (/^\/(category_id|author_id|tag_ids|published_at|is_featured)(\/.*)?$/.test(pointer)) return "details";
   if (/^\/translations\/[^/]+\/is_enabled$/.test(pointer)) return "details";
   if (/^\/(hero_media_id|teaser_media_id|media|media_translations)(\/.*)?$/.test(pointer)) return "content";
   if (/^\/translations\/[^/]+(\/.*)?$/.test(pointer)) return "content";

@@ -23,7 +23,7 @@ vi.mock("next/navigation", () => ({
 const toast = vi.hoisted(() => ({ success: vi.fn(), error: vi.fn(), warning: vi.fn() }));
 vi.mock("sonner", () => ({ toast }));
 
-const FULL = grants({ "cms.redirects": ["read", "create", "update", "delete", "export"], "cms.locales": ["read"] });
+const FULL = grants({ "cms.redirects": ["read", "create", "update", "delete", "export", "import"], "cms.locales": ["read"] });
 const READ_ONLY = grants({ "cms.redirects": ["read"], "cms.locales": ["read"] });
 beforeEach(() => {
   me.current = { id: 6, roleID: 2, permissions: FULL };
@@ -157,6 +157,26 @@ describe("RedirectsPage (SCR-42)", () => {
     renderApp(<RedirectsPage />);
     await user.click(await screen.findByRole("button", { name: "Export CSV" }));
     await waitFor(() => expect(clicked).toEqual(["redirects-20261101T090000Z.csv"]));
+  });
+
+  it("Import CSV needs cms.redirects:import; a full import through the dialog adds the rows to the list", async () => {
+    const user = userEvent.setup();
+    me.current = { id: 6, roleID: 2, permissions: grants({ "cms.redirects": ["read", "create", "update", "delete", "export"], "cms.locales": ["read"] }) };
+    const { unmount } = renderApp(<RedirectsPage />);
+    await screen.findByText("/old-blog");
+    expect(screen.queryByRole("button", { name: "Import CSV" })).toBeNull();
+    unmount();
+
+    me.current = { id: 6, roleID: 2, permissions: FULL };
+    renderApp(<RedirectsPage />);
+    await user.click(await screen.findByRole("button", { name: "Import CSV" }));
+    const dialog = await screen.findByRole("dialog");
+    await user.upload(within(dialog).getByTestId("redirect-import-input"), new File(["from,to,code\n/imported,/blog,308\n"], "r.csv", { type: "text/csv" }));
+    await user.click(within(dialog).getByRole("button", { name: "Check file" }));
+    await user.click(await within(dialog).findByRole("button", { name: "Import 1 change" }));
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+    expect(await screen.findByText("/imported")).toBeInTheDocument();
+    expect(toast.success).toHaveBeenCalledWith("Imported: 1 new, 0 updated, 0 unchanged.");
   });
 
   it("filters by the URL state", async () => {

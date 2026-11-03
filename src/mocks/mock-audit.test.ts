@@ -22,7 +22,7 @@ describe("GET /audit-logs: who may ask which shape", () => {
     setAuditCaller(getMockDb(), { "ops.audit": ["read"] });
     expect(q("action=iam.user.updated").data).toHaveLength(1);
     expect(q("entity_type=iam.role").data).toHaveLength(1);
-    expect(q("").meta.total).toBe(10);
+    expect(q("").meta.total).toBe(11);
   });
 
   it("without ops.audit:read the TAB SHAPE (entity_type + entity_id + from/to/page/limit/sort) works with read on the entity key", () => {

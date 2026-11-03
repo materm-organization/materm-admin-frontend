@@ -222,7 +222,8 @@
     "posts": "Blog posts",
     "galleries": "Galleries",
     "faq": "FAQ",
-    "redirects": "Redirects"
+    "redirects": "Redirects",
+    "authors": "Authors"
   },
   "breadcrumb": {
     "forms": "Forms",
@@ -245,7 +246,8 @@
     "posts": "Blog posts",
     "galleries": "Galleries",
     "faq": "FAQ",
-    "redirects": "Redirects"
+    "redirects": "Redirects",
+    "authors": "Authors"
   },
   "dashboard": {
     "title": "Dashboard",
@@ -785,7 +787,8 @@
       "userinfo_not_allowed": "An address with a user name or password is not allowed.",
       "host_required": "The address needs a website name after https://.",
       "path_or_https_url": "Use a path on this site (starting with /) or a full https:// address.",
-      "self_redirect": "The new address is the same as the old one."
+      "self_redirect": "The new address is the same as the old one.",
+      "author_inactive": "This author is switched off. Choose an active author."
     },
     "loadAccount": "Could not load your account. Check your connection and try again."
   },
@@ -3695,8 +3698,8 @@
       "tagRemove": "Remove the tag {name}",
       "publishing": "Author and date",
       "author": "Author",
-      "authorHint": "The person who created the post.",
-      "authorNone": "Nobody (a seeded post)",
+      "authorHint": "The byline of the post. Only active authors can be chosen; a switched-off author already on the post can stay.",
+      "authorNone": "No author",
       "publishedAt": "Display date",
       "publishedAtHint": "Empty = the day it is published. A date in the future is not accepted yet. Saved on its own, not with the draft.",
       "featured": "Featured",
@@ -3712,7 +3715,8 @@
       "firstPublished": "First published",
       "lastPublished": "Published version from",
       "saveDate": "Save date",
-      "publishedAtHintLive": "This post is published: a new date is saved on its own and shows on the website at once. It cannot be cleared."
+      "publishedAtHintLive": "This post is published: a new date is saved on its own and shows on the website at once. It cannot be cleared.",
+      "authorInactive": "switched off"
     },
     "seo": {
       "defaultMissing": "The {locale} SEO title is still empty. Publishing needs it.",
@@ -4209,6 +4213,220 @@
         "unknown_reference": "This language does not exist.",
         "invalid_format": "This value has an invalid format."
       }
+    },
+    "import": {
+      "button": "Import CSV",
+      "title": "Import redirects from a CSV file",
+      "description": "Check the file first. Nothing is saved until you apply it, and then all rows are saved together or none.",
+      "help": {
+        "format": "UTF-8 CSV with the header from,to,code (the same as the export). The code is 301, 302, 307 or 308; empty means 301.",
+        "rows": "Each row is one redirect for every language. A row whose \"from\" already exists is updated; nothing else about it (state, note) changes.",
+        "roundTrip": "The export has no language column: redirects for one language come back as \"every language\" rows when you import the file again.",
+        "limit": "At most 50,000 rows and 8 MB. You can run 20 checks or imports per hour."
+      },
+      "file": {
+        "label": "CSV file",
+        "choose": "Choose file",
+        "change": "Choose another file",
+        "none": "No file chosen"
+      },
+      "check": "Check file",
+      "checkAgain": "Check again",
+      "apply": "{count, plural, one {Import # change} other {Import # changes}}",
+      "close": "Close",
+      "valid": {
+        "title": "The file is valid",
+        "appliedTitle": "Imported",
+        "body": "Nothing has been saved yet. Apply the import to save these changes.",
+        "nothing": "Every row is already in place. There is nothing to import."
+      },
+      "invalid": {
+        "title": "{count, plural, one {# row has an error} other {# rows have errors}}",
+        "body": "Fix the file and check it again. Rows with errors are shown first."
+      },
+      "refused": {
+        "title": "The import was refused",
+        "body": "{count, plural, one {# row has an error} other {# rows have errors}}. Nothing was saved. Fix the file and check it again."
+      },
+      "totals": {
+        "rows": "Rows",
+        "created": "New",
+        "updated": "Updated",
+        "unchanged": "Unchanged",
+        "errors": "Errors"
+      },
+      "filter": {
+        "label": "Show",
+        "all": "All rows",
+        "problems": "Errors and warnings",
+        "error": "Errors only",
+        "created": "New",
+        "updated": "Updated",
+        "unchanged": "Unchanged",
+        "warnings": "Warnings only"
+      },
+      "status": {
+        "created": "New",
+        "updated": "Updated",
+        "unchanged": "Unchanged",
+        "error": "Error"
+      },
+      "table": {
+        "row": "Line",
+        "from": "From",
+        "to": "To",
+        "code": "Code",
+        "status": "Result",
+        "previous": "Was",
+        "problems": "Problems",
+        "empty": "No rows to show."
+      },
+      "pagination": {
+        "range": "{from}-{to} of {total}",
+        "none": "0 rows",
+        "prev": "Previous rows",
+        "next": "Next rows"
+      },
+      "toast": {
+        "applied": "Imported: {created} new, {updated} updated, {unchanged} unchanged."
+      },
+      "failure": {
+        "title": "The file could not be checked",
+        "network": "The server could not be reached. Check the connection and try again.",
+        "badRequest": "The request was not understood. Choose the file again.",
+        "forbidden": "You do not have permission to import redirects.",
+        "tooLarge": "The file is larger than {max} MB.",
+        "unsupported": "This is not a UTF-8 CSV file (zip files and binary files are not accepted).",
+        "rateLimited": "Too many imports for now. Try again later.",
+        "rateLimitedRetry": "Too many imports for now. Try again in about {minutes} minute(s).",
+        "unavailable": "The import is not available right now. Try again in a moment.",
+        "generic": "The file could not be checked.",
+        "file": {
+          "required": "Choose a file first.",
+          "too_many_files": "Send one file only.",
+          "empty": "The file is empty.",
+          "no_rows": "The file has the header but no rows.",
+          "header_mismatch": "The first line must be exactly: from,to,code.",
+          "invalid_csv": "The file is not valid CSV (check the quotes near line {line}).",
+          "too_many_rows": "The file has more than {max} rows.",
+          "has_errors": "Some rows have errors."
+        }
+      },
+      "errors": {
+        "required": "A value is needed.",
+        "too_long": "The value is too long (at most {max} characters).",
+        "invalid_type": "The code must be a whole number.",
+        "not_in_enum": "The code must be 301, 302, 307 or 308.",
+        "csv_formula": "The cell starts with = + - or @, which a spreadsheet reads as a formula. Remove it.",
+        "duplicate_in_file": "The same \"from\" is already on line {first_row}.",
+        "wrong_column_count": "The row must have exactly 3 columns (from, to, code).",
+        "https_only": "Only https:// addresses are allowed, not http://.",
+        "scheme_not_allowed": "This kind of address (javascript:, data:, file: ...) is not allowed.",
+        "userinfo_not_allowed": "An address with a user name or password is not allowed.",
+        "host_required": "The address needs a website name after https://.",
+        "path_or_https_url": "Use a path on this site (starting with /) or a full https:// address.",
+        "self_redirect": "The new address is the same as the old one.",
+        "redirect_loop": "This makes a loop: {path}.",
+        "redirect_chain_too_long": "The chain has {hops} steps (at most {max}). Point it straight at {final_target}.",
+        "redirect_chain_too_long_at_least": "The chain has at least {hops} steps (at most {max}). Point it straight at the final address.",
+        "invalid_format": "The value has an invalid format.",
+        "unknown_reference": "The value points to something that does not exist."
+      },
+      "warnings": {
+        "redirect_chain": "This starts a chain of {hops} steps. Point it straight at {final_target}.",
+        "source_is_published_page": "A published page is at this address. The page wins, so this redirect does not work until the page is unpublished."
+      }
+    }
+  },
+  "authors": {
+    "title": "Authors",
+    "description": "The people named as the writer of a blog post. Changes are saved at once.",
+    "searchPlaceholder": "Search by name, job title or bio",
+    "create": "New author",
+    "empty": "No authors yet.",
+    "emptyTrash": "The trash is empty.",
+    "trash": "Trash",
+    "active": "Active",
+    "inactive": "Switched off",
+    "filters": {
+      "status": "State",
+      "user": "Sign-in account",
+      "withUser": "Has an account",
+      "withoutUser": "No account"
+    },
+    "columns": {
+      "name": "Author",
+      "user": "Account",
+      "posts": "Posts",
+      "postsTitle": "{published} published or scheduled",
+      "status": "State",
+      "updated": "Updated",
+      "deleted": "Deleted",
+      "actions": "Actions"
+    },
+    "actions": {
+      "edit": "Edit {name}",
+      "delete": "Delete {name}",
+      "restore": "Restore {name}",
+      "restoreShort": "Restore"
+    },
+    "delete": {
+      "title": "Delete the author \"{name}\"?",
+      "description": "The author moves to the trash (kept for 30 days) and can be restored. An author whose posts still exist cannot be deleted.",
+      "confirm": "Move to trash"
+    },
+    "blocked": {
+      "title": "\"{name}\" cannot be deleted",
+      "description": "{count, plural, one {# post still names this author.} other {# posts still name this author.}}",
+      "hint": "Open those posts and choose another author (or none) in the Details tab, then delete the author. You can also switch the author off: a switched-off author stays on old posts but cannot be chosen again.",
+      "close": "Close",
+      "edit": "Switch off instead"
+    },
+    "toast": {
+      "deleted": "Author moved to the trash.",
+      "deleteFailed": "It could not be deleted.",
+      "stale": "Someone else changed this author. The list was reloaded.",
+      "restored": "Author restored.",
+      "restoreDuplicate": "It could not be restored: its account is linked to another author now.",
+      "restoreFailed": "It could not be restored."
+    },
+    "dialog": {
+      "createTitle": "New author",
+      "editTitle": "Edit author",
+      "createDescription": "Add a person who can be named as the writer of a post.",
+      "editDescription": "Changes are saved at once and show on the website only where a byline is used.",
+      "displayName": "Display name",
+      "displayNameHelp": "The name shown as the writer.",
+      "user": "Sign-in account",
+      "userNone": "No account",
+      "userHelp": "Optional. One account can belong to one author.",
+      "userReadOnly": "Only users with access to the user list can change this link.",
+      "userTaken": "This account is already linked to another author.",
+      "avatar": "Photo",
+      "avatarPicker": "Choose a photo",
+      "avatarHelp": "Optional. An image from the media library.",
+      "active": "Active",
+      "activeHelp": "A switched-off author stays on old posts but cannot be chosen for new ones.",
+      "jobTitle": "Job title",
+      "bio": "Short bio",
+      "default": "default language",
+      "translateOnly": "Translation mode: you can edit the job title and bio of the languages that are not the default one.",
+      "trashed": "This author is in the trash. Restore it from the list to edit it.",
+      "close": "Close",
+      "create": "Create author",
+      "save": "Save",
+      "created": "Author created.",
+      "saved": "Saved.",
+      "saveFailed": "It could not be saved.",
+      "restored": "Version restored.",
+      "tabs": {
+        "details": "Details",
+        "history": "Versions",
+        "activity": "Activity"
+      }
+    },
+    "activity": {
+      "empty": "Nothing has been recorded for this author yet."
     }
   }
 }

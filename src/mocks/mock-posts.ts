@@ -348,6 +348,8 @@ export function postListItem(db: MockDb, root: MockPostRoot, locale = DEFAULT_LO
     title_locale: title.locale,
     slug: title.slug,
     category: categoryRef(db, snap.post.category_id, locale),
+    author_id: snap.post.author_id ?? null,
+    author_name: db.authors.find((a) => a.id === snap.post.author_id)?.display_name ?? null,
     tag_count: snap.tag_ids.length,
     hero_media_id: snap.post.hero_media_id,
     teaser_media_id: snap.post.teaser_media_id,
@@ -762,7 +764,17 @@ function normaliseTranslation(code: string, t: Record<string, unknown>, old?: Mo
 }
 
 // The shared fields of a body (create and patch): category, tags, hero / teaser, flag, display date.
-function checkSharedFields(db: MockDb, input: Record<string, unknown>, errors: ApiFieldError[]) {
+// `currentAuthor` = the author the post has now (a PATCH): the check runs only when the value CHANGES, so an author switched off
+// later stays on the post and a form that sends the whole object again is not refused (05 15.8).
+function checkSharedFields(db: MockDb, input: Record<string, unknown>, errors: ApiFieldError[], currentAuthor: number | null = null) {
+  if (input.author_id !== undefined && input.author_id !== null) {
+    if (!Number.isInteger(input.author_id) || (input.author_id as number) < 1) errors.push({ in: "body", path: "/author_id", code: "invalid_type" });
+    else if (input.author_id !== currentAuthor) {
+      const author = db.authors.find((a) => a.id === input.author_id && !a.deleted_at);
+      if (!author) errors.push({ in: "body", path: "/author_id", code: "unknown_reference", params: { ref_type: "authors" } });
+      else if (!author.is_active) errors.push({ in: "body", path: "/author_id", code: "author_inactive" });
+    }
+  }
   if (input.category_id !== undefined && input.category_id !== null) {
     if (!Number.isInteger(input.category_id) || (input.category_id as number) < 1) errors.push({ in: "body", path: "/category_id", code: "invalid_type" });
     else if (!db.categories.some((c) => c.id === input.category_id && !c.deleted_at)) errors.push({ in: "body", path: "/category_id", code: "unknown_reference", params: { ref_type: "categories" } });
@@ -802,8 +814,7 @@ export function createPost(db: MockDb, body: unknown) {
   if (!isObject(body)) throw validationFailed([{ in: "body", path: "", code: "invalid_type" }]);
   const errors: ApiFieldError[] = [];
   for (const k of Object.keys(body)) {
-    if (k === "author_id") errors.push({ in: "body", path: "/author_id", code: "not_applicable" });
-    else if (!["translations", "category_id", "tag_ids", "hero_media_id", "teaser_media_id", "is_featured", "published_at"].includes(k)) errors.push({ in: "body", path: `/${k}`, code: "unknown_field" });
+    if (!["translations", "category_id", "author_id", "tag_ids", "hero_media_id", "teaser_media_id", "is_featured", "published_at"].includes(k)) errors.push({ in: "body", path: `/${k}`, code: "unknown_field" });
   }
   if (!isObject(body.translations)) errors.push({ in: "body", path: "/translations", code: body.translations === undefined ? "required" : "invalid_type" });
   else {
@@ -852,6 +863,7 @@ export function createPost(db: MockDb, body: unknown) {
     live: {
       post: {
         category_id: (body.category_id as number | null | undefined) ?? null,
+        author_id: (body.author_id as number | null | undefined) ?? null,
         hero_media_id: (body.hero_media_id as number | null | undefined) ?? null,
         teaser_media_id: (body.teaser_media_id as number | null | undefined) ?? null,
         is_featured: body.is_featured === true,
@@ -888,9 +900,8 @@ export function patchPost(db: MockDb, id: string, body: unknown, ifMatch: string
   const keys = Object.keys(body);
   if (keys.length === 0) throw validationFailed([{ in: "body", path: "", code: "min_properties" }]);
   for (const k of keys) {
-    if (k === "author_id") errors.push({ in: "body", path: "/author_id", code: "not_applicable" });
-    else if (["status", "scheduled_at", "unpublished_at", "first_published_at"].includes(k)) errors.push({ in: "body", path: `/${k}`, code: k === "status" ? "immutable" : "not_applicable" });
-    else if (!["translations", "media_translations", "category_id", "tag_ids", "hero_media_id", "teaser_media_id", "is_featured", "published_at"].includes(k)) errors.push({ in: "body", path: `/${k}`, code: "unknown_field" });
+    if (["status", "scheduled_at", "unpublished_at", "first_published_at"].includes(k)) errors.push({ in: "body", path: `/${k}`, code: k === "status" ? "immutable" : "not_applicable" });
+    else if (!["translations", "media_translations", "category_id", "author_id", "tag_ids", "hero_media_id", "teaser_media_id", "is_featured", "published_at"].includes(k)) errors.push({ in: "body", path: `/${k}`, code: "unknown_field" });
   }
   trashedCheck(root);
   const snapNow = postWorking(db, root);
@@ -922,12 +933,13 @@ export function patchPost(db: MockDb, id: string, body: unknown, ifMatch: string
       }
     }
   }
-  checkSharedFields(db, body, errors);
+  checkSharedFields(db, body, errors, snapNow.post.author_id ?? null);
   if (errors.length) throw validationFailed(errors);
 
   // Apply on a copy first: no change at all -> 200 with the same ETag, no side effect (05 13.3.3).
   const next = structuredClone(snapNow);
   if (body.category_id !== undefined) next.post.category_id = body.category_id as number | null;
+  if (body.author_id !== undefined) next.post.author_id = body.author_id as number | null;
   if (body.tag_ids !== undefined) next.tag_ids = [...(body.tag_ids as number[])];
   if (body.hero_media_id !== undefined) next.post.hero_media_id = body.hero_media_id as number | null;
   if (body.teaser_media_id !== undefined) next.post.teaser_media_id = body.teaser_media_id as number | null;
@@ -979,8 +991,8 @@ export function patchPost(db: MockDb, id: string, body: unknown, ifMatch: string
   // Who may write which value (the check is on the VALUE: a form may send the whole object, 05 11.1.3).
   if (!canUpdate(db, root)) {
     const first = (path: string) => deny(roleOf(db) === "author" ? "update_own" : "update", "PATCH", path);
-    for (const f of ["category_id", "hero_media_id", "teaser_media_id", "is_featured"] as const) {
-      if (next.post[f] !== snapNow.post[f]) throw first(`/${f}`);
+    for (const f of ["category_id", "author_id", "hero_media_id", "teaser_media_id", "is_featured"] as const) {
+      if ((next.post[f] ?? null) !== (snapNow.post[f] ?? null)) throw first(`/${f}`);
     }
     if (JSON.stringify(next.tag_ids) !== JSON.stringify(snapNow.tag_ids)) throw first("/tag_ids");
     for (const code of new Set([...next.translations.map((t) => t.locale_code), ...snapNow.translations.map((t) => t.locale_code)])) {

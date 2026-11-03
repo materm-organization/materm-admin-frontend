@@ -6,7 +6,7 @@
 // the working draft - doc/05 section 12.8) carry `publishable: true`.
 import { PERMISSION_KEYS } from "@/lib/constants/permissions";
 
-export type RevisionResource = "menus" | "settings" | "ui-strings" | "categories" | "tags" | "redirects" | "media/assets" | "pages" | "posts" | "albums" | "faq-groups" | "forms";
+export type RevisionResource = "menus" | "settings" | "ui-strings" | "categories" | "tags" | "redirects" | "authors" | "media/assets" | "pages" | "posts" | "albums" | "faq-groups" | "forms";
 
 export type RevisionEntityId = string | number;
 
@@ -64,6 +64,14 @@ export const REVISION_RESOURCES: Record<RevisionResource, ResourceConfig> = {
     restoreKey: () => PERMISSION_KEYS.CMS_CATEGORIES,
     restoreActions: ["update"],
     entityPath: (id) => `/tags/${seg(id)}`,
+  },
+  authors: {
+    // Authors are guarded by the blog key (doc/05 15.0); `update` restores.
+    base: (id) => `/authors/${seg(id)}`,
+    readKey: () => PERMISSION_KEYS.CMS_BLOG,
+    restoreKey: () => PERMISSION_KEYS.CMS_BLOG,
+    restoreActions: ["update"],
+    entityPath: (id) => `/authors/${seg(id)}`,
   },
   redirects: {
     base: (id) => `/redirects/${seg(id)}`,

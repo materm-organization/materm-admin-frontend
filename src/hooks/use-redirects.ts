@@ -62,3 +62,18 @@ export const useMutationRestoreRedirect = () => {
 };
 export const useMutationExportRedirects = () =>
   useMutation({ mutationFn: (query: RedirectsExportQuery) => RedirectsAPI.Export(query) });
+
+// The dry run writes nothing; the real import changes rows (and the answers of the checks), so only that one refreshes the lists.
+export const useMutationImportRedirects = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ file, dryRun, signal }: { file: File; dryRun: boolean; signal?: AbortSignal }) => RedirectsAPI.Import(file, dryRun, signal),
+    onSuccess: (report) => {
+      if (!report.applied) return;
+      void queryClient.invalidateQueries({ queryKey: LIST_KEY });
+      void queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.REDIRECTS.CHECK] });
+      // The import is one audit row without an entity (`cms.redirect.imported`); the row histories of the updated rows move too.
+      void queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.AUDIT.LIST] });
+    },
+  });
+};

@@ -154,6 +154,14 @@ export const API_ENDPOINTS = {
     RESTORE: (id: number | string) => `/redirects/${id}/restore`,
     CHECK: "/redirects/check",
     EXPORT: "/redirects/export",
+    // Multipart `file`, `?dry_run=` (doc/05 14.13).
+    IMPORT: "/redirects/import",
+  },
+  // Authors (byline of a post, doc/05 section 15): save-live + trash, under `cms.blog`.
+  AUTHORS: {
+    LIST: "/authors",
+    DETAIL: (id: number | string) => `/authors/${id}`,
+    RESTORE: (id: number | string) => `/authors/${id}/restore`,
   },
   TAGS: {
     LIST: "/tags",

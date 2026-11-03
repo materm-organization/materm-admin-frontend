@@ -225,7 +225,7 @@ export function PostsList() {
           },
         },
         { id: "category", header: t("columns.category"), cell: ({ row }) => row.original.category?.name ?? <span className="text-muted-foreground">-</span> },
-        { id: "author", header: t("columns.author"), cell: ({ row }) => <span className="block max-w-32 truncate" title={row.original.created_by?.name ?? undefined}>{row.original.created_by?.name ?? <span className="text-muted-foreground">-</span>}</span> },
+        { id: "author", header: t("columns.author"), cell: ({ row }) => <span className="block max-w-32 truncate" title={row.original.author_name ?? undefined}>{row.original.author_name ?? <span className="text-muted-foreground">-</span>}</span> },
         { id: "translations", header: t("columns.translations"), cell: ({ row }) => <TranslationBadges status={row.original.translation_status} fields={POST_FIELDS} noun={t("noun")} className="flex-nowrap" /> },
         {
           id: "updated_at",

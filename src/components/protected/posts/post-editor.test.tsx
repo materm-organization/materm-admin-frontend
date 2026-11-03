@@ -1,6 +1,6 @@
 import { act, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { http } from "msw";
+import { HttpResponse, http } from "msw";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { PostHost } from "@/components/protected/posts/post-host";
@@ -280,12 +280,13 @@ describe("PostEditor: the gallery (PUT /posts/{id}/media)", () => {
 describe("PostEditor: Details and SEO", () => {
   useMockApi();
 
-  it("Details: the category, the tags (0 - 10), the author (read only: the creator) and the display date; one save sends the PATCH", async () => {
+  it("Details: the category, the tags (0 - 10), the author and the display date; one save sends the PATCH", async () => {
     const u = user();
     const seen: unknown[] = [];
     server.use(http.patch(`${API}/posts/3`, async ({ request }) => { seen.push(await request.clone().json()); return undefined; }));
     await open(3, "tab=details");
-    expect(screen.getByTestId("post-author")).toHaveTextContent("Noy Keomany");
+    // post 3 has no author yet: the select says so
+    expect(screen.getByTestId("post-author")).toHaveTextContent("No author");
     // category 5 (hiking) -> outdoor
     await u.click(screen.getByRole("combobox", { name: /^Category/ }));
     await u.click(await screen.findByRole("option", { name: "Outdoor" }));
@@ -301,6 +302,50 @@ describe("PostEditor: Details and SEO", () => {
     expect(seen[0]).toEqual({ category_id: 3, tag_ids: [1, 3], is_featured: true });
     expect(root(3).live.post).toMatchObject({ category_id: 3, is_featured: true });
     expect(root(3).live.tag_ids).toEqual([1, 3]);
+  });
+
+  it("Details: the author is chosen from the ACTIVE authors only, sent as author_id, and cleared with null", async () => {
+    const u = user();
+    const seen: unknown[] = [];
+    server.use(http.patch(`${API}/posts/3`, async ({ request }) => { seen.push(await request.clone().json()); return undefined; }));
+    await open(3, "tab=details");
+    await u.click(screen.getByRole("combobox", { name: /^Author/ }));
+    expect(await screen.findByRole("option", { name: "Dara Phommachan" })).toBeInTheDocument();
+    // Mali Keo is switched off, Old Contributor is in the trash: neither can be chosen
+    expect(screen.queryByRole("option", { name: "Mali Keo" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("option", { name: "Old Contributor" })).not.toBeInTheDocument();
+    await u.click(screen.getByRole("option", { name: "Somchai Vongsa" }));
+    await u.click(screen.getByRole("button", { name: "Save draft" }));
+    await waitFor(() => expect(seen).toHaveLength(1));
+    expect(seen[0]).toEqual({ author_id: 1 });
+    expect(root(3).live.post.author_id).toBe(1);
+    await u.click(screen.getByRole("combobox", { name: /^Author/ }));
+    await u.click(await screen.findByRole("option", { name: "No author" }));
+    await u.click(screen.getByRole("button", { name: "Save draft" }));
+    await waitFor(() => expect(seen).toHaveLength(2));
+    expect(seen[1]).toEqual({ author_id: null });
+  });
+
+  it("Details: an author who was switched off after the post chose them stays shown (marked) and is not re-sent", async () => {
+    const db = getMockDb();
+    // post 5 names Mali Keo (switched off)
+    await open(5, "tab=details");
+    await waitFor(() => expect(screen.getByTestId("post-author")).toHaveTextContent("Mali Keo (switched off)"));
+    expect(db.authors.find((a) => a.id === 3)?.is_active).toBe(false);
+  });
+
+  it("an author_inactive / unknown_reference refusal of the server is said at the author field", async () => {
+    const u = user();
+    server.use(
+      http.patch(`${API}/posts/3`, () =>
+        HttpResponse.json({ success: false, code: "VALIDATION_FAILED", message: "x", request_id: "r", errors: [{ in: "body", path: "/author_id", code: "author_inactive" }] }, { status: 422 })
+      )
+    );
+    await open(3, "tab=details");
+    await u.click(screen.getByRole("combobox", { name: /^Author/ }));
+    await u.click(await screen.findByRole("option", { name: "Somchai Vongsa" }));
+    await u.click(screen.getByRole("button", { name: "Save draft" }));
+    expect(await screen.findByText("This author is switched off. Choose an active author.")).toBeInTheDocument();
   });
 
   it("removing a tag chip removes the tag; a post can hold 10 at most (the 11th is disabled)", async () => {

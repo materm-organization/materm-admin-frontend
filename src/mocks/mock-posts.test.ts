@@ -135,11 +135,14 @@ describe("POST /posts", () => {
     expect(createPost(db, { translations: { la: { title: "Rainy Season Camp" } } }).data.translations.la.slug).toBe("rainy-season-camp-2");
   });
 
-  it("is strict: the default title is required, unknown field / author_id / bad limits are 422, a taken slug is 409 with a suggestion", () => {
+  it("is strict: the default title is required, unknown field / bad author / bad limits are 422, a taken slug is 409 with a suggestion", () => {
     const db = getMockDb();
     expect(errorsOf(fails(() => createPost(db, {}), 422))[0]).toMatchObject({ path: "/translations", code: "required" });
     expect(errorsOf(fails(() => createPost(db, { translations: { en: { title: "x" } } }), 422))[0]).toMatchObject({ path: "/translations/la/title", code: "required" });
-    expect(errorsOf(fails(() => createPost(db, { translations: { la: { title: "x" } }, author_id: 3 }), 422))[0]).toMatchObject({ path: "/author_id", code: "not_applicable" });
+    // author_id is accepted since the authors feature (05 15.8): an unknown or a trashed author is `unknown_reference`, a switched-off one `author_inactive`.
+    expect(errorsOf(fails(() => createPost(db, { translations: { la: { title: "x" } }, author_id: 99 }), 422))[0]).toMatchObject({ path: "/author_id", code: "unknown_reference", params: { ref_type: "authors" } });
+    expect(errorsOf(fails(() => createPost(db, { translations: { la: { title: "x" } }, author_id: 4 }), 422))[0]).toMatchObject({ path: "/author_id", code: "unknown_reference" });
+    expect(errorsOf(fails(() => createPost(db, { translations: { la: { title: "x" } }, author_id: 3 }), 422))[0]).toMatchObject({ path: "/author_id", code: "author_inactive" });
     expect(errorsOf(fails(() => createPost(db, { translations: { la: { title: "x" } }, bogus: 1 }), 422))[0]).toMatchObject({ path: "/bogus", code: "unknown_field" });
     expect(errorsOf(fails(() => createPost(db, { translations: { la: { title: "x".repeat(151) } } }), 422))[0]).toMatchObject({ path: "/translations/la/title", code: "too_long" });
     expect(errorsOf(fails(() => createPost(db, { translations: { la: { title: "x", slug: "Bad Slug" } } }), 422))[0]).toMatchObject({ path: "/translations/la/slug", code: "pattern_mismatch" });
@@ -156,8 +159,8 @@ describe("PATCH /posts/{id}", () => {
     fails(() => patchPost(db, "3", { is_featured: true }, null), 428);
     fails(() => patchPost(db, "3", { is_featured: true }, '"9"'), 409, "CONFLICT_LOCK_VERSION");
     expect(errorsOf(fails(() => patchPost(db, "3", {}, etag(3)), 422))[0].code).toBe("min_properties");
-    const e = errorsOf(fails(() => patchPost(db, "3", { status: "published", scheduled_at: "x", author_id: 1, bogus: 1 }, etag(3)), 422));
-    expect(e.map((x) => `${x.path}:${x.code}`)).toEqual(["/status:immutable", "/scheduled_at:not_applicable", "/author_id:not_applicable", "/bogus:unknown_field"]);
+    const e = errorsOf(fails(() => patchPost(db, "3", { status: "published", scheduled_at: "x", bogus: 1 }, etag(3)), 422));
+    expect(e.map((x) => `${x.path}:${x.code}`)).toEqual(["/status:immutable", "/scheduled_at:not_applicable", "/bogus:unknown_field"]);
   });
 
   it("merges the translations per language, bumps the ETag once, and a change that alters nothing keeps it", () => {

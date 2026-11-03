@@ -55,6 +55,8 @@ export const NAV_MAIN_CONFIG: NavMainGroupConfig[] = [
       { title: "nav.menus", url: "/admin/menus", anyPermission: [PERMISSION_KEYS.CMS_MENUS] },
       { title: "nav.categories", url: "/admin/blog/categories", anyPermission: [PERMISSION_KEYS.CMS_CATEGORIES] },
       { title: "nav.tags", url: "/admin/blog/tags", anyPermission: [PERMISSION_KEYS.CMS_CATEGORIES] },
+      // Authors (SCR-27): the byline of a post. Guarded by the blog key (Q-A10: there is no `cms.authors`).
+      { title: "nav.authors", url: "/admin/blog/authors", anyPermission: [PERMISSION_KEYS.CMS_BLOG] },
     ],
   },
   // Site-wide settings (SCR-15) and SEO (SCR-16): three keys, `cms.settings`, `cms.seo` and `cms.redirects`.

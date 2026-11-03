@@ -86,3 +86,40 @@ export type RedirectSnapshot = {
   is_active: boolean;
   note: string | null;
 };
+
+// ---- CSV import (doc/05 14.13, `POST /redirects/import?dry_run=`) -----------------------------------------------------
+// `status` of a row; `error` rows are never written.
+export type RedirectImportStatus = "created" | "updated" | "unchanged" | "error";
+
+// An error of one row: `field` is `from | to | code`, or `""` for the whole row. `code` = a field code of 14.2 / 14.4 or one of
+// `csv_formula`, `duplicate_in_file`, `wrong_column_count`, `invalid_type`, `redirect_loop`, `redirect_chain_too_long`.
+// `message` is English (log / fallback); the UI translates `code` + `params`.
+export type RedirectImportIssue = { field?: string; code: string; message?: string; params?: Record<string, unknown> };
+
+// Cells are echoed as sent (cut at 2001 characters): ALWAYS render them as text.
+export type RedirectImportRow = {
+  // The line in the file (header = 1, first data row = 2).
+  row: number;
+  from: string;
+  to: string;
+  code: string;
+  status: RedirectImportStatus;
+  // Existing row for updated / unchanged; the new row after a real import; `null` in a dry run for created.
+  id: number | null;
+  // Only for `updated`.
+  previous: { to: string; code: number } | null;
+  errors: RedirectImportIssue[];
+  warnings: RedirectImportIssue[];
+};
+
+export type RedirectImportTotals = { rows: number; created: number; updated: number; unchanged: number; errors: number };
+
+export type RedirectImportReport = {
+  dry_run: boolean;
+  // No row has an error.
+  valid: boolean;
+  // `true` only for a real import that was committed.
+  applied: boolean;
+  totals: RedirectImportTotals;
+  rows: RedirectImportRow[];
+};

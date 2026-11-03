@@ -69,7 +69,7 @@ export function seedRedirects(db: MockDb) {
   db.nextRedirectId = 8;
 }
 
-const stamped = (row: Redirect): Redirect => ({
+export const stamped = (row: Redirect): Redirect => ({
   ...structuredClone(row),
   created_at: withLocalOffset(row.created_at) as string,
   updated_at: withLocalOffset(row.updated_at) as string,
@@ -100,9 +100,9 @@ export const normSource = (v: string) => {
   while (s.length > 1 && s.endsWith("/")) s = s.slice(0, -1);
   return s;
 };
-const normInternal = (v: string) => normSource(v.replace(/[?#].*$/, ""));
+export const normInternal = (v: string) => normSource(v.replace(/[?#].*$/, ""));
 
-function sourceErrors(raw: unknown): ApiFieldError[] {
+export function sourceErrors(raw: unknown): ApiFieldError[] {
   if (raw === undefined || raw === null) return [body("/source_path", "required")];
   if (typeof raw !== "string") return [body("/source_path", "invalid_type")];
   const s = normSource(raw);
@@ -122,7 +122,7 @@ function sourceErrors(raw: unknown): ApiFieldError[] {
   return rule ? [body("/source_path", "pattern_mismatch", { rule })] : [];
 }
 
-function targetErrors(raw: unknown): ApiFieldError[] {
+export function targetErrors(raw: unknown): ApiFieldError[] {
   if (raw === undefined || raw === null) return [body("/target", "required")];
   if (typeof raw !== "string") return [body("/target", "invalid_type")];
   const t = raw.trim();
