@@ -31,6 +31,7 @@ import {
 } from "@/mocks/mock-core";
 import { MENU_NEXT_ITEM_ID, restoreMenu, seedMenuRevisions, seedMenus } from "@/mocks/mock-menus";
 import { seedAlbumRevisions, seedAlbums } from "@/mocks/mock-albums";
+import { restoreCollectionRevision, seedCollections } from "@/mocks/mock-collections";
 import { seedFaqGroups, seedFaqRevisions } from "@/mocks/mock-faq";
 import { seedPageRevisions, seedPages } from "@/mocks/mock-pages";
 import { seedPreviewLinks } from "@/mocks/mock-preview";
@@ -183,6 +184,11 @@ export function createMockDb(): MockDb {
     nextAlbumId: 6,
     nextAlbumItemId: 16,
     faqGroups: [],
+    collections: [],
+    nextCollectionId: 1,
+    collectionEntries: [],
+    nextCollectionEntryId: 1,
+    collectionRole: "admin",
     nextFaqGroupId: 5,
     nextFaqItemId: 11,
     idempotency: {},
@@ -236,6 +242,7 @@ export function createMockDb(): MockDb {
   db.posts = seedPosts(db);
   db.albums = seedAlbums();
   db.faqGroups = seedFaqGroups();
+  seedCollections(db);
   seedUiStrings(db);
   seedTaxonomy(db);
   seedRedirects(db);
@@ -660,6 +667,8 @@ function revisionEntityExists(db: MockDb, resource: string, id: string): boolean
       return db.redirects.some((r) => String(r.id) === id);
     case "authors":
       return db.authors.some((a) => String(a.id) === id);
+    case "collections":
+      return db.collections.some((c) => c.key === id);
     default:
       return Boolean(db.entities[keyOf(resource, id)]);
   }
@@ -748,6 +757,7 @@ export function restoreRevision(db: MockDb, resource: string, id: string, revId:
   if (resource === "ui-strings") return restoreUiString(db, id, found, note, ifMatch);
   if (resource === "redirects") return restoreRedirect(db, id, found, note, ifMatch);
   if (resource === "authors") return restoreAuthor(db, id, found, note, ifMatch);
+  if (resource === "collections") return restoreCollectionRevision(db, id, found, note, ifMatch);
   if (resource === "categories" || resource === "tags") return restoreTaxonomy(db, resource, id, found, note, ifMatch);
 
   // Anything else (an id only a test or the playground invents): a stub entity with an ETag.

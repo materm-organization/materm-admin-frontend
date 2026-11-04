@@ -25,6 +25,8 @@ import {
   tick,
   validationFailed,
   type MockAlbum,
+  type MockCollectionEntry,
+  type MockEntrySnapshot,
   type MockAlbumSnapshot,
   type MockDb,
   type MockFaqGroup,
@@ -38,9 +40,9 @@ import type { SaveLiveWarning } from "@/types/media";
 import type { AggregateStamp, PublishIssue } from "@/types/publishing";
 import type { RevisionSummary } from "@/types/revisions";
 
-export type Kind = "albums" | "faq-groups";
-export type Root = MockAlbum | MockFaqGroup;
-export type Snap = MockAlbumSnapshot | MockFaqSnapshot;
+export type Kind = "albums" | "faq-groups" | "collection-entries";
+export type Root = MockAlbum | MockFaqGroup | MockCollectionEntry;
+export type Snap = MockAlbumSnapshot | MockFaqSnapshot | MockEntrySnapshot;
 
 export const TRASH_DAYS = 30;
 const MAX_ISSUES = 100;
@@ -103,10 +105,14 @@ export type Adapter<R extends Root, V extends object> = {
   snapshotRefs: (db: MockDb, snapshot: Snap) => ApiFieldError[];
   // The ids of the children a new draft reserves (a published thing's children keep their ids, 05 13.4.4): nothing to do in the mock.
   childrenOf: (snapshot: Snap) => unknown[];
+  // A restore from the trash that would collide with a live row (default: the same `key`).
+  restoreConflicts?: (db: MockDb, root: R) => ApiFieldError[];
+  // Rights beyond "translator": the action is refused when this returns false (the collections `viewer` role).
+  allowed?: (db: MockDb, action: string) => boolean;
 };
 
 export function makeEngine<R extends Root, V extends object>(a: Adapter<R, V>) {
-  const translator = (db: MockDb) => db.translateOnly.includes(a.kind);
+  const translator = (db: MockDb) => db.translateOnly.includes(a.kind) || (a.kind === "collection-entries" && db.collectionRole === "viewer");
   const deny = (action: string, method: string, path = a.path) => forbidden(`${a.permission}:${action} ${method} ${path}`);
 
   const revList = (db: MockDb, root: R) => (db.revisions[keyOf(a.kind, root.id)] ??= []);
@@ -202,7 +208,8 @@ export function makeEngine<R extends Root, V extends object>(a: Adapter<R, V>) {
     if (translator(db)) throw deny("delete", "POST", `${a.path}/restore`);
     requireMatch(ifMatch, root);
     if (!isTrashed(root)) throw invalidState("not_trashed");
-    if (a.roots(db).some((r) => r.id !== root.id && !r.deleted_at && r.key === root.key)) throw duplicate([{ in: "entity", path: "/key", code: "duplicate" }]);
+    const conflicts = a.restoreConflicts?.(db, root) ?? (a.roots(db).some((r) => r.id !== root.id && !r.deleted_at && r.key === root.key) ? [{ in: "entity" as const, path: "/key", code: "duplicate" }] : []);
+    if (conflicts.length) throw duplicate(conflicts);
     touch(db, root);
     root.deleted_at = null;
     root.status = "draft";

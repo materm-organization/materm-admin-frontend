@@ -115,6 +115,26 @@ import {
   testWebhook,
 } from "@/mocks/mock-webhooks";
 import { createAuthor, deleteAuthor, getAuthor, listAuthors, listUsersForPicker, patchAuthor, restoreAuthorFromTrash } from "@/mocks/mock-authors";
+import {
+  createCollection,
+  createEntry,
+  deleteCollection,
+  deleteEntry,
+  discardEntryDraft,
+  getCollection,
+  getEntry,
+  getEntryRevision,
+  listCollections,
+  listEntries,
+  listEntryRevisions,
+  patchCollection,
+  patchEntry,
+  publishEntry,
+  restoreCollection,
+  restoreEntry,
+  restoreEntryRevision,
+  unpublishEntry,
+} from "@/mocks/mock-collections";
 import { importRedirects } from "@/mocks/mock-redirects-import";
 import { checkRedirect, createRedirect, deleteRedirect, exportRedirects, getRedirect, listRedirects, patchRedirect, restoreRedirectFromTrash } from "@/mocks/mock-redirects";
 import { bundleSync, deleteUiString, listUiStrings, putUiString, uiStringKeyEtag } from "@/mocks/mock-ui-strings";
@@ -249,6 +269,7 @@ export const revisionApiHandlers: HttpHandler[] = [
   ...revisionHandlers("tags", "/tags/:id", "id"),
   ...revisionHandlers("redirects", "/redirects/:id", "id"),
   ...revisionHandlers("authors", "/authors/:id", "id"),
+  ...revisionHandlers("collections", "/collections/:key", "key"),
 ];
 
 export const systemApiHandlers: HttpHandler[] = [
@@ -625,6 +646,85 @@ const faqHandlers: HttpHandler[] = itemCollectionHandlers("/faq-groups", {
   restoreRevision: restoreFaqRevision,
 });
 
+// Collections (05 section 17): definitions by key, entries by id inside a collection. `/collections/:key/revisions` is registered with the generic
+// revision handlers (resource "collections"); the entries' revisions are the publish engine's.
+const collectionHandlers: HttpHandler[] = [
+  http.get(P("/collections"), guard(({ request }) => {
+    const { data, meta } = listCollections(getMockDb(), searchOf(request));
+    return ok(data, { meta });
+  })),
+  http.post(P("/collections"), guard(async ({ request, params }) => {
+    const body = await jsonBody(request);
+    return idempotent(request, params, () => {
+      const done = createCollection(getMockDb(), body);
+      return { status: 201, ...done, location: `/api/v1/collections/${(done.data as { key: string }).key}` };
+    });
+  })),
+  http.get(P("/collections/:key"), guard(({ params }) => {
+    const { data, etag } = getCollection(getMockDb(), param(params, "key"));
+    return ok(data, { etag });
+  })),
+  http.patch(P("/collections/:key"), guard(async ({ request, params }) => {
+    const { data, etag } = patchCollection(getMockDb(), param(params, "key"), await jsonBody(request), request.headers.get("If-Match"));
+    return ok(data, { etag });
+  })),
+  http.delete(P("/collections/:key"), guard(({ request, params }) => {
+    const { data, etag } = deleteCollection(getMockDb(), param(params, "key"), request.headers.get("If-Match"));
+    return ok(data, { etag });
+  })),
+  http.post(P("/collections/:key/restore"), guard(({ request, params }) => {
+    const { data, etag } = restoreCollection(getMockDb(), param(params, "key"), request.headers.get("If-Match"));
+    return ok(data, { etag });
+  })),
+  http.get(P("/collections/:key/entries"), guard(({ request, params }) => {
+    const { data, meta } = listEntries(getMockDb(), param(params, "key"), searchOf(request));
+    return ok(data, { meta });
+  })),
+  http.post(P("/collections/:key/entries"), guard(async ({ request, params }) => {
+    const body = await jsonBody(request);
+    return idempotent(request, params, () => {
+      const done = createEntry(getMockDb(), param(params, "key"), body);
+      return { status: 201, ...done, location: `/api/v1/collections/${param(params, "key")}/entries/${(done.data as { id: number }).id}` };
+    });
+  })),
+  http.get(P("/collections/:key/entries/:id"), guard(({ params }) => {
+    const { data, etag } = getEntry(getMockDb(), param(params, "key"), param(params, "id"));
+    return ok(data, { etag });
+  })),
+  http.patch(P("/collections/:key/entries/:id"), guard(async ({ request, params }) => {
+    const { data, etag } = patchEntry(getMockDb(), param(params, "key"), param(params, "id"), await jsonBody(request), request.headers.get("If-Match"));
+    return ok(data, { etag });
+  })),
+  http.delete(P("/collections/:key/entries/:id"), guard(({ request, params }) => {
+    const { data, etag } = deleteEntry(getMockDb(), param(params, "key"), param(params, "id"), searchOf(request), request.headers.get("If-Match"));
+    return ok(data, { etag });
+  })),
+  http.post(P("/collections/:key/entries/:id/restore"), guard(({ request, params }) => {
+    const { data, etag } = restoreEntry(getMockDb(), param(params, "key"), param(params, "id"), request.headers.get("If-Match"));
+    return ok(data, { etag });
+  })),
+  http.post(P("/collections/:key/entries/:id/publish"), guard(async ({ request, params }) => {
+    const body = await jsonBody(request);
+    return idempotent(request, params, () => ({ status: 200, ...publishEntry(getMockDb(), param(params, "key"), param(params, "id"), searchOf(request), body, request.headers.get("If-Match")) }));
+  })),
+  http.post(P("/collections/:key/entries/:id/unpublish"), guard(({ request, params }) =>
+    idempotent(request, params, () => ({ status: 200, ...unpublishEntry(getMockDb(), param(params, "key"), param(params, "id"), searchOf(request), request.headers.get("If-Match")) }))
+  )),
+  http.post(P("/collections/:key/entries/:id/discard-draft"), guard(({ request, params }) => {
+    const { data, etag } = discardEntryDraft(getMockDb(), param(params, "key"), param(params, "id"), request.headers.get("If-Match"));
+    return ok(data, { etag });
+  })),
+  http.get(P("/collections/:key/entries/:id/revisions"), guard(({ request, params }) => {
+    const { data, meta } = listEntryRevisions(getMockDb(), param(params, "key"), param(params, "id"), searchOf(request));
+    return ok(data, { meta });
+  })),
+  http.get(P("/collections/:key/entries/:id/revisions/:revId"), guard(({ params }) => ok(getEntryRevision(getMockDb(), param(params, "key"), param(params, "id"), param(params, "revId"))))),
+  http.post(P("/collections/:key/entries/:id/revisions/:revId/restore"), guard(async ({ request, params }) => {
+    const { data, etag } = restoreEntryRevision(getMockDb(), param(params, "key"), param(params, "id"), param(params, "revId"), await jsonBody(request), request.headers.get("If-Match"));
+    return ok(data, { etag });
+  })),
+];
+
 // Preview links (T1.4.4, doc/05 12.9; posts 13.3.8). The creation answer carries the raw token in `url` and must not be cached.
 const previewLinkHandlers: HttpHandler[] = [
   http.post(P("/pages/:id/preview-links"), guard(async ({ request, params }) => {
@@ -824,6 +924,7 @@ export const saveLiveApiHandlers: HttpHandler[] = [
   ...postHandlers,
   ...albumHandlers,
   ...faqHandlers,
+  ...collectionHandlers,
   ...previewLinkHandlers,
   ...cmsLookupHandlers,
   ...settingsHandlers,

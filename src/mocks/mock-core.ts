@@ -146,8 +146,34 @@ type MockPublishableRoot<S> = {
   deleted_at: string | null;
   live: S;
 };
+export type MockEntryTranslation = { locale_code: string; title: string; slug: string | null; data: Record<string, unknown>; is_enabled: boolean };
+export type MockEntrySnapshot = { entry: { data: Record<string, unknown>; schema_version: number; sort_order: number }; translations: MockEntryTranslation[] };
+// A collection definition (05 17.2): save-live; ETag = its UTC `updated_at`.
+export type MockCollection = {
+  id: number;
+  public_id: string;
+  key: string;
+  name: string;
+  description: string;
+  icon: string | null;
+  is_active: boolean;
+  sort_order: number;
+  title_field: string;
+  has_slug: boolean;
+  json_schema: Record<string, unknown>;
+  localized_schema: Record<string, unknown>;
+  ui_schema: Record<string, unknown>;
+  schema_version: number;
+  created_by: UserRef;
+  updated_by: UserRef;
+  created_at: string;
+  updated_at: string;
+  deleted_at: string | null;
+};
 export type MockAlbum = MockPublishableRoot<MockAlbumSnapshot>;
 export type MockFaqGroup = MockPublishableRoot<MockFaqSnapshot>;
+// A collection entry: `key` is its id as text (the engine's restore check is replaced by the slug rule), `collection_key` its collection.
+export type MockCollectionEntry = MockPublishableRoot<MockEntrySnapshot> & { collection_key: string };
 // A stored answer of a request that carried an `Idempotency-Key` (create page, set-home, publish, unpublish).
 export type MockIdempotent = { fingerprint: string; status: number; data: unknown; etag?: string };
 // A post of the mock (doc/05 section 13.3), stored like a page: the REAL rows (`live`, written directly while the post is not
@@ -280,6 +306,13 @@ export type MockDb = {
   nextAlbumItemId: number;
   faqGroups: MockFaqGroup[];
   nextFaqGroupId: number;
+  // SCR-40 / 41 collections (05 17): `collectionRole` drives the 403 rules (editor = entries only, viewer = read only); `translateOnly`
+  // containing "collection-entries" makes the caller a translator.
+  collections: MockCollection[];
+  nextCollectionId: number;
+  collectionEntries: MockCollectionEntry[];
+  nextCollectionEntryId: number;
+  collectionRole: "admin" | "editor" | "viewer";
   nextFaqItemId: number;
   idempotency: Record<string, MockIdempotent>;
   posts: MockPostRoot[];
