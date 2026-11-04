@@ -20,7 +20,7 @@ import { LinkField } from "./link-field";
 import { LocalizedTextField } from "./localized-text-field";
 import { MediaField } from "./media-field";
 import { RichTextField } from "./rich-text-field";
-import { BooleanField, EnumArrayField, EnumField, NumberField, StringField } from "./scalar-fields";
+import { BooleanField, DateField, DateTimeSchemaField, EnumArrayField, EnumField, NumberField, StringField } from "./scalar-fields";
 
 // Chooses the widget for a node (doc/07 section 4.2 / 4.3). Memoised on (node, pointer, value): an edit copies
 // only the objects along its path (`setByPointer`), so every untouched branch keeps its value identity and
@@ -65,6 +65,10 @@ export const FieldRenderer = memo(function FieldRenderer({
       return <NumberField {...props} />;
     case "string":
       return <StringField {...props} />;
+    case "date":
+      return <DateField {...props} />;
+    case "datetime":
+      return <DateTimeSchemaField {...props} />;
     default:
       return <JsonFallbackField node={node} pointer={pointer} value={value} />;
   }

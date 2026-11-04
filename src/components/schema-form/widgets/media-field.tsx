@@ -56,6 +56,8 @@ export function MediaField({
   const mediaAlt = asset.data?.alt?.[locale] ?? asset.data?.alt?.[defaultLocale];
   const altIssues = issues.filter((i) => i.path.startsWith(`${pointer}/alt`));
   const mediaIssues = issues.filter((i) => !i.path.startsWith(`${pointer}/alt`));
+  // A collection's image is `{media_id}` only: the alt text and the "decorative" flag are the media row's own (05 17.4.4).
+  const hasAltControls = node.schema.properties === undefined || "alt" in node.schema.properties || "decorative" in node.schema.properties;
   const altId = useControlA11y(`${pointer}/alt`, altIssues.length > 0, false, `_${locale}`);
 
   // Removing the image of an array slot leaves an empty object so the array keeps its shape.
@@ -121,6 +123,7 @@ export function MediaField({
               </Button>
             )}
           </div>
+          {hasAltControls && (
           <div className="flex items-center gap-2">
             <Switch
               id={decorativeId}
@@ -132,7 +135,8 @@ export function MediaField({
               {t("decorative")}
             </Label>
           </div>
-          {!decorative && (
+          )}
+          {hasAltControls && !decorative && (
             <div className="space-y-1.5">
               <Label htmlFor={altId.id}>{t("alt")}</Label>
               <Input

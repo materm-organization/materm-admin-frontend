@@ -10,6 +10,8 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { Textarea } from "@/components/ui/textarea";
+import { DateTimeField } from "@/components/global/date-time-field";
 import { cn } from "@/lib/utils";
 
 import { useFieldLabel, useIssuesAt } from "../context";
@@ -35,7 +37,11 @@ export function StringField({ node, pointer, value, onChange, editable }: Scalar
     <FieldShell pointer={pointer} label={label} required={node.required} description={node.description} issues={issues}>
       {(a11y) => (
         <>
-          <Input {...a11y} value={text} disabled={!editable} onChange={(e) => onChange(e.target.value === "" ? undefined : e.target.value)} />
+          {node.multiline || node.textarea ? (
+            <Textarea {...a11y} rows={node.options.rows ?? 4} className="leading-snug" value={text} disabled={!editable} onChange={(e) => onChange(e.target.value === "" ? undefined : e.target.value)} />
+          ) : (
+            <Input {...a11y} value={text} disabled={!editable} onChange={(e) => onChange(e.target.value === "" ? undefined : e.target.value)} />
+          )}
           {node.maxLength !== undefined && (
             <p className={cn("text-right text-xs text-muted-foreground", length > node.maxLength && "text-destructive")}>
               {length}/{node.maxLength}
@@ -206,5 +212,29 @@ export function EnumArrayField({ node, pointer, value, onChange, editable }: Sca
         })}
       </div>
     </GroupShell>
+  );
+}
+
+// `format: date` (a collection field the builder wrote with `ui:widget: "date"`): the value is `YYYY-MM-DD`.
+export function DateField({ node, pointer, value, onChange, editable }: ScalarProps) {
+  const label = useFieldLabel(node);
+  const issues = useIssuesAt([pointer]);
+  return (
+    <FieldShell pointer={pointer} label={label} required={node.required} description={node.description} issues={issues}>
+      {(a11y) => (
+        <Input {...a11y} type="date" className="max-w-48" value={typeof value === "string" ? value : ""} disabled={!editable} onChange={(e) => onChange(e.target.value === "" ? undefined : e.target.value)} />
+      )}
+    </FieldShell>
+  );
+}
+
+// `format: date-time`: an RFC 3339 instant (UTC), picked as wall-clock time in Asia/Vientiane.
+export function DateTimeSchemaField({ node, pointer, value, onChange, editable }: ScalarProps) {
+  const label = useFieldLabel(node);
+  const issues = useIssuesAt([pointer]);
+  return (
+    <FieldShell pointer={pointer} label={label} required={node.required} description={node.description} issues={issues}>
+      {(a11y) => <DateTimeField id={a11y.id} aria-label={label} value={typeof value === "string" ? value : null} disabled={!editable} onChange={(next) => onChange(next ?? undefined)} />}
+    </FieldShell>
   );
 }

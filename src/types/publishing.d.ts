@@ -36,7 +36,8 @@ export type PublishableMeta = {
 
 // What PublishBar needs to know about an entity (a subset of PublishableMeta + the two flags a page has).
 export type PublishableState = Pick<PublishableMeta, "status" | "has_unpublished_changes"> & {
-  id: number;
+  // A number; a collection entry uses the composite `"<key>:<id>"` (lib/collections/ref.ts).
+  id: number | string;
   deleted_at?: string | null;
   // The home page can not be unpublished (BR-16); a system page can not be deleted (BR-18).
   is_home?: boolean;

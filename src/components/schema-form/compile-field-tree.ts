@@ -136,6 +136,13 @@ function compileNode(
     return setKind("localized-text");
   }
 
+  // 1b. rich text that is not a locale map (collection schemas: `{type: object, x-richtext: "lite"}`, the value is the document)
+  if (schema["x-richtext"] === "lite" && type === "object" && !schema.properties) {
+    node.richtextProfile = "lite";
+    node.plainRichtext = true;
+    return setKind("richtext");
+  }
+
   // 2. well-known defs (also when ui_schema does not say so)
   if (widget === "media-picker" || defName === "image") return setKind("image");
   if (widget === "link-picker" || defName === "link") return setKind("link");
@@ -195,6 +202,8 @@ function compileNode(
     node.maximum = schema.maximum;
     return setKind("number");
   }
+  if (type === "string" && (widget === "date" || (schema.format === "date" && !widget))) return setKind("date");
+  if (type === "string" && (widget === "date-time" || (schema.format === "date-time" && !widget))) return setKind("datetime");
   if (type === "string") {
     node.maxLength = schema.maxLength;
     node.minLength = schema.minLength;

@@ -125,6 +125,15 @@ export const API_ENDPOINTS = {
     ITEM: (id: number | string, itemId: number | string) => `/albums/${id}/items/${itemId}`,
     ITEMS_ORDER: (id: number | string) => `/albums/${id}/items/order`,
   },
+  // Collections (doc/05 section 17): definitions are addressed by `key`, entries by their numeric `id` inside a collection.
+  COLLECTIONS: {
+    LIST: "/collections",
+    DETAIL: (key: string) => `/collections/${encodeURIComponent(key)}`,
+    RESTORE: (key: string) => `/collections/${encodeURIComponent(key)}/restore`,
+    ENTRIES: (key: string) => `/collections/${encodeURIComponent(key)}/entries`,
+    ENTRY: (key: string, id: number | string) => `/collections/${encodeURIComponent(key)}/entries/${id}`,
+    ENTRY_RESTORE: (key: string, id: number | string) => `/collections/${encodeURIComponent(key)}/entries/${id}/restore`,
+  },
   // Save-live (doc/05 sections 11.2 - 11.5). Revisions of these are in `REVISIONS` above.
   MENUS: {
     LIST: "/menus",

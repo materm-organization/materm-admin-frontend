@@ -1,9 +1,10 @@
 // The publishable entities (doc/05 section 12.7: `POST /{e}/{id}/publish`, `.../unpublish`, `.../discard-draft`;
 // doc/07 section 3.24). `PublishBar` takes `resource` and builds every URL and permission check from this table.
 // Pages are the first, posts the second (T1.5.5); albums, FAQ groups and forms are added in M5 (one entry each).
+import { splitEntryRef } from "@/lib/collections/ref";
 import { PERMISSION_ACTIONS, PERMISSION_KEYS } from "@/lib/constants/permissions";
 
-export type PublishableResource = "pages" | "posts" | "albums" | "faq-groups" | "forms";
+export type PublishableResource = "pages" | "posts" | "albums" | "faq-groups" | "forms" | "collection-entries";
 
 export type PublishableConfig = {
   // `/pages/12`
@@ -69,6 +70,19 @@ export const PUBLISHABLE_RESOURCES: Record<PublishableResource, PublishableConfi
     permissionKey: PERMISSION_KEYS.FORMS_MANAGE,
     entityType: "forms.forms",
     previewActions: [PERMISSION_ACTIONS.UPDATE, PERMISSION_ACTIONS.REVIEW],
+    previewLinks: false,
+    ownActions: false,
+  },
+  // Collection entries (05 17): the id is the composite `"<collection key>:<entry id>"` (`lib/collections/ref.ts`). No preview links (05 17.14), no `update_own`.
+  "collection-entries": {
+    base: (ref) => {
+      const { key, id } = splitEntryRef(ref);
+      return `/collections/${encodeURIComponent(key)}/entries/${id}`;
+    },
+    listPath: "/collections",
+    permissionKey: PERMISSION_KEYS.CMS_COLLECTIONS,
+    entityType: "cms.collection_entries",
+    previewActions: [PERMISSION_ACTIONS.UPDATE],
     previewLinks: false,
     ownActions: false,
   },

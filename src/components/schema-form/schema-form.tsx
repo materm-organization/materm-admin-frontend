@@ -27,7 +27,7 @@ import { groupIssuesByPointer, countIssuesByLocale, locateIssue, serverErrorsToI
 import { getByPointer, setByPointer } from "./pointer";
 import { useSchemaValidation, type SchemaFormValidation } from "./use-schema-validation";
 import type { Issue, ValidationMode } from "./types";
-import type { MediaLookup } from "./validate";
+import type { MediaLookup, SchemaValidator } from "./validate";
 import { FieldRenderer } from "./widgets/field-renderer";
 import type { CompletenessOptions } from "./completeness";
 
@@ -75,6 +75,10 @@ export type SchemaFormProps = {
   media?: MediaLookup;
   mediaAlt?: CompletenessOptions["media"];
   onValidationChange?: (validation: SchemaFormValidation) => void;
+  // Collection entries: a validator of the caller's own. When given the form never compiles the schema with Ajv (`new Function`).
+  validator?: SchemaValidator;
+  // false: no language switcher / completeness bar (a form for ONE language, or for shared data).
+  showLocaleSwitcher?: boolean;
   className?: string;
 };
 
@@ -95,6 +99,8 @@ export const SchemaForm = forwardRef<SchemaFormHandle, SchemaFormProps>(function
     media,
     mediaAlt,
     onValidationChange,
+    validator,
+    showLocaleSwitcher = true,
     className,
   },
   ref
@@ -151,6 +157,7 @@ export const SchemaForm = forwardRef<SchemaFormHandle, SchemaFormProps>(function
     delayMs: validationDelayMs,
     media,
     mediaAlt,
+    validator,
   });
   // Reported only when the CONTENT of the result changes (a caller's inline `media` lookup or `setState` in the
   // callback must not be able to loop): the issues, the completeness numbers and whether Ajv is available.
@@ -277,7 +284,7 @@ export const SchemaForm = forwardRef<SchemaFormHandle, SchemaFormProps>(function
     <SchemaFormContextProvider value={context}>
       <div ref={rootRef} className={className} data-slot="schema-form" data-mode={mode}>
         <div className="mb-4 space-y-3">
-          {activeLocales.length > 1 && (
+          {showLocaleSwitcher && activeLocales.length > 1 && (
             <EditorLocaleSwitcher
               locales={activeLocales}
               value={locale}
@@ -288,7 +295,7 @@ export const SchemaForm = forwardRef<SchemaFormHandle, SchemaFormProps>(function
               onCompareChange={setCompare}
             />
           )}
-          {current && current.total > 0 && (
+          {showLocaleSwitcher && current && current.total > 0 && (
             <div className="flex items-center gap-3" data-slot="completeness">
               <Progress value={current.percent} className="h-1.5 max-w-48" aria-label={t("completenessLabel", { locale: locale.toUpperCase() })} />
               <p className="text-xs text-muted-foreground">

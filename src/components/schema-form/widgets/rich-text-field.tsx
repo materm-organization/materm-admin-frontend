@@ -32,13 +32,15 @@ export function RichTextField({
   const t = useTranslations("schemaForm");
   const { locale, defaultLocale, compare } = useSchemaFormContext();
   const label = useFieldLabel(node);
+  const plain = node.plainRichtext === true;
   // The map itself, and anything inside the chosen language's document (a link href, ...).
   const own = useIssuesAt([pointer]);
-  const inLocale = useIssuesUnder(`${pointer}/${locale}`);
+  const inLocale = useIssuesUnder(plain ? pointer : `${pointer}/${locale}`);
   const issues = [...own, ...inLocale];
-  const map = isPlainObject(value) ? value : undefined;
-  const doc = map?.[locale];
-  const defaultDoc = map?.[defaultLocale];
+  const map = isPlainObject(value) && !plain ? value : undefined;
+  const doc = plain ? value : map?.[locale];
+  const defaultDoc = plain ? undefined : map?.[defaultLocale];
+  const emitDoc = (next: unknown) => onChange(plain ? (isRichTextEmpty(next) ? undefined : next) : setLocaleValue(map, locale, next, node.required));
   const missing = isRichTextEmpty(doc);
 
   return (
@@ -48,16 +50,16 @@ export function RichTextField({
       required={node.required}
       description={node.description}
       issues={issues}
-      suffix={`_${locale}`}
+      suffix={plain ? "" : `_${locale}`}
       badges={
-        missing && locale !== defaultLocale ? (
+        !plain && missing && locale !== defaultLocale ? (
           <Badge variant="outline" className="text-amber-700 dark:text-amber-400">
             {t("notTranslated")}
           </Badge>
         ) : null
       }
       actions={
-        editable && missing && locale !== defaultLocale && !isRichTextEmpty(defaultDoc) ? (
+        editable && !plain && missing && locale !== defaultLocale && !isRichTextEmpty(defaultDoc) ? (
           <Button
             type="button"
             variant="ghost"
@@ -73,14 +75,14 @@ export function RichTextField({
     >
       {(a11y) => (
         <>
-          {compare && locale !== defaultLocale && (
+          {compare && !plain && locale !== defaultLocale && (
             <p className="whitespace-pre-line rounded-md bg-muted px-3 py-2 text-sm text-muted-foreground" data-slot="compare-default">
               <span className="mr-1 text-xs font-medium uppercase">{defaultLocale}</span>
               {richTextPlainText(defaultDoc) || t("compareEmpty")}
             </p>
           )}
           <RichTextEditor
-            key={`${pointer}:${locale}`}
+            key={plain ? pointer : `${pointer}:${locale}`}
             id={a11y.id}
             aria-label={label}
             aria-describedby={a11y["aria-describedby"]}
@@ -90,7 +92,7 @@ export function RichTextField({
             disabled={!editable}
             invalid={issues.length > 0}
             maxNodes={(node.richtextProfile ?? "lite") === "lite" ? 50 : undefined}
-            onChange={(next) => onChange(setLocaleValue(map, locale, next, node.required))}
+            onChange={emitDoc}
           />
         </>
       )}

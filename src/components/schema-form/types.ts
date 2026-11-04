@@ -14,6 +14,8 @@ export type FieldKind =
   | "enum"
   | "enum-array"
   | "string"
+  | "date"
+  | "datetime"
   | "number"
   | "boolean"
   | "unknown";
@@ -47,6 +49,8 @@ export type FieldNode = {
   multiline: boolean;
   textarea: boolean;
   richtextProfile?: "lite" | "full";
+  // Rich text whose value IS the document (collection schemas have no `x-localized` locale map).
+  plainRichtext?: boolean;
   maxLength?: number;
   minLength?: number;
   pattern?: string;

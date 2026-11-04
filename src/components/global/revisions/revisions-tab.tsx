@@ -92,6 +92,9 @@ type RestoreIssue =
   | { kind: "trashed" }
   | { kind: "refs"; errors: ApiFieldError[] }
   | { kind: "duplicate"; errors: ApiFieldError[] }
+  // 05 17.5: restoring an old schema would leave entries that no longer pass it (`checked`, `invalid`, ids of the first ones).
+  | { kind: "breaks"; checked: number; invalid: number; ids: number[] }
+  | { kind: "tooMany" }
   | { kind: "missingEtag" }
   | { kind: "other"; message: string };
 
@@ -510,6 +513,10 @@ function RestoreDialog({
         const reason = parsed.details?.reason;
         if (reason === "snapshot_incompatible") setIssue({ kind: "incompatible" });
         else if (reason === "trashed") setIssue({ kind: "trashed" });
+        else if (reason === "schema_breaks_entries") {
+          const d = parsed.details as { checked?: number; invalid_count?: number; invalid_entries?: Array<{ id: number }> };
+          setIssue({ kind: "breaks", checked: d.checked ?? 0, invalid: d.invalid_count ?? 0, ids: (d.invalid_entries ?? []).map((x) => x.id) });
+        } else if (reason === "too_many_entries_to_verify") setIssue({ kind: "tooMany" });
         else setIssue({ kind: "other", message: translateApiError(tErr, parsed) });
       } else if (parsed.status === 422) {
         setIssue({ kind: "refs", errors: parsed.fieldErrors });
@@ -556,6 +563,8 @@ function RestoreDialog({
             <AlertDescription>
               {issue.kind === "other" ? (
                 issue.message
+              ) : issue.kind === "breaks" ? (
+                <span data-testid="restore-breaks">{t("issue.breaks.body", { checked: issue.checked, invalid: issue.invalid, ids: issue.ids.join(", ") })}</span>
               ) : (
                 <>
                   <span>{t(`issue.${issue.kind}.body`)}</span>

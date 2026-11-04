@@ -5,7 +5,7 @@ import { useMemo } from "react";
 import type { SectionType } from "@/types/cms";
 
 import { computeCompleteness, type CompletenessOptions, type LocaleCompleteness } from "./completeness";
-import { getSchemaValidator, type MediaLookup } from "./validate";
+import { getSchemaValidator, type MediaLookup, type SchemaValidator } from "./validate";
 import type { Issue, ValidationMode } from "./types";
 import { useDebouncedValue } from "./widgets/use-debounced";
 
@@ -24,6 +24,8 @@ export type UseSchemaValidationOptions = {
   delayMs?: number;
   media?: MediaLookup;
   mediaAlt?: CompletenessOptions["media"];
+  // A validator supplied by the caller (collection entries: a hand-written checker). When given, Ajv is never reached.
+  validator?: SchemaValidator;
 };
 
 export function schemaCacheKey(type: Pick<SectionType, "key" | "version" | "schema_hash">): string {
@@ -35,12 +37,12 @@ export function schemaCacheKey(type: Pick<SectionType, "key" | "version" | "sche
 export function useSchemaValidation(
   type: Pick<SectionType, "key" | "version" | "schema_hash" | "json_schema">,
   props: unknown,
-  { mode, defaultLocale, localeCodes, delayMs = 300, media, mediaAlt }: UseSchemaValidationOptions
+  { mode, defaultLocale, localeCodes, delayMs = 300, media, mediaAlt, validator: injected }: UseSchemaValidationOptions
 ): SchemaFormValidation {
   const settled = useDebouncedValue(props, delayMs);
   const schema = type.json_schema;
   const cacheKey = schemaCacheKey(type);
-  const validator = useMemo(() => getSchemaValidator(schema, cacheKey, type.schema_hash), [schema, cacheKey, type.schema_hash]);
+  const validator = useMemo(() => injected ?? getSchemaValidator(schema, cacheKey, type.schema_hash), [injected, schema, cacheKey, type.schema_hash]);
   const issues = useMemo(
     () => validator.validate(settled, { mode, defaultLocale, media }),
     [validator, settled, mode, defaultLocale, media]

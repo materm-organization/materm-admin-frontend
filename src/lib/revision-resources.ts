@@ -4,9 +4,10 @@
 //
 // The publishable resources (`pages`, `posts`, then `albums`... in M5: kinds `draft` / `published`, a restore becomes
 // the working draft - doc/05 section 12.8) carry `publishable: true`.
+import { splitEntryRef } from "@/lib/collections/ref";
 import { PERMISSION_KEYS } from "@/lib/constants/permissions";
 
-export type RevisionResource = "menus" | "settings" | "ui-strings" | "categories" | "tags" | "redirects" | "authors" | "media/assets" | "pages" | "posts" | "albums" | "faq-groups" | "forms";
+export type RevisionResource = "menus" | "settings" | "ui-strings" | "categories" | "tags" | "redirects" | "authors" | "media/assets" | "pages" | "posts" | "albums" | "faq-groups" | "forms" | "collections" | "collection-entries";
 
 export type RevisionEntityId = string | number;
 
@@ -119,6 +120,29 @@ export const REVISION_RESOURCES: Record<RevisionResource, ResourceConfig> = {
     restoreKey: () => PERMISSION_KEYS.FORMS_MANAGE,
     restoreActions: ["update"],
     entityPath: (id) => `/forms/${seg(id)}`,
+    publishable: true,
+  },
+  // Collection definitions (05 17.6): save-live, addressed by key; a restore needs `manage_schema` and passes the schema rules again.
+  collections: {
+    base: (id) => `/collections/${seg(id)}`,
+    readKey: () => PERMISSION_KEYS.CMS_COLLECTIONS,
+    restoreKey: () => PERMISSION_KEYS.CMS_COLLECTIONS,
+    restoreActions: ["manage_schema"],
+    entityPath: (id) => `/collections/${seg(id)}`,
+  },
+  // Collection entries (05 17.10): publishable; the id is the composite `"<key>:<id>"` (`lib/collections/ref.ts`).
+  "collection-entries": {
+    base: (ref) => {
+      const { key, id } = splitEntryRef(ref);
+      return `/collections/${seg(key)}/entries/${id}`;
+    },
+    readKey: () => PERMISSION_KEYS.CMS_COLLECTIONS,
+    restoreKey: () => PERMISSION_KEYS.CMS_COLLECTIONS,
+    restoreActions: ["update"],
+    entityPath: (ref) => {
+      const { key, id } = splitEntryRef(ref);
+      return `/collections/${seg(key)}/entries/${id}`;
+    },
     publishable: true,
   },
   "media/assets": {
