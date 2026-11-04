@@ -224,7 +224,8 @@
     "faq": "FAQ",
     "redirects": "Redirects",
     "authors": "Authors",
-    "webhooks": "Webhooks"
+    "webhooks": "Webhooks",
+    "collections": "Collections"
   },
   "breadcrumb": {
     "forms": "Forms",
@@ -249,7 +250,8 @@
     "faq": "FAQ",
     "redirects": "Redirects",
     "authors": "Authors",
-    "webhooks": "Webhooks"
+    "webhooks": "Webhooks",
+    "collections": "Collections"
   },
   "dashboard": {
     "title": "Dashboard",
@@ -790,7 +792,12 @@
       "host_required": "The address needs a website name after https://.",
       "path_or_https_url": "Use a path on this site (starting with /) or a full https:// address.",
       "self_redirect": "The new address is the same as the old one.",
-      "author_inactive": "This author is switched off. Choose an active author."
+      "author_inactive": "This author is switched off. Choose an active author.",
+      "unsupported_keyword": "This keyword is not supported.",
+      "missing_keyword": "A required keyword is missing.",
+      "reserved_name": "This name is reserved.",
+      "invalid_schema": "The schema is not valid.",
+      "too_complex": "Too complex to check."
     },
     "loadAccount": "Could not load your account. Check your connection and try again."
   },
@@ -2241,6 +2248,14 @@
         "missingEtag": {
           "title": "The current version of the item is unknown",
           "body": "Reload the page and try again."
+        },
+        "breaks": {
+          "title": "The old schema does not fit the entries",
+          "body": "Restoring it would leave {invalid} of {checked} entries invalid (first ones: {ids}). Nothing was changed. Fix those entries first."
+        },
+        "tooMany": {
+          "title": "Too many entries to check",
+          "body": "The schema cannot be changed while the collection has more than 5,000 entries outside the trash."
         }
       },
       "buttonDraft": "Restore as draft",
@@ -2821,7 +2836,8 @@
       "pages": "page",
       "posts": "post",
       "albums": "album",
-      "faq-groups": "FAQ group"
+      "faq-groups": "FAQ group",
+      "collection-entries": "entry"
     },
     "actions": {
       "saveDraft": "Save draft",
@@ -4674,6 +4690,408 @@
         "tested": "Test sent",
         "retried": "Delivery retried",
         "disabled": "Switched off by the system"
+      }
+    }
+  },
+  "collections": {
+    "title": "Collections",
+    "description": "Content types the administrators define themselves, such as team members or events, and their entries.",
+    "searchPlaceholder": "Search by name or key",
+    "empty": "No collections yet",
+    "emptyHint": "Create one to describe a new kind of content and its fields.",
+    "emptyTrash": "The trash is empty",
+    "trash": "Show trash",
+    "stale": "This row was out of date. The list was reloaded.",
+    "active": "Active",
+    "inactive": "Hidden",
+    "purgeOn": "Removed for good on {when}",
+    "entriesCount": "{total} ({published} published)",
+    "columns": {
+      "name": "Name",
+      "entries": "Entries",
+      "state": "State",
+      "schema": "Schema",
+      "updated": "Updated",
+      "deleted": "Deleted",
+      "actions": "Actions"
+    },
+    "actions": {
+      "menu": "Actions for {name}",
+      "entries": "Open entries",
+      "editSchema": "Edit schema",
+      "viewSchema": "View schema",
+      "delete": "Move to trash",
+      "restore": "Restore {name}",
+      "restoreShort": "Restore"
+    },
+    "delete": {
+      "title": "Move {name} to the trash?",
+      "description": "The collection leaves the website and can be restored for 30 days. It can only be deleted while it has no entries.",
+      "confirm": "Move to trash",
+      "done": "{name} moved to the trash.",
+      "failed": "Could not delete the collection."
+    },
+    "blocked": {
+      "title": "It still has entries",
+      "body": "{name} has {count, plural, one {# entry} other {# entries}} outside the trash. Move or delete them first, then delete the collection.",
+      "open": "Open the entries"
+    },
+    "restore": {
+      "done": "{name} restored.",
+      "failed": "Could not restore the collection.",
+      "duplicate": "Another collection already uses the key {key}. Change that one first."
+    },
+    "create": {
+      "open": "New collection",
+      "title": "New collection",
+      "description": "Name it and choose its key. You add the fields on the next screen.",
+      "nameLabel": "Name",
+      "keyLabel": "Key",
+      "keyHint": "3 to 40 characters: lower case letters, digits and single underscores, starting with a letter. It cannot be changed later.",
+      "hasSlug": "Entries have an address (slug)",
+      "hasSlugHint": "Each language of an entry then needs its own address.",
+      "cancel": "Cancel",
+      "submit": "Create",
+      "created": "Collection created.",
+      "failed": "Could not create the collection.",
+      "errors": {
+        "name": {
+          "required": "Enter a name.",
+          "too_long": "At most {max} characters."
+        },
+        "key": {
+          "required": "Enter a key.",
+          "too_short": "At least {min} characters.",
+          "too_long": "At most {max} characters.",
+          "pattern_mismatch": "Lower case letters and digits, single underscores between words, starting with a letter.",
+          "taken": "This key is already used by another collection."
+        }
+      }
+    },
+    "host": {
+      "notFoundTitle": "Collection not found",
+      "notFoundDescription": "It does not exist or was deleted.",
+      "backToList": "All collections",
+      "version": "schema version {version}"
+    },
+    "documents": {
+      "json_schema": "Shared fields (json_schema)",
+      "localized_schema": "Fields per language (localized_schema)",
+      "ui_schema": "Layout hints (ui_schema)"
+    },
+    "editor": {
+      "save": "Save",
+      "unsaved": "Unsaved changes",
+      "fixFirst": "Fix the marked problems first.",
+      "saved": "Saved.",
+      "stale": "The collection was changed. Reload it and try again.",
+      "refused": "The server refused the schema. The reasons are listed.",
+      "saveFailed": "Could not save the collection.",
+      "openEntries": "Open entries",
+      "delete": "Move to trash",
+      "restore": "Restore",
+      "trashedTitle": "This collection is in the trash",
+      "trashedBody": "Restore it to edit it. Its entries cannot be opened until then.",
+      "readOnlyNote": "You can read this definition but not change it. Changing the schema needs the manage-schema permission.",
+      "tabs": {
+        "details": "Details",
+        "fields": "Fields",
+        "advanced": "Advanced JSON",
+        "revisions": "Versions",
+        "activity": "Activity"
+      },
+      "name": "Name",
+      "key": "Key",
+      "keyHint": "The key is part of the web address and cannot be changed.",
+      "description": "Description",
+      "icon": "Icon name",
+      "iconHint": "Optional: lower case letters, digits, - or _.",
+      "sortOrder": "Order in the list",
+      "titleField": "Field shown as the title",
+      "titleFieldDefault": "Title of each language (default)",
+      "titleFieldHint": "A hint for screens that list entries. The list always shows the entry title.",
+      "hasSlug": "Entries have an address (slug)",
+      "hasSlugHint": "Turning this off is refused while an entry still has an address.",
+      "isActive": "Shown on the website",
+      "isActiveHint": "When off, the collection is hidden from the website. Entries can still be edited.",
+      "problems": {
+        "name": {
+          "required": "Enter a name.",
+          "too_long": "At most {max} characters."
+        },
+        "description": {
+          "too_long": "At most {max} characters."
+        },
+        "icon": {
+          "pattern_mismatch": "Lower case letters, digits, - or _, up to 40 characters."
+        },
+        "sort_order": {
+          "out_of_range": "A whole number from 0 to {max}."
+        }
+      },
+      "lockedTitle": "The field builder cannot show this schema",
+      "lockedBody": "It uses something the builder cannot represent (see {document} at {path}). Nothing would be lost: edit it in the Advanced JSON tab.",
+      "lockedInvalid": "The JSON in the Advanced tab is not valid yet, so the builder has nothing to show.",
+      "openAdvanced": "Open Advanced JSON",
+      "fieldsIntro": "Each field is one input of the entry form. A field that is different in each language is stored per language; the others are shared by all languages.",
+      "deleteTitle": "Move {name} to the trash?",
+      "deleteBody": "The collection leaves the website and can be restored for 30 days. It can only be deleted while it has no entries.",
+      "deleteConfirm": "Move to trash",
+      "deleted": "{name} moved to the trash.",
+      "deleteFailed": "Could not delete the collection.",
+      "hasEntriesTitle": "It still has entries",
+      "hasEntriesBody": "{count, plural, one {# entry is} other {# entries are}} still outside the trash. Move or delete them first.",
+      "restored": "{name} restored.",
+      "restoreFailed": "Could not restore the collection.",
+      "restoreDuplicate": "Another collection already uses the key {key}."
+    },
+    "builder": {
+      "empty": "No fields yet. Add the first one.",
+      "add": "Add field",
+      "shared": "Shared",
+      "perLanguage": "Per language",
+      "moveUp": "Move {name} up",
+      "moveDown": "Move {name} down",
+      "remove": "Remove {name}",
+      "name": "Field name",
+      "label": "Label",
+      "kind": "Type",
+      "required": "Required to publish",
+      "localized": "Different in each language",
+      "description": "Help text",
+      "minLength": "Minimum length",
+      "maxLength": "Maximum length",
+      "pattern": "Pattern (regular expression)",
+      "minimum": "Minimum",
+      "maximum": "Maximum",
+      "options": "Choices (one per line)",
+      "optionsHint": "The entry form offers exactly these values.",
+      "itemKind": "Each item is a",
+      "minItems": "Minimum items",
+      "maxItems": "Maximum items (up to {max})",
+      "unique": "No repeated items",
+      "kinds": {
+        "string": "Short text",
+        "text": "Long text",
+        "richtext": "Rich text",
+        "number": "Number",
+        "integer": "Whole number",
+        "boolean": "Yes / no",
+        "date": "Date",
+        "datetime": "Date and time",
+        "enum": "Choice from a list",
+        "media": "Picture",
+        "array": "List of items"
+      },
+      "problems": {
+        "name_required": "Give the field a name.",
+        "name_pattern": "The name must start with a lower case letter and use only lower case letters, digits and _ (up to 40 characters).",
+        "name_reserved": "This name is reserved. Choose another.",
+        "name_duplicate": "Another field already has this name.",
+        "media_id_type": "A field named media_id must be a whole number.",
+        "enum_empty": "Add at least one choice.",
+        "enum_blank": "A choice is empty.",
+        "enum_duplicate": "A choice is repeated.",
+        "enum_too_many": "At most {max} choices.",
+        "length_range": "The minimum length is larger than the maximum.",
+        "length_invalid": "Lengths are whole numbers (maximum at least 1).",
+        "number_range": "The minimum is larger than the maximum.",
+        "integer_bounds": "A whole number field needs whole number limits.",
+        "pattern_length": "The pattern is longer than {max} characters.",
+        "pattern_invalid": "This pattern is not a valid regular expression.",
+        "max_items": "Maximum items must be a whole number from 1 to {max}.",
+        "min_items": "Minimum items must be a whole number not larger than the maximum.",
+        "too_many_fields": "At most {max} fields in one group.",
+        "pattern_needs_max": "A pattern needs a maximum length (up to 10000) so that matching stays fast.",
+        "pattern_max_too_long": "With a pattern, the maximum length is at most {max}.",
+        "pattern_repeat": "A repeat count in the pattern is at most {max}."
+      }
+    },
+    "advanced": {
+      "intro": "The three documents the builder writes. Edit them here for things the builder cannot do. The server checks them when you save and says what it refused.",
+      "hint": {
+        "json_schema": "Applies to the data shared by all languages.",
+        "localized_schema": "Applies to the data of each language.",
+        "ui_schema": "Field order and widgets. The builder keeps it in step with the fields."
+      }
+    },
+    "schemaErrors": {
+      "title": "{count, plural, one {# problem with the schema} other {# problems with the schema}}",
+      "inField": "Field {field}",
+      "other": "Refused ({code}).",
+      "badJson": "{document}: not valid JSON ({message})",
+      "fieldsToFix": "{count, plural, one {# field needs a fix} other {# fields need a fix}}.",
+      "unsupported_keyword": "The keyword {keyword} is not supported.",
+      "missing_keyword": "The keyword {keyword} is required here.",
+      "reserved_name": "The name {name} is reserved.",
+      "limit_exceeded": "A limit was exceeded (at most {max}).",
+      "invalid_type": "The value has the wrong type.",
+      "too_long": "The value is too long.",
+      "not_applicable": "This does not apply here.",
+      "too_complex": "The schema is too complex to check.",
+      "invalid_schema": {
+        "not_object": "A schema must be a JSON object.",
+        "root_type": "The root must be of type object.",
+        "type": "The type is not valid here.",
+        "pattern": "The pattern is not a valid regular expression.",
+        "format": "Only the formats date and date-time on a string are allowed.",
+        "additional_properties": "additionalProperties must be false.",
+        "property_name": "The property name must be lower case letters, digits and _, starting with a letter, up to 40 characters.",
+        "richtext": "x-richtext must be \"lite\" on an object without properties.",
+        "media_id_type": "A property named media_id must be an integer.",
+        "compile": "The schema could not be compiled."
+      }
+    },
+    "breaks": {
+      "title": "This schema would break existing entries",
+      "description": "Nothing was saved. The entries below no longer pass the new schema.",
+      "summary": "{invalid} of {checked} entries would not pass.",
+      "nothingSaved": "Your schema changes are still in the editor.",
+      "which": "Entries that block the change",
+      "entry": "Entry #{id}",
+      "more": "Showing {shown} of {total}.",
+      "fix": "Fix or remove those entries, or soften the change (for example make the field optional), then save again.",
+      "tooManyTitle": "Too many entries to check",
+      "tooManyBody": "The schema cannot be changed while the collection has more than 5,000 entries outside the trash.",
+      "close": "Close"
+    },
+    "activity": {
+      "empty": "No activity recorded yet."
+    },
+    "entries": {
+      "description": "The entries of this collection.",
+      "searchPlaceholder": "Search by title or address",
+      "editSchema": "Edit schema",
+      "viewSchema": "View schema",
+      "inactiveNote": "This collection is hidden from the website. Its entries can still be edited.",
+      "noun": "entry",
+      "readOnly": "Read only",
+      "empty": "No entries yet",
+      "emptyHint": "Create the first entry of this collection.",
+      "emptyTrash": "The trash is empty",
+      "trash": "Show trash",
+      "stale": {
+        "chip": "Schema changed"
+      },
+      "purgeOn": "Removed for good on {when}",
+      "status": {
+        "draft": "Draft",
+        "published": "Published",
+        "archived": "Archived"
+      },
+      "filters": {
+        "status": "Status",
+        "language": "Language",
+        "pendingOnly": "Only with unpublished changes"
+      },
+      "columns": {
+        "title": "Title",
+        "status": "Status",
+        "translations": "Languages",
+        "order": "Order",
+        "updated": "Updated",
+        "deleted": "Deleted",
+        "actions": "Actions"
+      },
+      "actions": {
+        "menu": "Actions for {name}",
+        "open": "Open",
+        "view": "View",
+        "delete": "Move to trash",
+        "restore": "Restore {name}",
+        "restoreShort": "Restore"
+      },
+      "delete": {
+        "title": "Move {title} to the trash?",
+        "description": "It can be restored for 30 days.",
+        "publishedNote": "It is published, so it leaves the website.",
+        "confirm": "Move to trash",
+        "done": "{title} moved to the trash.",
+        "failed": "Could not delete the entry."
+      },
+      "restore": {
+        "done": "{title} restored as a draft.",
+        "failed": "Could not restore the entry.",
+        "duplicate": "Another entry already uses this address in the same language.",
+        "invalid": "The entry no longer passes the current schema ({path}). Fix the schema or the entry first."
+      },
+      "create": {
+        "open": "New entry",
+        "title": "New entry",
+        "description": "The title in {language}. The rest is filled in the editor.",
+        "titleLabel": "Title",
+        "slugLabel": "Address (slug)",
+        "slugHint": "Lower case letters, digits and single hyphens. Leave it empty to set it later.",
+        "cancel": "Cancel",
+        "submit": "Create",
+        "created": "Entry created.",
+        "failed": "Could not create the entry.",
+        "errors": {
+          "title": {
+            "required": "Enter a title.",
+            "too_long": "At most {max} characters."
+          },
+          "slug": {
+            "pattern_mismatch": "Lower case letters, digits and single hyphens.",
+            "too_long": "At most {max} characters.",
+            "taken": "Another entry already uses this address."
+          }
+        }
+      },
+      "host": {
+        "notFoundTitle": "Entry not found",
+        "notFoundDescription": "It does not exist in this collection.",
+        "backToList": "All entries",
+        "untitled": "Untitled",
+        "trashedTitle": "This entry is in the trash",
+        "trashedBody": "Restore it to edit it. It comes back as a draft."
+      },
+      "problems": {
+        "required": "This is required.",
+        "too_long": "At most {max} characters.",
+        "pattern_mismatch": "Lower case letters, digits and single hyphens.",
+        "out_of_range": "A whole number from 0 to 1,000,000.",
+        "slugTaken": "Another entry already uses this address in this language."
+      },
+      "editor": {
+        "tabs": {
+          "content": "Content",
+          "revisions": "History",
+          "activity": "Activity"
+        },
+        "fixFirst": "Fix the marked problems first.",
+        "saveRefused": "The server refused the entry. The problems are marked.",
+        "saveFailed": "Could not save the entry.",
+        "staleTitle": "The schema changed since this entry was last checked",
+        "staleBody": "This entry was checked against schema version {entry}; the collection is now at version {current}. It may no longer pass. Publishing checks it again.",
+        "translateNote": "You can edit the title, address and fields of languages that already exist. Shared fields, the order and adding languages need the update permission.",
+        "readOnlyNote": "You can read this entry but not change it.",
+        "missingLocales": "Languages without a complete title: {languages}.",
+        "delete": "Move to trash",
+        "restore": "Restore as draft",
+        "deleteTitle": "Move {title} to the trash?",
+        "deleteBody": "It can be restored for 30 days.",
+        "deletePublishedNote": "It is published, so it leaves the website.",
+        "deleteConfirm": "Move to trash",
+        "deleted": "Entry moved to the trash.",
+        "deleteFailed": "Could not delete the entry.",
+        "restored": "Entry restored as a draft.",
+        "restoreFailed": "Could not restore the entry.",
+        "restoreDuplicate": "Another entry already uses this address.",
+        "sharedHeading": "Shared fields",
+        "sortOrder": "Order",
+        "sortOrderHint": "Smaller numbers come first. Set the number to move an entry.",
+        "noSharedFields": "This collection has no shared fields.",
+        "languageHeading": "Content by language",
+        "languageMissing": "This entry has no {language} version yet.",
+        "newLanguageNeedsUpdate": "Adding the {language} version needs the update permission.",
+        "addLanguage": "Add {language}",
+        "titleLabel": "Title ({language})",
+        "slugLabel": "Address ({language})",
+        "slugHint": "Lower case letters, digits and single hyphens. It must be unique in this language.",
+        "enabled": "Show the {language} version on the website",
+        "removeLanguage": "Remove {language}",
+        "restoreInvalid": "The entry no longer passes the current schema ({path}). Fix the schema or the entry first."
       }
     }
   }

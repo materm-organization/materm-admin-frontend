@@ -118,6 +118,7 @@ describe("W1 iam/ops routes (T1.1.10)", () => {
       // T1.5.6 galleries and FAQ
       "/admin/galleries",
       "/admin/faq",
+      "/admin/collections",
       "/admin/menus",
       "/admin/blog/categories",
       "/admin/blog/tags",
@@ -239,5 +240,19 @@ describe("external webhooks route (SCR-43)", () => {
     const access = getPermissionsForPath("/admin/webhooks");
     expect(isRouteAllowed(access, [PERMISSION_KEYS.OPS_AUDIT])).toBe(false);
     expect(isRouteAllowed(access, [PERMISSION_KEYS.OPS_WEBHOOKS])).toBe(true);
+  });
+});
+
+describe("collections routes (SCR-40 / SCR-41)", () => {
+  it("every page below /admin/collections is guarded by cms.collections:read", () => {
+    const expected = { kind: "requires", keys: [PERMISSION_KEYS.CMS_COLLECTIONS] };
+    for (const path of ["/admin/collections", "/admin/collections/team", "/admin/collections/team/schema", "/admin/collections/team/41"]) {
+      expect(getPermissionsForPath(path)).toEqual(expected);
+    }
+  });
+  it("the sidebar shows Collections to a reader of the key and to nobody else", () => {
+    const urls = (keys: string[]) => buildNavMainItemsForUser(keys).flatMap((g): Array<{ url: string }> => g.items ?? [g]).map((i) => i.url);
+    expect(urls([PERMISSION_KEYS.CMS_COLLECTIONS])).toContain("/admin/collections");
+    expect(urls([PERMISSION_KEYS.CMS_FAQ])).not.toContain("/admin/collections");
   });
 });
