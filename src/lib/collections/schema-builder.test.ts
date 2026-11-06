@@ -136,7 +136,8 @@ describe("fieldProblems", () => {
     expect(codes([f({ name: "e", fieldKind: "enum", kind: "enum", options: Array.from({ length: 201 }, (_, i) => `o${i}`) })])).toContain("enum_too_many");
     expect(codes([f({ name: "s", minLength: 5, maxLength: 2 })])).toContain("length_range");
     expect(codes([f({ name: "n", fieldKind: "number", kind: "number", minimum: 9, maximum: 1 })])).toContain("number_range");
-    expect(codes([f({ name: "s", pattern: "(" })])).toContain("pattern_invalid");
+    // RE2-valid syntax that JavaScript refuses must not block the save
+    for (const pattern of ["(?i)abc", "(?P<n>x)y", "(", "\\pL+\\z"]) expect(codes([f({ name: "s", pattern, maxLength: 10 })])).not.toContain("pattern_invalid");
     expect(codes([f({ name: "s", pattern: "x".repeat(257), maxLength: 10 })])).toContain("pattern_length");
     expect(codes([f({ name: "s", pattern: "^a" })])).toContain("pattern_needs_max");
     expect(codes([f({ name: "s", pattern: "^a", maxLength: 10001 })])).toContain("pattern_max_too_long");
@@ -205,7 +206,7 @@ describe("checkEntryData (the conservative checker, no Ajv)", () => {
     expect(codes({ year: "x" })).toContain("/year invalid_type");
     expect(codes({ year: 1800 })).toContain("/year out_of_range");
     expect(codes({ year: 1.5 })).toContain("/year invalid_type");
-    expect(codes({ title_en: "abc" })).toContain("/title_en pattern_mismatch");
+    expect(codes({ title_en: "abc" })).not.toContain("/title_en pattern_mismatch"); // pattern is left to the server
     expect(codes({ born: "2026-02-30" })).toContain("/born invalid_format");
     expect(codes({ starts: "2026-02-01" })).toContain("/starts invalid_format");
     expect(codes({ starts: "2026-02-01T10:00:00+07:00" })).toEqual([]);
@@ -220,9 +221,22 @@ describe("checkEntryData (the conservative checker, no Ajv)", () => {
     expect(codes({ title_en: "" }, "draft")).not.toContain("/title_en too_short");
     expect(codes({ title_en: "", year: 2000, photo: { media_id: 1 } }, "publish")).toContain("/title_en too_short");
   });
-  it("skips combinators and an uncompilable pattern instead of guessing", () => {
+  it("skips combinators and never executes a pattern", () => {
     expect(checkEntryData({ type: "object", anyOf: [{ required: ["a"] }] }, {}, "publish")).toEqual([]);
     expect(checkEntryData({ type: "string", pattern: "(?i)abc" }, "zzz")).toEqual([]);
     expect(checkEntryData({ type: "string", pattern: "(" }, "zzz")).toEqual([]);
+  });
+  it("returns immediately for a catastrophic pattern (ReDoS) and flags own-property names", () => {
+    const t0 = performance.now();
+    expect(checkEntryData({ type: "string", pattern: "^(a+)+$" }, "a".repeat(40) + "!")).toEqual([]);
+    expect(performance.now() - t0).toBeLessThan(50);
+    const schema = { type: "object", properties: { a: { type: "string" } }, additionalProperties: false } as never;
+    const issues = checkEntryData(schema, JSON.parse('{"__proto__":1,"constructor":2,"toString":3}'));
+    expect(issues.map((i) => i.code)).toEqual(["unknown_field", "unknown_field", "unknown_field"]);
+  });
+  it("builds a field named __proto__ as an own property", () => {
+    const g2 = generateSchemas([f({ name: "__proto__", fieldKind: "string", kind: "string", label: "x" })]);
+    expect(Object.keys(g2.json_schema.properties as object)).toEqual(["__proto__"]);
+    expect(JSON.parse(JSON.stringify(g2.json_schema)).properties).toHaveProperty("__proto__");
   });
 });

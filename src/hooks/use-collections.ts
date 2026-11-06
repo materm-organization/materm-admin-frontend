@@ -121,6 +121,8 @@ export function useEntryWrites(key: string, id: number) {
   );
   return useMemo(
     () => ({
+      // Any other write (delete, restore) takes its turn in the same queue and gets the ETag current at that moment.
+      queue: run,
       update: (payload: UpdateCollectionEntryPayload) =>
         run(async (etag) => {
           const response = await CollectionsAPI.UpdateEntry(key, id, payload, etag);

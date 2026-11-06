@@ -133,9 +133,11 @@ export function DefinitionEditor({ collection, etag, onReseed }: { collection: C
       setEdit(null);
       return true;
     }
+    const sent = edit;
     try {
       await update.mutateAsync({ payload: patch, etag });
-      setEdit(null);
+      // Keep what was typed while the save was in flight; the baseline re-bases itself on the saved copy.
+      setEdit((current) => (current && JSON.stringify(current) === JSON.stringify(sent) ? null : current));
       setServerErrors([]);
       setSubmitted(false);
       toast.success(t("saved"));

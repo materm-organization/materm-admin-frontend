@@ -260,7 +260,7 @@ export function EntryEditor({ collection, entry, etag, onReseed }: { collection:
 
   const doDelete = async () => {
     try {
-      await deleteMutation.mutateAsync({ id: entry.id, etag });
+      await writes.queue((current) => deleteMutation.mutateAsync({ id: entry.id, etag: current }));
       toast.success(t("deleted"));
       router.push(`/admin/collections/${encodeURIComponent(key)}`);
     } catch (error) {
@@ -271,7 +271,7 @@ export function EntryEditor({ collection, entry, etag, onReseed }: { collection:
   };
   const doRestore = async () => {
     try {
-      const result = await restoreMutation.mutateAsync({ id: entry.id, etag });
+      const result = await writes.queue((current) => restoreMutation.mutateAsync({ id: entry.id, etag: current }));
       writeThroughEntry(queryClient, key, entry.id, { data: result.data.data, etag: result.etag });
       await queryClient.invalidateQueries({ queryKey: entryQueryKey(key, entry.id) });
       await onReseed({ refetch: false });

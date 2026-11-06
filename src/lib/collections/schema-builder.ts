@@ -180,7 +180,7 @@ export function generateSchemas(fields: BuilderField[]): GeneratedSchemas {
   const order: string[] = [];
   for (const f of fields) {
     const target = f.localized ? localized : json;
-    (target.properties as Record<string, JsonSchema>)[f.name] = fieldSchema(f);
+    Object.defineProperty(target.properties, f.name, { value: fieldSchema(f), enumerable: true, writable: true, configurable: true });
     if (f.required) (target.required ??= []).push(f.name);
     const u = fieldUi(f);
     if (u) ui[f.name] = u;
@@ -353,12 +353,7 @@ export function fieldProblems(fields: BuilderField[]): Record<string, FieldProbl
         for (const m of spec.pattern.matchAll(/\{(\d+)(?:,(\d*))?\}/g)) {
           if (Math.max(Number(m[1]), Number(m[2] || 0)) > MAX_PATTERN_REPEAT) add(f.id, { code: "pattern_repeat", params: { max: MAX_PATTERN_REPEAT } });
         }
-        // A hint only: the server compiles RE2, JavaScript is close enough to catch a typo.
-        try {
-          new RegExp(spec.pattern, "u");
-        } catch {
-          add(f.id, { code: "pattern_invalid" });
-        }
+        // No JavaScript compile check: the server validates RE2, whose syntax JavaScript refuses in places ((?i), (?P<n>x), \z).
       }
     }
     if (f.fieldKind === "array") {

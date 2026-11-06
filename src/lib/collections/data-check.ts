@@ -4,8 +4,7 @@ import type { JsonSchema } from "@/types/cms";
 // (Ajv compiles with `new Function`, which the production CSP forbids) and never evaluates the schema as code: the schema is walked as data.
 //
 // Conservative = it reports only definite failures, with the server's codes and paths:
-//   type, enum / const, minimum / maximum (+ exclusive), minLength / maxLength (code points), pattern (only when JavaScript can compile it),
-//   format date / date-time, items / minItems / maxItems / uniqueItems, additionalProperties:false, and `required` / `minLength` /
+//   type, enum / const, minimum / maximum (+ exclusive), minLength / maxLength (code points), format date / date-time, items / minItems / maxItems / uniqueItems, additionalProperties:false, and `required` / `minLength` /
 //   `minItems` only in `publish` mode (the server skips them for a draft). Combinators (allOf / anyOf / oneOf / not / if) and the deep
 //   rich text check are left to the server. The server stays the authority.
 
@@ -53,17 +52,6 @@ function typeMatches(type: string, v: unknown): boolean {
 
 const esc = (s: string) => s.replace(/~/g, "~0").replace(/\//g, "~1");
 
-function compile(pattern: string): RegExp | null {
-  for (const flags of ["u", ""]) {
-    try {
-      return new RegExp(pattern, flags);
-    } catch {
-      /* try the next flag set */
-    }
-  }
-  return null;
-}
-
 function walk(schema: JsonSchema, value: unknown, path: string, mode: DataMode, out: DataIssue[]) {
   if (out.length >= 100) return;
   const add = (code: string, params?: DataIssue["params"]) => out.push({ path, code, params });
@@ -78,10 +66,6 @@ function walk(schema: JsonSchema, value: unknown, path: string, mode: DataMode, 
     const len = codePoints(value);
     if (typeof schema.maxLength === "number" && len > schema.maxLength) add("too_long", { max: schema.maxLength });
     if (mode === "publish" && typeof schema.minLength === "number" && len < schema.minLength) add("too_short", { min: schema.minLength });
-    if (typeof schema.pattern === "string") {
-      const re = compile(schema.pattern);
-      if (re && !re.test(value)) add("pattern_mismatch");
-    }
     if (schema.format === "date" && !isValidDate(value)) add("invalid_format", { format: "date" });
     if (schema.format === "date-time" && !isValidDateTime(value)) add("invalid_format", { format: "date-time" });
   }
@@ -109,7 +93,7 @@ function walk(schema: JsonSchema, value: unknown, path: string, mode: DataMode, 
       }
     }
     for (const [name, v] of Object.entries(value)) {
-      if (props[name]) walk(props[name], v, `${path}/${esc(name)}`, mode, out);
+      if (Object.hasOwn(props, name)) walk(props[name], v, `${path}/${esc(name)}`, mode, out);
       else if (schema.additionalProperties === false) out.push({ path: `${path}/${esc(name)}`, code: "unknown_field" });
     }
   }
