@@ -8,7 +8,7 @@ This file provides guidance to Claude Code when working on this project.
 auth (sign-in, forgot/reset password, accept invitation, profile), the IAM/ops screens (users, roles +
 permission matrix, audit log, locales, system status + cache purge), the media library + MediaPicker, the generic
 revisions tab, the save-live screens (menus, site settings, SEO, UI strings, categories / tags), a protected layout shell and
-shared infrastructure, and the CMS screens of M3-M5 (pages / sections, posts, galleries, FAQ, forms, inbox, dashboard). It has no backend of its own. Since M6 (T1.6.3) every screen has been run against the real admin backend (`npm run e2e`, 70 steps).
+shared infrastructure, and the CMS screens of M3-M5 (pages / sections, posts, galleries, FAQ, forms, inbox, dashboard), plus redirects CSV import, authors, external webhooks (SCR-43) and collections (SCR-40 / 41). It has no backend of its own. Every screen has been run against the real admin backend (`npm run e2e`: specs 00-90, 119/119 steps on 2026-11-06; 70 steps at the end of M6).
 
 ## Tech stack
 
@@ -744,7 +744,7 @@ Contract: `doc/05` section 17 (21 routes), `doc/07` 3.25. Content types the admi
 
 `tests/e2e/run.sh` (README beside it): builds an isolated stack with the scripts of `../e2e-cross-system` (used, never edited; scratch Postgres 55433 and
 Redis 56380 from `make testdb-up` in the admin backend, HEAD clones plus the working tree of this repo), then drives a production build in system Chrome
-with `playwright-core` (installed into the stack's temp dir, not into this repo) through `tests/e2e/specs/00..60*.mjs` (70 steps, all green at the end of
-M6; spec 90 = collections) and tears down. Ports 3201 (admin backend), 3202 (portal backend), 3203 (admin frontend), 3204 (portal frontend); Redis proxy 56390. `SPEC=30`,
+with `playwright-core` (installed into the stack's temp dir, not into this repo) through `tests/e2e/specs/00..90*.mjs` (119 steps, all green on 2026-11-06; 70 at the end of
+M6; 70 = redirects import + authors, 80 = webhooks, 90 = collections) and tears down. Ports 3201 (admin backend), 3202 (portal backend), 3203 (admin frontend), 3204 (portal frontend); Redis proxy 56390. `SPEC=30`,
 `XFLOWS="55 80"`, `KEEP=1` and `up|test|down` are in the README. `tests/e2e/eye-check.mjs` is the screenshot sweep. Needs Docker, Go, Chrome, `rsync`
 and the sibling repos. Never touches 5432 / 6379 / 3000-3002 or the `materm` database.
