@@ -3,7 +3,7 @@
 // ETag of a page = `"<lock_version>"`; a list row has no ETag header, build it with `pageEtag(row)`.
 import type { ApiMeta } from "@/types/api";
 import type { SaveLiveWarning } from "@/types/media";
-import type { AggregateStamp, PublishableMeta, PublishedRevisionRef } from "@/types/publishing";
+import type { AggregateStamp, PublishableMeta, PublishableStatus, PublishedRevisionRef } from "@/types/publishing";
 
 export type PageTranslationStatus = { enabled: boolean; title: boolean; seo_title: boolean; seo_description: boolean };
 
@@ -59,6 +59,18 @@ export type SectionTypeLite = {
   code_registered: boolean;
 };
 
+// What a page section that references a shared section knows about it (05 18.9.3). `live` = the predicate of 18.11.1.
+export type SharedSectionRef = {
+  id: number;
+  public_id: string;
+  name: string;
+  status: PublishableStatus;
+  has_unpublished_changes: boolean;
+  live: boolean;
+  deleted_at: string | null;
+  variant: string | null;
+};
+
 export type SectionSummary = {
   id: number;
   public_id: string;
@@ -71,6 +83,8 @@ export type SectionSummary = {
   anchor_id: string | null;
   props_bytes: number;
   shared_section_id: number | null;
+  // 05 18.9.3: `null` when the section does not reference a shared one; absent in older fixtures.
+  shared_section?: SharedSectionRef | null;
   required: boolean;
   unsupported: boolean;
   translation_status: Record<string, { missing: number }>;
@@ -94,8 +108,11 @@ export type SectionWriteResult = {
 // `PUT .../sections/order` and `DELETE .../sections/{id}`.
 export type SectionOrderResult = { sections: SectionOrder[]; aggregate: AggregateStamp };
 
+// A new section is either of a type (`section_type_key`) or a reference to a shared section (`shared_section_id`, 05 18.9.1:
+// `variant` and `props` must then be left out; `section_type_key` is optional and must equal the shared section's type).
 export type CreateSectionPayload = {
-  section_type_key: string;
+  section_type_key?: string;
+  shared_section_id?: number;
   position?: number;
   variant?: string | null;
   props?: Record<string, unknown>;

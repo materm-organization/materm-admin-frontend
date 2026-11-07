@@ -225,7 +225,8 @@
     "redirects": "Redirects",
     "authors": "Authors",
     "webhooks": "Webhooks",
-    "collections": "Collections"
+    "collections": "Collections",
+    "sections": "Shared sections"
   },
   "breadcrumb": {
     "forms": "Forms",
@@ -251,7 +252,8 @@
     "redirects": "Redirects",
     "authors": "Authors",
     "webhooks": "Webhooks",
-    "collections": "Collections"
+    "collections": "Collections",
+    "sections": "Shared sections"
   },
   "dashboard": {
     "title": "Dashboard",
@@ -2837,7 +2839,8 @@
       "posts": "post",
       "albums": "album",
       "faq-groups": "FAQ group",
-      "collection-entries": "entry"
+      "collection-entries": "entry",
+      "shared-sections": "shared section"
     },
     "actions": {
       "saveDraft": "Save draft",

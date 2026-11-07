@@ -91,6 +91,8 @@ export const API_ENDPOINTS = {
     // `PUT` (05 12.5.7): the whole order in one request. Not a section id.
     SECTIONS_ORDER: (id: number | string) => `/pages/${id}/sections/order`,
     SECTION: (id: number | string, sectionId: number | string) => `/pages/${id}/sections/${sectionId}`,
+    // 05 18.10: copies the shared section's working copy into the page section; `If-Match` = the PAGE's ETag.
+    SECTION_DETACH: (id: number | string, sectionId: number | string) => `/pages/${id}/sections/${sectionId}/detach`,
   },
   // Templates of the pages (doc/05 section 12.4): a registry in the backend's code, 4 rows, not paginated.
   PAGE_TEMPLATES: {
@@ -133,6 +135,13 @@ export const API_ENDPOINTS = {
     ENTRIES: (key: string) => `/collections/${encodeURIComponent(key)}/entries`,
     ENTRY: (key: string, id: number | string) => `/collections/${encodeURIComponent(key)}/entries/${id}`,
     ENTRY_RESTORE: (key: string, id: number | string) => `/collections/${encodeURIComponent(key)}/entries/${id}/restore`,
+  },
+  // Shared sections (doc/05 section 18): `{id}` is the numeric id; the publish engine adds `/publish`, `/unpublish`, `/discard-draft`, `/revisions`.
+  SHARED_SECTIONS: {
+    LIST: "/shared-sections",
+    DETAIL: (id: number | string) => `/shared-sections/${id}`,
+    RESTORE: (id: number | string) => `/shared-sections/${id}/restore`,
+    USAGES: (id: number | string) => `/shared-sections/${id}/usages`,
   },
   // Save-live (doc/05 sections 11.2 - 11.5). Revisions of these are in `REVISIONS` above.
   MENUS: {

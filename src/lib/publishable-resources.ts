@@ -4,7 +4,7 @@
 import { splitEntryRef } from "@/lib/collections/ref";
 import { PERMISSION_ACTIONS, PERMISSION_KEYS } from "@/lib/constants/permissions";
 
-export type PublishableResource = "pages" | "posts" | "albums" | "faq-groups" | "forms" | "collection-entries";
+export type PublishableResource = "pages" | "posts" | "albums" | "faq-groups" | "forms" | "collection-entries" | "shared-sections";
 
 export type PublishableConfig = {
   // `/pages/12`
@@ -82,6 +82,17 @@ export const PUBLISHABLE_RESOURCES: Record<PublishableResource, PublishableConfi
     listPath: "/collections",
     permissionKey: PERMISSION_KEYS.CMS_COLLECTIONS,
     entityType: "cms.collection_entries",
+    previewActions: [PERMISSION_ACTIONS.UPDATE],
+    previewLinks: false,
+    ownActions: false,
+  },
+  // Shared sections (05 18.8): publishable, addressed by the numeric id. `previewLinks` is false by SS-10 (the portal's preview takes pages and posts
+  // only); if the contract adds a preview for them (SS-16) this is the one switch to flip.
+  "shared-sections": {
+    base: (id) => `/shared-sections/${id}`,
+    listPath: "/shared-sections",
+    permissionKey: PERMISSION_KEYS.CMS_SECTIONS,
+    entityType: "cms.shared_sections",
     previewActions: [PERMISSION_ACTIONS.UPDATE],
     previewLinks: false,
     ownActions: false,

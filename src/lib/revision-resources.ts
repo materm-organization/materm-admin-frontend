@@ -7,7 +7,7 @@
 import { splitEntryRef } from "@/lib/collections/ref";
 import { PERMISSION_KEYS } from "@/lib/constants/permissions";
 
-export type RevisionResource = "menus" | "settings" | "ui-strings" | "categories" | "tags" | "redirects" | "authors" | "media/assets" | "pages" | "posts" | "albums" | "faq-groups" | "forms" | "collections" | "collection-entries";
+export type RevisionResource = "menus" | "settings" | "ui-strings" | "categories" | "tags" | "redirects" | "authors" | "media/assets" | "pages" | "posts" | "albums" | "faq-groups" | "forms" | "collections" | "collection-entries" | "shared-sections";
 
 export type RevisionEntityId = string | number;
 
@@ -143,6 +143,15 @@ export const REVISION_RESOURCES: Record<RevisionResource, ResourceConfig> = {
       const { key, id } = splitEntryRef(ref);
       return `/collections/${seg(key)}/entries/${id}`;
     },
+    publishable: true,
+  },
+  // Shared sections (05 18.8): publishable; the history entity type is `cms.shared_section`. A restore needs `cms.sections:update`.
+  "shared-sections": {
+    base: (id) => `/shared-sections/${seg(id)}`,
+    readKey: () => PERMISSION_KEYS.CMS_SECTIONS,
+    restoreKey: () => PERMISSION_KEYS.CMS_SECTIONS,
+    restoreActions: ["update"],
+    entityPath: (id) => `/shared-sections/${seg(id)}`,
     publishable: true,
   },
   "media/assets": {

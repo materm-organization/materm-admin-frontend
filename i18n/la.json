@@ -225,7 +225,8 @@
     "redirects": "ການປ່ຽນເສັ້ນທາງ",
     "authors": "ຜູ້ຂຽນ",
     "webhooks": "Webhook",
-    "collections": "ຊຸດເນື້ອຫາ"
+    "collections": "ຊຸດເນື້ອຫາ",
+    "sections": "ສ່ວນທີ່ໃຊ້ຮ່ວມກັນ"
   },
   "breadcrumb": {
     "forms": "ແບບຟອມ",
@@ -251,7 +252,8 @@
     "redirects": "ການປ່ຽນເສັ້ນທາງ",
     "authors": "ຜູ້ຂຽນ",
     "webhooks": "Webhook",
-    "collections": "ຊຸດເນື້ອຫາ"
+    "collections": "ຊຸດເນື້ອຫາ",
+    "sections": "ສ່ວນທີ່ໃຊ້ຮ່ວມກັນ"
   },
   "dashboard": {
     "title": "ພາບລວມ",
@@ -2837,7 +2839,8 @@
       "posts": "ບົດຄວາມ",
       "albums": "ອັນລະບັ້ມ",
       "faq-groups": "ກຸ່ມຄຳຖາມທີ່ພົບເລື້ອຍ",
-      "collection-entries": "ລາຍການ"
+      "collection-entries": "ລາຍການ",
+      "shared-sections": "ສ່ວນທີ່ໃຊ້ຮ່ວມກັນ"
     },
     "actions": {
       "saveDraft": "ບັນທຶກສະບັບຮ່າງ",
