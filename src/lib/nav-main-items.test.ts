@@ -119,6 +119,7 @@ describe("W1 iam/ops routes (T1.1.10)", () => {
       "/admin/galleries",
       "/admin/faq",
       "/admin/collections",
+      "/admin/sections",
       "/admin/menus",
       "/admin/blog/categories",
       "/admin/blog/tags",
@@ -254,5 +255,17 @@ describe("collections routes (SCR-40 / SCR-41)", () => {
     const urls = (keys: string[]) => buildNavMainItemsForUser(keys).flatMap((g): Array<{ url: string }> => g.items ?? [g]).map((i) => i.url);
     expect(urls([PERMISSION_KEYS.CMS_COLLECTIONS])).toContain("/admin/collections");
     expect(urls([PERMISSION_KEYS.CMS_FAQ])).not.toContain("/admin/collections");
+  });
+});
+
+describe("shared sections routes (SCR-22)", () => {
+  it("every page below /admin/sections is guarded by cms.sections:read", () => {
+    const expected = { kind: "requires", keys: [PERMISSION_KEYS.CMS_SECTIONS] };
+    for (const path of ["/admin/sections", "/admin/sections/7"]) expect(getPermissionsForPath(path)).toEqual(expected);
+  });
+  it("the sidebar shows Shared sections to a reader of the key and to nobody else", () => {
+    const urls = (keys: string[]) => buildNavMainItemsForUser(keys).flatMap((g): Array<{ url: string }> => g.items ?? [g]).map((i) => i.url);
+    expect(urls([PERMISSION_KEYS.CMS_SECTIONS])).toContain("/admin/sections");
+    expect(urls([PERMISSION_KEYS.CMS_PAGES])).not.toContain("/admin/sections");
   });
 });

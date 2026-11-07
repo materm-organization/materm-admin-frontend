@@ -54,6 +54,8 @@ export const NAV_MAIN_CONFIG: NavMainGroupConfig[] = [
       { title: "nav.faq", url: "/admin/faq", anyPermission: [PERMISSION_KEYS.CMS_FAQ] },
       // Collections (SCR-40 / SCR-41): content types the administrators define, and their entries.
       { title: "nav.collections", url: "/admin/collections", anyPermission: [PERMISSION_KEYS.CMS_COLLECTIONS] },
+      // Shared sections (SCR-22): sections that several pages reference; `/admin/sections/<id>` is the editor.
+      { title: "nav.sections", url: "/admin/sections", anyPermission: [PERMISSION_KEYS.CMS_SECTIONS] },
       { title: "nav.menus", url: "/admin/menus", anyPermission: [PERMISSION_KEYS.CMS_MENUS] },
       { title: "nav.categories", url: "/admin/blog/categories", anyPermission: [PERMISSION_KEYS.CMS_CATEGORIES] },
       { title: "nav.tags", url: "/admin/blog/tags", anyPermission: [PERMISSION_KEYS.CMS_CATEGORIES] },

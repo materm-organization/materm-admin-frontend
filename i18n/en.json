@@ -5156,5 +5156,144 @@
         "restoreInvalid": "The entry no longer passes the current schema ({path}). Fix the schema or the entry first."
       }
     }
+  },
+  "sharedSections": {
+    "title": "Shared sections",
+    "description": "Sections that several pages show. Change one here and publish it once: every page that uses it follows.",
+    "searchPlaceholder": "Search by name",
+    "empty": "There are no shared sections yet.",
+    "emptyHint": "Create one, then place it on pages from the Shared tab when you add a section.",
+    "emptyTrash": "The trash is empty.",
+    "trash": "Trash",
+    "stale": "This shared section was changed by someone else. The list was reloaded.",
+    "purgeOn": "Kept until {when}",
+    "columns": {
+      "name": "Name",
+      "type": "Kind",
+      "status": "State",
+      "usedIn": "Used in",
+      "updated": "Updated",
+      "deleted": "Deleted",
+      "actions": "Actions"
+    },
+    "usedIn": {
+      "none": "Not used",
+      "pages": "{count, plural, one {# page} other {# pages}}",
+      "trashed": "{count} in the trash",
+      "open": "Show the pages that use {name}"
+    },
+    "filters": {
+      "type": "Kind",
+      "status": "State",
+      "pending": "With unpublished changes",
+      "unused": "Not used"
+    },
+    "restore": {
+      "done": "\"{name}\" was restored as a draft.",
+      "failed": "The shared section could not be restored.",
+      "aria": "Restore {name}",
+      "button": "Restore"
+    },
+    "create": {
+      "open": "New shared section",
+      "title": "New shared section",
+      "description": "Choose the kind of section. It starts as a draft with example content that you then edit.",
+      "nameLabel": "Name",
+      "nameHint": "Only used in the admin, to find it again. It is not shown on the website.",
+      "typeLabel": "Kind of section",
+      "noTypes": "No kind of section can be shared.",
+      "variantLabel": "Variant",
+      "variantDefault": "Default",
+      "submit": "Create",
+      "cancel": "Cancel",
+      "created": "The shared section was created.",
+      "failed": "The shared section could not be created.",
+      "errors": {
+        "name": {
+          "required": "The name is required.",
+          "too_long": "At most {max} characters."
+        },
+        "type": "Choose a kind of section."
+      }
+    },
+    "usages": {
+      "empty": "No page uses this shared section yet.",
+      "truncated": "Only the first {shown} of {total} pages are listed.",
+      "inLive": "{count, plural, one {Placed on the page} other {# times on the page}}",
+      "inDraft": "{count, plural, one {In its unpublished draft} other {# times in its unpublished draft}}",
+      "hidden": "Hidden",
+      "liveOnSite": "Shows it on the website",
+      "sheetTitle": "Pages that use {name}",
+      "sheetDescription": "Including pages in the trash and pages that only hold it in an unpublished draft."
+    },
+    "confirm": {
+      "publishTitle": "{count, plural, =0 {No live page shows it yet} one {The change goes live on # page} other {The change goes live on # pages}}",
+      "publishNone": "Pages that use it show the new content once they are published.",
+      "unpublishTitle": "{count, plural, =0 {No live page shows it now} one {# live page loses this section} other {# live pages lose this section}}",
+      "unpublishBlocked": "Pages that use it cannot be published until you publish it again, or hide, delete or detach the section there.",
+      "unpublishNone": "No page uses it, so nothing changes on the website."
+    },
+    "delete": {
+      "blocked": {
+        "inDraft": "(in its unpublished draft)",
+        "inPage": "(in the page)",
+        "pageInTrash": "The page is in the trash.",
+        "more": "and {count} more"
+      }
+    },
+    "host": {
+      "notFoundTitle": "Shared section not found",
+      "notFoundDescription": "It does not exist, or you may not see it.",
+      "backToList": "All shared sections"
+    },
+    "editor": {
+      "nameLabel": "Name",
+      "nameSave": "Rename",
+      "nameFailed": "The name could not be saved.",
+      "nameProblem": {
+        "required": "The name is required.",
+        "too_long": "At most {max} characters."
+      },
+      "version": "version {version}",
+      "usedNone": "Not used on any page yet.",
+      "used": "{count, plural, one {Used in # page} other {Used in # pages}}",
+      "usedWithTrash": "{count, plural, one {Used in # page} other {Used in # pages}}, and {trashed} in the trash",
+      "trashedTitle": "This shared section is in the trash",
+      "trashedBody": "It is not shown on the website. Restore it to edit it again; it comes back as a draft.",
+      "previewNote": "To preview it, use the Preview of a page that shows it. A page preview shows only what is published.",
+      "tabs": {
+        "content": "Content",
+        "usage": "Usage",
+        "revisions": "History of versions",
+        "history": "Activity"
+      },
+      "autosave": "Autosave",
+      "restore": {
+        "button": "Restore",
+        "done": "\"{name}\" was restored as a draft.",
+        "failed": "The shared section could not be restored."
+      },
+      "readOnly": "You may read this shared section but not change it.",
+      "delete": {
+        "section": "Delete",
+        "heading": "Delete this shared section",
+        "hint": "It moves to the trash. You can restore it for 30 days.",
+        "inUse": "It is used in {count, plural, one {# page} other {# pages}}{trashed, plural, =0 {} other { and # in the trash}}. Detach or delete the section in those pages first.",
+        "showPages": "Show the pages",
+        "button": "Delete",
+        "done": "\"{name}\" was moved to the trash.",
+        "stale": "The shared section is not in the state this screen showed. It was reloaded.",
+        "failed": "The shared section could not be deleted.",
+        "title": "Delete \"{name}\"?",
+        "description": "The shared section moves to the trash. It is not used on any page.",
+        "confirm": "Delete",
+        "blocked": {
+          "title": "It is still used",
+          "body": "{count, plural, one {# place still uses} other {# places still use}} this shared section, so it cannot be deleted.",
+          "trashedHint": "For a page in the trash: restore the page first, then detach or delete the section there.",
+          "close": "Close"
+        }
+      }
+    }
   }
 }

@@ -15,6 +15,7 @@ export const BREADCRUMB_CONFIG: Record<string, string> = {
   "/admin/galleries": "breadcrumb.galleries",
   "/admin/faq": "breadcrumb.faq",
   "/admin/collections": "breadcrumb.collections",
+  "/admin/sections": "breadcrumb.sections",
   "/admin/blog/categories": "breadcrumb.categories",
   "/admin/blog/tags": "breadcrumb.tags",
   "/admin/blog/authors": "breadcrumb.authors",

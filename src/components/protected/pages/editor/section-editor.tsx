@@ -21,7 +21,6 @@ import { useAutosave } from "@/hooks/use-autosave";
 import { useSectionType } from "@/hooks/use-section-types";
 import { useUnsavedChangesGuard } from "@/hooks/use-unsaved-changes-guard";
 import { isConflictError, parseApiError } from "@/lib/api-error";
-import type { usePageWrites } from "@/hooks/use-page-sections";
 import type { ApiFieldError } from "@/types/api";
 import type { Locale } from "@/types/locales";
 import type { SectionSummary, UpdateSectionPayload } from "@/types/pages";
@@ -41,7 +40,10 @@ export type SectionFocusRequest = { token: number; errors: ApiFieldError[] };
 
 type Props = {
   section: SectionSummary;
-  writes: ReturnType<typeof usePageWrites>;
+  // Page sections pass `usePageWrites()`; a shared section passes an adapter over its own write queue (SCR-22): all the editor needs is one PATCH.
+  writes: { updateSection: (sectionId: number, payload: UpdateSectionPayload) => Promise<unknown> };
+  // false: no "hidden on the website" switch (a shared section has no visibility of its own).
+  showVisibility?: boolean;
   locales: Locale[];
   locale: string;
   onLocaleChange: (code: string) => void;
@@ -63,7 +65,7 @@ const OTHER_SOURCES = new Set(["blog_strip", "post_list", "contact_section", "fa
 // draft (props + variant) is local; "Save section" is ONE `PATCH` with the page's ETag (read when it runs), the answer's
 // new ETag goes into the cache. A translator edits only `x-localized` text (the rest is disabled and not sent).
 export const SectionEditor = forwardRef<SectionEditorHandle, Props>(function SectionEditor(
-  { section, writes, locales, locale, onLocaleChange, canUpdate, canTranslate, readOnly, autosave, focusRequest, onState, onIssueCount, onConflict },
+  { section, writes, showVisibility = true, locales, locale, onLocaleChange, canUpdate, canTranslate, readOnly, autosave, focusRequest, onState, onIssueCount, onConflict },
   ref
 ) {
   const t = useTranslations("pages.editor.section");
@@ -238,7 +240,7 @@ export const SectionEditor = forwardRef<SectionEditorHandle, Props>(function Sec
             {variantError ? <p className="text-sm text-destructive">{t("variantInvalid")}</p> : null}
           </fieldset>
         ) : null}
-        {canUpdate && !readOnly ? (
+        {showVisibility && canUpdate && !readOnly ? (
           <div className="flex items-center gap-2">
             <Switch
               id={`visible-${section.id}`}
