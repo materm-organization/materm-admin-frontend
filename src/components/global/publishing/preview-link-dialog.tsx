@@ -275,6 +275,7 @@ function PreviewLinkDialogBody({ resource, entityId, onOpenChange, isDirty = fal
               </div>
 
               <p className="text-sm text-muted-foreground">{t("frozen")}</p>
+              {resource === "pages" ? <p className="text-sm text-muted-foreground" data-testid="preview-frozen-shared">{t("frozenShared")}</p> : null}
 
               {problem ? <ProblemAlert problem={problem} noun={noun} /> : null}
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertTriangleIcon, ExternalLinkIcon } from "lucide-react";
+import { AlertTriangleIcon, EyeIcon, ExternalLinkIcon } from "lucide-react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 
@@ -8,6 +8,7 @@ import { ErrorState } from "@/components/global/states/error-state";
 import { NoPermission } from "@/components/layout/no-permission";
 import { StatusBadge } from "@/components/global/status/status-badge";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useSharedSectionUsages } from "@/hooks/use-shared-sections";
@@ -18,15 +19,17 @@ import type { SharedSectionReference, SharedSectionUsages, SharedUsagePage } fro
 
 // The pages that use a shared section (05 18.7), as the reader thinks of them: title, address, state of the page, whether the section is in its live rows
 // and / or its unpublished draft, hidden or not, in the trash. The link to the page editor needs `cms.pages:read` (the list itself needs only `cms.sections:read`).
-export function SharedUsageList({ usages }: { usages: SharedSectionUsages }) {
+export function SharedUsageList({ usages, onPreview }: { usages: SharedSectionUsages; onPreview?: (pageId: number) => void }) {
   const t = useTranslations("sharedSections.usages");
   const canOpenPages = useCan(PERMISSION_KEYS.CMS_PAGES, PERMISSION_ACTIONS.READ);
+  // SS-20: "Preview in this page" = the ordinary page preview link (`cms.pages:read` and `update` or `review`); the page must not be in the trash.
+  const canPreviewPages = useCan(PERMISSION_KEYS.CMS_PAGES, [PERMISSION_ACTIONS.UPDATE, PERMISSION_ACTIONS.REVIEW]) && canOpenPages;
   if (usages.pages.length === 0) return <p className="text-sm text-muted-foreground" data-testid="usages-empty">{t("empty")}</p>;
   return (
     <div className="space-y-2">
       <ul className="divide-y rounded-md border text-sm" data-testid="usage-list">
         {usages.pages.map((p) => (
-          <UsageRow key={p.page_id} page={p} canOpen={canOpenPages} />
+          <UsageRow key={p.page_id} page={p} canOpen={canOpenPages} onPreview={onPreview && canPreviewPages && !p.deleted_at ? onPreview : undefined} />
         ))}
       </ul>
       {usages.truncated ? <p className="text-xs text-muted-foreground">{t("truncated", { shown: usages.pages.length, total: usages.total_pages })}</p> : null}
@@ -34,7 +37,7 @@ export function SharedUsageList({ usages }: { usages: SharedSectionUsages }) {
   );
 }
 
-function UsageRow({ page, canOpen }: { page: SharedUsagePage; canOpen: boolean }) {
+function UsageRow({ page, canOpen, onPreview }: { page: SharedUsagePage; canOpen: boolean; onPreview?: (pageId: number) => void }) {
   const t = useTranslations("sharedSections.usages");
   const title = page.title ?? `#${page.page_id}`;
   const live = page.sections.filter((s) => s.where === "live");
@@ -60,18 +63,38 @@ function UsageRow({ page, canOpen }: { page: SharedUsagePage; canOpen: boolean }
       <div className="flex flex-wrap items-center gap-1.5">
         <StatusBadge status={page.status} hasUnpublishedChanges={page.has_unpublished_changes} trashed={Boolean(page.deleted_at)} />
         {page.live_on_site ? <Badge variant="outline" className="text-[10px]" data-testid="live-on-site">{t("liveOnSite")}</Badge> : null}
+        {onPreview ? (
+          <Button type="button" variant="outline" size="sm" data-testid={`preview-in-page-${page.page_id}`} onClick={() => onPreview(page.page_id)}>
+            <EyeIcon />
+            {t("previewInPage")}
+          </Button>
+        ) : null}
       </div>
     </li>
   );
 }
 
 // Loads the usages of one shared section; used by the Usage tab, the sheet of the list and the confirmations.
-export function SharedUsages({ id }: { id: number }) {
+export function SharedUsages({ id, onPreview }: { id: number; onPreview?: (pageId: number) => void }) {
+  const t = useTranslations("sharedSections.usages");
   const query = useSharedSectionUsages(id);
   if (query.isPending) return <Skeleton className="h-24 w-full" />;
   if (query.error && isNoPermissionError(query.error)) return <NoPermission className="min-h-40 py-8" />;
   if (query.error) return <ErrorState error={query.error} onRetry={() => void query.refetch()} isRetrying={query.isFetching} className="min-h-40 py-8" />;
-  return <SharedUsageList usages={query.data.data} />;
+  return (
+    <div className="space-y-2">
+      {onPreview && query.data.data.pages.length === 0 ? (
+        <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground" data-testid="preview-none">
+          <Button type="button" variant="outline" size="sm" disabled>
+            <EyeIcon />
+            {t("previewInPage")}
+          </Button>
+          {t("previewNone")}
+        </div>
+      ) : null}
+      <SharedUsageList usages={query.data.data} onPreview={onPreview} />
+    </div>
+  );
 }
 
 // "Used in N pages" of the list: opens this sheet (05 18.7).

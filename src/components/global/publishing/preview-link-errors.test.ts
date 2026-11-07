@@ -21,6 +21,8 @@ describe("classifyPreviewCreateError", () => {
     expect(classifyPreviewCreateError(wrap([{ in: "body", path: "/locale", code: "unknown_reference" }]))).toEqual({ kind: "locale" });
     expect(classifyPreviewCreateError(wrap([{ in: "body", path: "/ttl_minutes", code: "out_of_range", params: { min: 1, max: 1440 } }]))).toEqual({ kind: "ttl", min: 1, max: 1440 });
     expect(classifyPreviewCreateError(wrap([{ in: "body", path: "/x", code: "unknown_field" }]))).toEqual({ kind: "other" });
+    // 05 18.12.4: the shared sections of the page are too big to freeze: not the 20-links limit
+    expect(classifyPreviewCreateError(wrap([{ in: "entity", path: "/shared_sections", code: "limit_exceeded", params: { max_bytes: 2097152 } }]))).toEqual({ kind: "sharedTooLarge" });
   });
 
   it("429 carries Retry-After; 409 INVALID_STATE trashed vs another reason; 404, 403, network", () => {

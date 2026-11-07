@@ -3170,7 +3170,8 @@
         "notFound": "This {noun} no longer exists.",
         "forbidden": "You do not have permission to create preview links for this {noun}.",
         "network": "The server could not be reached. Check your connection and try again.",
-        "other": "The link could not be created."
+        "other": "The link could not be created.",
+        "sharedTooLarge": "The shared sections on this page are too large to freeze into a preview link."
       },
       "list": {
         "title": "Active links",
@@ -3202,7 +3203,8 @@
         "done": "Link revoked.",
         "gone": "The link was already gone.",
         "failed": "The link could not be revoked."
-      }
+      },
+      "frozenShared": "A page that shows shared sections is frozen with their saved working copies as well. Edits to a shared section after the link was made are not counted as newer: create a new link to see them."
     },
     "autoRedirect": {
       "open": "Open Redirects",
@@ -5224,7 +5226,9 @@
       "hidden": "Hidden",
       "liveOnSite": "Shows it on the website",
       "sheetTitle": "Pages that use {name}",
-      "sheetDescription": "Including pages in the trash and pages that only hold it in an unpublished draft."
+      "sheetDescription": "Including pages in the trash and pages that only hold it in an unpublished draft.",
+      "previewInPage": "Preview in this page",
+      "previewNone": "No page uses this shared section, so there is nothing to preview it in."
     },
     "confirm": {
       "publishTitle": "{count, plural, =0 {No live page shows it yet} one {The change goes live on # page} other {The change goes live on # pages}}",
@@ -5260,7 +5264,7 @@
       "usedWithTrash": "{count, plural, one {Used in # page} other {Used in # pages}}, and {trashed} in the trash",
       "trashedTitle": "This shared section is in the trash",
       "trashedBody": "It is not shown on the website. Restore it to edit it again; it comes back as a draft.",
-      "previewNote": "To preview it, use the Preview of a page that shows it. A page preview shows only what is published.",
+      "previewNote": "To preview it, use \"Preview in this page\" in the Usage tab. The page preview shows this section as it is saved now, including unpublished edits; it is frozen when the link is made.",
       "tabs": {
         "content": "Content",
         "usage": "Usage",

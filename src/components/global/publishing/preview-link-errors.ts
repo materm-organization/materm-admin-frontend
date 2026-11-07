@@ -5,6 +5,7 @@ import { parseApiError } from "@/lib/api-error";
 export type PreviewCreateProblem =
   | { kind: "notConfigured" } // 503 SERVICE_UNAVAILABLE, details.dependency = preview.portalUrl
   | { kind: "unavailable" } // any other 5xx / 503
+  | { kind: "sharedTooLarge" } // 422 limit_exceeded at /shared_sections (05 18.12.4: the shared sections of the page are too big to freeze)
   | { kind: "limit"; max: number } // 422 limit_exceeded (body, path "")
   | { kind: "locale" } // 422 unknown_reference at /locale (the language is not active)
   | { kind: "ttl"; min: number; max: number } // 422 out_of_range at /ttl_minutes
@@ -35,6 +36,7 @@ export function classifyPreviewCreateError(error: unknown): PreviewCreateProblem
       return { kind: "other" };
     case 422: {
       for (const fe of parsed.fieldErrors) {
+        if (fe.code === "limit_exceeded" && fe.path === "/shared_sections") return { kind: "sharedTooLarge" };
         if (fe.code === "limit_exceeded") return { kind: "limit", max: Number(fe.params?.max) || 20 };
         if (fe.path === "/locale" && fe.code === "unknown_reference") return { kind: "locale" };
         if (fe.path === "/ttl_minutes" && fe.code === "out_of_range") {

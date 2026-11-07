@@ -9,6 +9,7 @@ import { toast } from "sonner";
 
 import { ConfirmDialog } from "@/components/global/confirm-dialog";
 import { ConflictDialog } from "@/components/global/conflict-dialog";
+import { PreviewLinkDialog } from "@/components/global/publishing/preview-link-dialog";
 import { PublishBar, type PublishBarResult } from "@/components/global/publishing/publish-bar";
 import { RevisionsTab, type RestoredRevision } from "@/components/global/revisions/revisions-tab";
 import { EditorSkeleton } from "@/components/global/states/editor-skeleton";
@@ -96,6 +97,8 @@ export function SharedSectionEditor({ section, etag, onReseed }: SharedSectionEd
   const [autosave, setAutosave] = useAutosavePreference();
   const [conflictOpen, setConflictOpen] = useState(false);
   const [isReloading, setIsReloading] = useState(false);
+  // The page whose preview link is being made (SS-20: the shared section has none of its own; the page preview shows its working copy).
+  const [previewPage, setPreviewPage] = useState<number | null>(null);
   const [focusRequest, setFocusRequest] = useState<SectionFocusRequest | undefined>();
   const focusToken = useRef(0);
 
@@ -358,7 +361,7 @@ export function SharedSectionEditor({ section, etag, onReseed }: SharedSectionEd
           )}
         </TabsContent>
         <TabsContent value="usage" className="pt-2">
-          <SharedUsages id={id} />
+          <SharedUsages id={id} onPreview={(pageId) => setPreviewPage(pageId)} />
         </TabsContent>
         <TabsContent value="revisions" className="pt-2">
           <RevisionsTab resource="shared-sections" id={id} canRestore={canUpdate && !trashed} etag={etag} onRestored={onRestored} onRefresh={() => onReseed({ refetch: true })} />
@@ -423,6 +426,16 @@ export function SharedSectionEditor({ section, etag, onReseed }: SharedSectionEd
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      {/* The link is frozen when it is made, so the shared section is saved first (the dialog asks the same of a page). */}
+      <PreviewLinkDialog
+        resource="pages"
+        entityId={previewPage ?? 0}
+        open={previewPage !== null}
+        onOpenChange={(open) => !open && setPreviewPage(null)}
+        isDirty={isDirty}
+        flush={canEditContent ? async () => (isDirty ? saveAll() : true) : undefined}
+        isSaving={nameSaving || editorState.saving}
+      />
       <ConflictDialog open={conflictOpen} onOpenChange={setConflictOpen} onReload={reload} isReloading={isReloading} />
     </div>
   );

@@ -21,6 +21,7 @@ const VW = await session(b, { user: viewerU.username, pass: viewerU.password });
 t.page = S.page;
 const page = S.page;
 const NAME = `E2E shared ${TAG}`;
+const NAME2 = `E2E shared renamed ${TAG}`; // the name after the rename step
 const TITLE_V1 = `E2E_SHARED_V1_${TAG}`;
 const TITLE_V2 = `E2E_SHARED_V2_${TAG}`;
 const toast = (pg, re) => pg.locator('[data-sonner-toast]').filter({ hasText: re }).first().waitFor({ timeout: 10000 });
@@ -41,7 +42,7 @@ async function newPage(label) {
   eq(s.status, 200, 'seo ' + label);
   return id;
 }
-const sectionOf = async (pageId, sharedId) => (await api(root, 'GET', `/pages/${pageId}/sections`)).body.data.find((s) => s.shared_section_id === sharedId);
+const sectionOf = async (pageId, sharedId) => (await api(root, 'GET', `/pages/${pageId}/sections?include=props`)).body.data.find((s) => s.shared_section_id === sharedId);
 const addShared = async (pg, pageId) => {
   await open(pg, `/admin/pages/${pageId}`);
   await pg.getByRole('button', { name: 'Add section' }).click();
@@ -88,11 +89,12 @@ await t.step('fill the section through the same schema form as SCR-21 and Save s
 });
 
 await t.step('rename inline (PATCH name) and the History tab lists cms.shared_section rows with the numeric id', async () => {
-  await page.getByLabel('Name').fill(NAME + ' ');
+  // padded with spaces: the editor trims it, the server stores the trimmed name
+  await page.getByLabel('Name').fill(`  ${NAME2}  `);
   const w = page.waitForResponse((r) => r.url().endsWith(`/shared-sections/${sid}`) && r.request().method() === 'PATCH');
   await page.getByRole('button', { name: 'Rename' }).click();
   eq((await w).status(), 200, 'rename');
-  eq((await api(root, 'GET', `/shared-sections/${sid}`)).body.data.name, NAME, 'trimmed on the server');
+  eq((await api(root, 'GET', `/shared-sections/${sid}`)).body.data.name, NAME2, 'trimmed on the server');
   await page.getByRole('tab', { name: 'Activity' }).click();
   await page.getByText(/cms\.shared_section\./).first().waitFor({ timeout: 10000 });
   await page.getByRole('tab', { name: 'Content' }).click();
@@ -185,6 +187,21 @@ await t.step('edit the source and publish it: the confirmation lists the 2 live 
   await page.keyboard.press('Escape');
 });
 
+await t.step('preview (SS-16 / SS-20): the shared section has no link of its own; the Usage tab makes the ordinary page preview link per page and the page snapshot carries the working copy', async () => {
+  await gotoShared();
+  eq(await page.getByRole('button', { name: /^Preview$/ }).count(), 0, 'no Preview button on the shared section');
+  await page.getByRole('tab', { name: 'Usage' }).click();
+  await page.getByTestId(`preview-in-page-${pA}`).waitFor({ timeout: 10000 });
+  await page.getByTestId(`preview-in-page-${pA}`).click();
+  const d = page.getByRole('dialog', { name: 'Preview link' });
+  ok(/not counted as newer/.test(await d.getByTestId('preview-frozen-shared').innerText()), 'the dialog says shared edits after the link are not counted');
+  const w = page.waitForResponse((r) => r.url().endsWith(`/pages/${pA}/preview-links`) && r.request().method() === 'POST');
+  await d.getByRole('button', { name: /^Create/ }).click();
+  const res = await w; eq(res.status(), 201, 'preview link of the page');
+  ok([404, 405].includes((await api(root, 'POST', `/shared-sections/${sid}/preview-links`, { locale: 'la' })).status), 'no preview-links route for a shared section (SS-20)');
+  await page.keyboard.press('Escape');
+});
+
 await t.step('unpublish: the confirmation lists the 2 live pages that lose the section and can always be confirmed; the answer warns shared_section_referenced; the next page publish is blocked', async () => {
   await gotoShared();
   await page.getByRole('button', { name: /^Unpublish$/ }).click();
@@ -223,7 +240,7 @@ await t.step('delete is disabled with the reason while pages use it; the API ans
   const row = r.body.details.references.find((x) => x.id === pA);
   ok(row && row.entity_type === 'cms.page' && row.section_id === secA.id && ['section_ref', 'draft_section_ref'].includes(row.kind) && 'in_draft' in row && 'page_status' in row && 'page_trashed' in row && 'is_visible' in row, 'row shape: ' + JSON.stringify(r.body.details.references[0]));
   eq((await api(root, 'GET', `/shared-sections/${sid}`)).body.data.deleted_at, null, 'nothing was deleted');
-  const list = (await api(root, 'GET', `/shared-sections?in_use=true&keyword=${encodeURIComponent(NAME)}`)).body.data;
+  const list = (await api(root, 'GET', `/shared-sections?in_use=true&keyword=${encodeURIComponent(NAME2)}`)).body.data;
   ok(list.some((x) => x.id === sid && x.used_in_pages === 2), 'list counts used_in_pages = 2: ' + JSON.stringify(list.map((x) => [x.id, x.used_in_pages])));
 });
 
@@ -290,7 +307,7 @@ await t.step('after both pages are published (their rows no longer name it) the 
   eq((await w).status(), 200, 'delete'); await page.waitForURL(/\/admin\/sections$/);
   ok((await api(root, 'GET', `/shared-sections/${sid}`)).body.data.deleted_at, 'in the trash');
   await open(page, '/admin/sections?trashed=true');
-  await page.getByRole('button', { name: new RegExp('^Restore ' + NAME) }).click();
+  await page.getByRole('button', { name: new RegExp('^Restore ' + NAME2) }).click();
   await toast(page, /restored as a draft/);
   eq((await api(root, 'GET', `/shared-sections/${sid}`)).body.data.status, 'draft', 'back as a draft');
 });
@@ -305,10 +322,10 @@ await t.step('editor: create / delete through the API and New shared section in 
   const placed = await api(root, 'POST', `/pages/${pB}/sections`, { shared_section_id: sid }, { 'if-match': await etagOf(`/pages/${pB}`) });
   eq(placed.status, 201, 'place again for the reader view');
   await open(VW.page, '/admin/sections');
-  await VW.page.getByRole('link', { name: NAME }).waitFor();
+  await VW.page.getByRole('link', { name: NAME2 }).waitFor();
   eq(await VW.page.getByRole('button', { name: 'New shared section' }).count(), 0, 'viewer: no New');
   eq(await VW.page.getByLabel('Trash').count(), 0, 'viewer: no trash switch');
-  await VW.page.getByRole('link', { name: NAME }).click();
+  await VW.page.getByRole('link', { name: NAME2 }).click();
   await VW.page.getByTestId('shared-type-line').waitFor();
   eq(await VW.page.getByRole('button', { name: 'Rename' }).count(), 0, 'viewer: no Rename');
   eq(await VW.page.getByTestId('delete-button').count(), 0, 'viewer: no Delete');

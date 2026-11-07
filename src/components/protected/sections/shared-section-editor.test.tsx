@@ -49,7 +49,7 @@ describe("SharedSectionEditor (SCR-22)", () => {
     expect(screen.getByTestId("shared-used-line")).toHaveTextContent("Used in 1 page");
     expect(screen.getByTestId("publish-bar")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Preview" })).not.toBeInTheDocument();
-    expect(screen.getByTestId("shared-preview-note")).toHaveTextContent("only what is published");
+    expect(screen.getByTestId("shared-preview-note")).toHaveTextContent("Preview in this page");
     // the form is the section editor of SCR-21 without a "hidden" switch
     expect(await screen.findByTestId("section-editor")).toBeInTheDocument();
     expect(screen.queryByLabelText("Hidden on the website")).not.toBeInTheDocument();
@@ -150,6 +150,28 @@ describe("SharedSectionEditor (SCR-22)", () => {
     await user.click(screen.getByTestId("restore-button"));
     await waitFor(() => expect(shared(4).deleted_at).toBeNull());
     expect(toast.success).toHaveBeenCalledWith('"Old banner" was restored as a draft.');
+  });
+
+  it("Usage: 'Preview in this page' makes the ordinary page preview link (a page in the trash has none); with no page using it the button is disabled and says why", async () => {
+    const user = userEvent.setup();
+    me.current = { ...me.current, permissions: grants({ "cms.sections": ["read", "create", "update", "delete", "publish", "unpublish"], "cms.pages": ["read", "update"], "cms.locales": ["read"] }) };
+    place(8, 1);
+    const trashedPage = db().pages.find((p) => p.id === 7)!;
+    trashedPage.live.sections.push({ ...trashedPage.live.sections[0], id: 900, public_id: "0192d3a4-7c1e-7b52-9d0a-3f5e2a1b5900", section_type: "gallery_cards", shared_section_id: 1, props: {} });
+    const { unmount } = await open();
+    await user.click(screen.getByRole("tab", { name: "Usage" }));
+    expect(await screen.findByTestId("preview-in-page-8")).toBeInTheDocument();
+    expect(screen.queryByTestId("preview-in-page-7")).not.toBeInTheDocument();
+    await user.click(screen.getByTestId("preview-in-page-8"));
+    const dialog = await screen.findByRole("dialog", { name: "Preview link" });
+    expect(within(dialog).getByTestId("preview-frozen-shared")).toHaveTextContent("create a new link to see them");
+    await user.click(within(dialog).getByRole("button", { name: /^Create/ }));
+    await waitFor(() => expect(getMockDb().previewLinks.some((l) => l.page_id === 8)).toBe(true));
+    unmount();
+    await open(2);
+    await user.click(screen.getAllByRole("tab", { name: "Usage" }).at(-1)!);
+    expect(await screen.findByTestId("preview-none")).toHaveTextContent("No page uses this shared section");
+    expect(within(screen.getByTestId("preview-none")).getByRole("button", { name: "Preview in this page" })).toBeDisabled();
   });
 
   it("a reader has no commands, no rename and no Delete; the form is read only", async () => {
