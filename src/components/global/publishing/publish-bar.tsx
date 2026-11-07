@@ -69,11 +69,14 @@ export type PublishBarProps = {
   onGoToField?: (target: PublishIssueTarget) => void;
   // Opens the host's `PreviewLinkDialog` (T1.4.4 UI). Without a handler the button is shown disabled with a tooltip.
   onCreatePreviewLink?: () => void;
+  // What the host knows about the consequences of a command (shared sections: the pages that show it, from `GET .../usages`), shown inside the
+  // publish confirmation / the unpublish confirmation.
+  confirmExtras?: { publish?: ReactNode; unpublish?: ReactNode };
   className?: string;
 };
 
 // Warnings of a success the user should read (not only a toast): the draft kept in the History, links that are hidden.
-const NOTICE_CODES = new Set(["draft_kept_as_history", "page_referenced", "post_referenced", "album_referenced", "faq_group_referenced", "form_referenced", "path_changed_published", "slug_changed_published", "auto_redirect_skipped"]);
+const NOTICE_CODES = new Set(["draft_kept_as_history", "shared_section_referenced", "page_referenced", "post_referenced", "album_referenced", "faq_group_referenced", "form_referenced", "path_changed_published", "slug_changed_published", "auto_redirect_skipped"]);
 
 // The automatic 301 redirects a publish made when a published page changed path / a published post changed slug (doc/05
 // 14.12). Created / updated / cleanup are information (a short toast with a link to the Redirects screen); `skipped` is a
@@ -137,6 +140,7 @@ export function PublishBar({
   onRefresh,
   onGoToField,
   onCreatePreviewLink,
+  confirmExtras,
   className,
 }: PublishBarProps) {
   const t = useTranslations("publishing");
@@ -415,6 +419,7 @@ export function PublishBar({
         noun={noun}
         hasChanges={pending}
         isPending={busy === "publishing"}
+        extra={confirmExtras?.publish}
         onConfirm={doPublish}
       />
       <PublishBlockersDialog
@@ -436,6 +441,7 @@ export function PublishBar({
           <>
             <span>{t("unpublish.description", { noun })}</span>
             {pending ? <span className="mt-2 block">{t("unpublish.withDraft")}</span> : null}
+            {confirmExtras?.unpublish}
           </>
         }
         confirmLabel={t("unpublish.confirm")}

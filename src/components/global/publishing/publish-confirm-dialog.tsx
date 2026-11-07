@@ -1,7 +1,7 @@
 "use client";
 
 import { AlertTriangleIcon, RocketIcon } from "lucide-react";
-import { useId, useState } from "react";
+import { useId, useState, type ReactNode } from "react";
 import { useTranslations } from "next-intl";
 
 import { fieldLabel, issueMessage } from "@/components/global/publishing/publish-blockers-dialog";
@@ -21,6 +21,7 @@ export function PublishConfirmDialog({
   noun,
   hasChanges,
   isPending,
+  extra,
   onConfirm,
 }: {
   open: boolean;
@@ -31,6 +32,8 @@ export function PublishConfirmDialog({
   // A published entity with a pending draft: "publish the changes".
   hasChanges: boolean;
   isPending: boolean;
+  // Something the host knows about the consequences (shared sections: the pages that show it), shown under the description.
+  extra?: ReactNode;
   onConfirm: (changeNote: string | undefined) => void | Promise<void>;
 }) {
   const t = useTranslations("publishing.confirm");
@@ -57,6 +60,8 @@ export function PublishConfirmDialog({
           </DialogTitle>
           <DialogDescription>{hasChanges ? t("descriptionChanges", { noun }) : t("description", { noun })}</DialogDescription>
         </DialogHeader>
+
+        {extra}
 
         {languages.length > 0 ? (
           <section aria-label={t("languages")} className="space-y-1.5 rounded-md border border-amber-500/50 bg-amber-50 p-3 text-sm text-amber-950 dark:bg-amber-950/40 dark:text-amber-100">

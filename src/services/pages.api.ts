@@ -104,4 +104,8 @@ export const PageSectionsAPI = {
     ),
   Delete: async (pageId: number | string, id: number | string, etag: string | undefined) =>
     withEtag(await axiosInstance.delete<ApiResponse<SectionOrderResult>>(API_ENDPOINTS.PAGES.SECTION(pageId, id), { headers: ifMatchHeaders(etag, { required: true }) })),
+  // 05 18.10 (SS-5): `If-Match` = the PAGE's ETag. The shared section's working copy becomes the section's own props; a section that references
+  // nothing answers 200 with the same ETag. `shared_draft_copied` is a warning of the answer.
+  Detach: async (pageId: number | string, id: number | string, etag: string | undefined) =>
+    withEtag(await axiosInstance.post<ApiResponse<SectionWriteResult>>(API_ENDPOINTS.PAGES.SECTION_DETACH(pageId, id), undefined, { headers: ifMatchHeaders(etag, { required: true }) })),
 };

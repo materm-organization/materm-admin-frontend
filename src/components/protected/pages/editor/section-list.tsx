@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertTriangleIcon, CheckIcon, EyeIcon, EyeOffIcon, MoreHorizontalIcon, PlusIcon, Trash2Icon } from "lucide-react";
+import { AlertTriangleIcon, CheckIcon, EyeIcon, EyeOffIcon, Link2Icon, MoreHorizontalIcon, PlusIcon, Trash2Icon, UnlinkIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -36,6 +36,8 @@ export type SectionListProps = {
   onAdd: (position: number) => void;
   onToggleVisible: (section: SectionSummary) => void | Promise<void>;
   onDelete: (section: SectionSummary) => void;
+  // `⋯ -> Detach to a copy` of a section that references a shared section (05 18.10); needs `cms.sections:update`.
+  onDetach?: (section: SectionSummary) => void;
   // Sends the whole new order (`PUT .../sections/order`, right after the drop: 07 SCR-20). Rejects when refused.
   onReorder: (ids: number[]) => Promise<unknown>;
 };
@@ -59,6 +61,7 @@ export function SectionList({
   onAdd,
   onToggleVisible,
   onDelete,
+  onDetach,
   onReorder,
 }: SectionListProps) {
   const t = useTranslations("pages.editor.sections");
@@ -144,8 +147,11 @@ export function SectionList({
             const section = byId.get(Number(id));
             if (!section) return null;
             const selected = section.id === selectedId;
-            const excerpt = sectionExcerpt(section.props, locale, defaultLocale);
-            const missing = locales.filter((l) => (section.translation_status[l.code]?.missing ?? 0) > 0);
+            // A reference to a shared section (05 18.9.3) has no props or translations of its own: its name stands in for the excerpt and the
+            // language badges are left out (completeness lives with the shared section).
+            const shared = section.shared_section ?? null;
+            const excerpt = shared ? shared.name : sectionExcerpt(section.props, locale, defaultLocale);
+            const missing = shared ? [] : locales.filter((l) => (section.translation_status[l.code]?.missing ?? 0) > 0);
             const issues = issueCounts[section.id] ?? 0;
             const name = typeName(section);
             return (
@@ -186,7 +192,24 @@ export function SectionList({
                           {t("required")}
                         </Badge>
                       ) : null}
-                      {missing.length === 0 ? (
+                      {shared ? (
+                        <Badge variant="outline" className="gap-1 text-[10px]" data-testid="shared-badge">
+                          <Link2Icon className="size-3" aria-hidden />
+                          {t("shared.badge")}
+                        </Badge>
+                      ) : null}
+                      {shared && shared.deleted_at ? (
+                        <Badge variant="destructive" className="gap-1 text-[10px]" data-testid="shared-state-badge">
+                          <AlertTriangleIcon className="size-3" aria-hidden />
+                          {t("shared.trashed")}
+                        </Badge>
+                      ) : shared && !shared.live ? (
+                        <Badge variant="secondary" className="gap-1 text-[10px] text-amber-800 dark:text-amber-200" data-testid="shared-state-badge" title={t("shared.notLiveHint")}>
+                          <AlertTriangleIcon className="size-3" aria-hidden />
+                          {t("shared.notLive")}
+                        </Badge>
+                      ) : null}
+                      {shared ? null : missing.length === 0 ? (
                         <span className="inline-flex items-center gap-0.5 text-[11px] text-emerald-700 dark:text-emerald-300" title={t("complete")}>
                           <CheckIcon className="size-3" aria-hidden />
                           <span className="sr-only">{t("complete")}</span>
@@ -226,7 +249,7 @@ export function SectionList({
                       {section.is_visible ? <EyeIcon /> : <EyeOffIcon />}
                     </Button>
                   ) : null}
-                  {!readOnly && (canCreate || canDelete) ? (
+                  {!readOnly && (canCreate || canDelete || (canUpdate && shared && onDetach)) ? (
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button type="button" variant="ghost" size="icon" className="size-7 shrink-0" aria-label={t("menu", { name })}>
@@ -240,9 +263,15 @@ export function SectionList({
                             <DropdownMenuItem onSelect={() => onAdd(index + 1)}>{t("insertBelow")}</DropdownMenuItem>
                           </>
                         ) : null}
+                        {shared && canUpdate && onDetach ? (
+                          <DropdownMenuItem onSelect={() => onDetach(section)}>
+                            <UnlinkIcon />
+                            {t("shared.detach")}
+                          </DropdownMenuItem>
+                        ) : null}
                         {canDelete && !section.required ? (
                           <>
-                            {canCreate ? <DropdownMenuSeparator /> : null}
+                            {canCreate || (shared && canUpdate) ? <DropdownMenuSeparator /> : null}
                             <DropdownMenuItem variant="destructive" onSelect={() => onDelete(section)}>
                               <Trash2Icon />
                               {t("delete")}

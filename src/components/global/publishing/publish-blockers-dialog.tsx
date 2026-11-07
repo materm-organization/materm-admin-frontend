@@ -2,11 +2,14 @@
 
 import { AlertTriangleIcon, ArrowRightIcon, BanIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
+import Link from "next/link";
 import { useMemo } from "react";
 
 import { fieldSegments, issueTarget } from "@/components/global/publishing/issue-target";
 import { humanizeSegment } from "@/components/global/revisions/snapshot-diff";
 import { Button } from "@/components/ui/button";
+import { useCan } from "@/hooks/use-permission";
+import { PERMISSION_ACTIONS, PERMISSION_KEYS } from "@/lib/constants/permissions";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import type { PublishableResource } from "@/lib/publishable-resources";
 import { cn } from "@/lib/utils";
@@ -30,7 +33,9 @@ export function issueMessage(t: Translator, issue: PublishIssue): string {
   const sectionKey = typeof issue.params?.section_key === "string" ? issue.params.section_key : "";
   const section = sectionKey ? (t.has(`sectionTypes.${sectionKey}`) ? t(`sectionTypes.${sectionKey}`) : humanizeSegment(sectionKey)) : "";
   // A slug that is taken says "slug", not "address" (posts: `/translations/<l>/slug`).
-  const keys = [rule ? `issues.${issue.code}_${rule}` : "", issue.path.endsWith("/slug") ? `issues.${issue.code}_slug` : "", `issues.${issue.code}`].filter(Boolean);
+  // A blocker about a shared section (`reference_not_published` / `unknown_reference` with `ref_type: cms_shared_sections`, 05 18.11.2) has its own words.
+  const shared = issue.params?.ref_type === "cms_shared_sections";
+  const keys = [shared ? `issues.${issue.code}_shared` : "", rule ? `issues.${issue.code}_${rule}` : "", issue.path.endsWith("/slug") ? `issues.${issue.code}_slug` : "", `issues.${issue.code}`].filter(Boolean);
   for (const key of keys) {
     if (t.has(key)) {
       try {
@@ -108,6 +113,7 @@ export function PublishBlockersDialog({
   const tp = useTranslations("publishing");
   const groups = useMemo(() => groupIssues(tp, blockers, resource), [tp, blockers, resource]);
   const count = blockerCount ?? blockers.length;
+  const canOpenShared = useCan(PERMISSION_KEYS.CMS_SECTIONS, PERMISSION_ACTIONS.READ);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -137,6 +143,14 @@ export function PublishBlockersDialog({
                         </p>
                         <p className="text-muted-foreground">{issueMessage(tp, issue)}</p>
                       </div>
+                      <div className="flex flex-wrap items-center gap-2">
+                      {issue.params?.ref_type === "cms_shared_sections" && typeof issue.params.ref_id === "number" && canOpenShared ? (
+                        <Button asChild variant="outline" size="sm">
+                          <Link href={`/admin/sections/${issue.params.ref_id}`} target="_blank" rel="noopener" data-testid="open-shared-link">
+                            {t("openShared")}
+                          </Link>
+                        </Button>
+                      ) : null}
                       {onGoToField ? (
                         <Button
                           type="button"
@@ -152,6 +166,7 @@ export function PublishBlockersDialog({
                           <ArrowRightIcon className="rtl:rotate-180" aria-hidden />
                         </Button>
                       ) : null}
+                      </div>
                     </li>
                   );
                 })}

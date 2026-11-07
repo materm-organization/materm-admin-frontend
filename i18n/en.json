@@ -2879,7 +2879,8 @@
       "warningsTitle": "Also good to know (these do not block)",
       "goToField": "Go to field",
       "goToFieldFor": "Go to field: {field}",
-      "close": "Close"
+      "close": "Close",
+      "openShared": "Open shared section"
     },
     "groups": {
       "form": "Form",
@@ -2952,7 +2953,8 @@
       "answer": "Answer",
       "layout_hint": "Layout hint",
       "caption_title": "Caption title",
-      "caption_description": "Caption text"
+      "caption_description": "Caption text",
+      "shared_section_id": "Shared section"
     },
     "issues": {
       "recipients_required": "Add at least one active To recipient who gets every topic (Recipients tab).",
@@ -2994,7 +2996,10 @@
       "label_long": "The label is longer than {recommended} characters; the blog strip may cut it.",
       "limit_exceeded": "There are too many.",
       "album_empty": "The album has no pictures. The gallery would be empty.",
-      "faq_group_empty": "The group has no visible question. The FAQ section would be empty."
+      "faq_group_empty": "The group has no visible question. The FAQ section would be empty.",
+      "reference_not_published_shared": "The shared section is not published yet. Publish it, hide this section or detach it.",
+      "unknown_reference_shared": "The shared section no longer exists or is in the trash. Detach or delete this section.",
+      "template_violation_shared_in_required_slot": "A shared section cannot fill a section that the page template requires."
     },
     "sectionTypes": {
       "hero_brand": "Hero (brand)",
@@ -3084,6 +3089,10 @@
           "internal_error": "The server could not create it. Old links to {source_path} may not work. Open Redirects and add a redirect from {source_path} to {target} yourself.",
           "other": "The redirect was not created. Old links to {source_path} may not work. Open Redirects and add a redirect from {source_path} to {target} yourself."
         }
+      },
+      "shared_section_referenced": {
+        "title": "Pages that show this section lost it",
+        "body": "{live_pages_total, plural, one {# live page no longer shows} other {# live pages no longer show}} this section. {pages_blocked_on_publish, plural, one {# page cannot} other {# pages cannot}} be published until you publish it again, or hide, delete or detach the section there."
       }
     },
     "toast": {
@@ -3394,7 +3403,8 @@
           "hero_first": "The hero section has to stay at the top.",
           "after_hero": "This section has to come after the hero.",
           "max_per_page": "The page has too many sections of this kind.",
-          "section_not_allowed": "This kind of section is not allowed in this template."
+          "section_not_allowed": "This kind of section is not allowed in this template.",
+          "shared_in_required_slot": "A shared section cannot fill a section that the page template requires."
         },
         "open": "Open section {index}: {name}",
         "unsaved": "Unsaved edits",
@@ -3423,7 +3433,26 @@
         "deleteDescription": "It disappears from the page. You can get it back from the History tab.",
         "deleteConfirm": "Delete section",
         "switchDescription": "This section has edits that are not saved. Save them before opening another section, or discard them.",
-        "saveAndOpen": "Save and open"
+        "saveAndOpen": "Save and open",
+        "shared": {
+          "badge": "Shared",
+          "trashed": "In the trash",
+          "notLive": "Not published",
+          "notLiveHint": "Publishing the page is blocked while this section is shown and its shared section is not published.",
+          "detach": "Detach to a page-only copy"
+        },
+        "deleteSharedDescription": "Only this reference is removed from the page. The shared section itself is not deleted and stays on other pages.",
+        "detachTitle": "Detach from the shared section?",
+        "detachDescription": "The current content of the shared section, including its unpublished draft, is copied into this page. Later changes to the shared section will no longer reach this page.",
+        "detachConfirm": "Detach",
+        "detached": "The section is now a copy that belongs to this page only.",
+        "detachedDraft": "The unpublished draft of the shared section was copied. On the website it changes when you publish this page.",
+        "detachFailed": "The section could not be detached.",
+        "sharedNotLiveToast": "This shared section is not published yet. Publishing the page is blocked until it is.",
+        "sharedRefused": {
+          "unknown_reference": "That shared section no longer exists or is in the trash.",
+          "other": "That shared section cannot be placed on this page."
+        }
       },
       "picker": {
         "title": "Add a section",
@@ -3431,7 +3460,18 @@
         "list": "Kinds of section",
         "max": "Already on the page (at most {max}).",
         "requiredByTemplate": "Needed by this page template.",
-        "positionNote": "A hero section always goes to the top, and sections that follow the hero go below it."
+        "positionNote": "A hero section always goes to the top, and sections that follow the hero go below it.",
+        "tabs": {
+          "types": "New section",
+          "shared": "Shared"
+        },
+        "shared": {
+          "search": "Search shared sections by name",
+          "noMatch": "No shared section matches.",
+          "empty": "There is no shared section that fits this page yet.",
+          "list": "Shared sections",
+          "notPublished": "Not published yet: publishing the page is blocked until it is."
+        }
       },
       "section": {
         "saveRefused": "{count, plural, one {# value was not accepted} other {# values were not accepted}}. They are marked in the form.",
@@ -3514,6 +3554,25 @@
         "canonicalHint": "Only when search engines should treat another address as the main one. Starts with /.",
         "serp": "Search result preview ({locale})",
         "serpNoDescription": "No description yet."
+      },
+      "sharedPanel": {
+        "badge": "Shared",
+        "note": "This content is shared. Edit it at the source and the change reaches every page that uses it.",
+        "trashed": {
+          "title": "The shared section is in the trash",
+          "body": "Restore it, or detach this section. Publishing the page fails while this section is shown."
+        },
+        "notLive": {
+          "title": "The shared section is not published",
+          "visible": "Publishing this page is blocked until the shared section is published, or this section is hidden or detached.",
+          "hidden": "This section is hidden, so it does not block publishing. It shows nothing until the shared section is published."
+        },
+        "editSource": "Edit source",
+        "detach": "Detach to a copy",
+        "hiddenSwitch": "Hidden on the website",
+        "toggleFailed": "The section could not be changed.",
+        "noRead": "You may not read shared sections, so their content is not shown here.",
+        "readOnly": "Read only: the content of the shared section as it is being edited (drafts included)."
       }
     }
   },

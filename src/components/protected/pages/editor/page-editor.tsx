@@ -47,6 +47,7 @@ import { buildPatch, draftFromPage, fieldsEqual, pagePointerFieldId, pagePointer
 import { PageDetailsTab, PageSeoTab, type PageFieldsFormProps } from "./page-fields-form";
 import { SectionEditor, type SectionEditorHandle, type SectionEditorState, type SectionFocusRequest } from "./section-editor";
 import { SectionList } from "./section-list";
+import { SharedReferencePanel } from "./shared-reference-panel";
 import { SectionTypePicker } from "./section-type-picker";
 
 const TABS = ["content", "details", "seo", "revisions"] as const;
@@ -66,7 +67,7 @@ function focusWhenPresent(id: string, tries = 20) {
   requestAnimationFrame(() => attempt(tries));
 }
 
-const STRUCTURE_RULES = new Set(["hero_first", "after_hero", "max_per_page", "section_not_allowed"]);
+const STRUCTURE_RULES = new Set(["hero_first", "after_hero", "max_per_page", "section_not_allowed", "shared_in_required_slot"]);
 
 export type PageEditorProps = {
   page: PageDetail;
@@ -270,6 +271,7 @@ export function PageEditor({ page, etag, onReseed }: PageEditorProps) {
   // ---- add / hide / delete / reorder ---------------------------------------------------------------------------------------
   const [picker, setPicker] = useState<{ position: number } | null>(null);
   const [deleting, setDeleting] = useState<SectionSummary | null>(null);
+  const [detaching, setDetaching] = useState<SectionSummary | null>(null);
 
   // A refused structure change (422 `template_violation`) is said in words; the rest goes through the common handler.
   const explain = (error: unknown, fallback: string) => {
@@ -292,6 +294,12 @@ export function PageEditor({ page, etag, onReseed }: PageEditorProps) {
       toast.error(t("sections.trashed"));
       return;
     }
+    // Placing a shared section that is gone / of the wrong kind (05 18.9.1): said in words.
+    const sharedProblem = parsed.fieldErrors.find((e) => e.path === "/shared_section_id" && e.code !== "template_violation");
+    if (parsed.status === 422 && sharedProblem) {
+      toast.error(t(`sections.sharedRefused.${sharedProblem.code === "unknown_reference" ? "unknown_reference" : "other"}`));
+      return;
+    }
     if (parsed.status === 422 && parsed.fieldErrors[0]?.code === "limit_exceeded") {
       toast.error(t("sections.limit", { max: Number(parsed.fieldErrors[0].params?.max ?? 60) }));
       return;
@@ -308,6 +316,38 @@ export function PageEditor({ page, etag, onReseed }: PageEditorProps) {
     } catch (error) {
       explain(error, t("sections.addFailed"));
       throw error;
+    }
+  };
+
+  // The "Shared" tab of the picker (05 18.9.1): a reference to a shared section, no type, no props, no variant. A shared section that is not
+  // published yet can be placed; the answer's warning says the page publish is blocked until it is.
+  const addSharedSection = async (sharedId: number, _typeKey: string, position: number, key: string) => {
+    void _typeKey;
+    try {
+      const result = await writes.createSection({ shared_section_id: sharedId, position }, key);
+      toast.success(t("sections.added"));
+      if (result.warnings.some((w) => w.code === "shared_section_not_live")) toast.warning(t("sections.sharedNotLiveToast"));
+      setParams({ tab: null, section: sectionState.dirty ? search.get("section") : String(result.section.id) });
+      return result;
+    } catch (error) {
+      explain(error, t("sections.addFailed"));
+      throw error;
+    }
+  };
+
+  // Detach (05 18.10, SS-5): the shared section's working copy (a draft too) becomes the section's own; the editor on the right is then the
+  // ordinary one (its key changes with the reference). Warning `shared_draft_copied` is said once.
+  const detachSection = async () => {
+    const target = detaching;
+    if (!target) return;
+    try {
+      const result = await writes.detachSection(target.id);
+      toast.success(t("sections.detached"));
+      if (result.warnings.some((w) => w.code === "shared_draft_copied")) toast.info(t("sections.detachedDraft"));
+    } catch (error) {
+      explain(error, t("sections.detachFailed"));
+    } finally {
+      setDetaching(null);
     }
   };
 
@@ -378,7 +418,8 @@ export function PageEditor({ page, etag, onReseed }: PageEditorProps) {
       setHandledField(fieldParam);
       if (found && inProps) setFocusRequest({ token: focusToken.current, errors: [{ in: "body", path: `/props${inProps[1] ?? ""}`, code: search.get("fieldCode") ?? "required" }] });
       setParams({ ...clear, tab: null, section: found ? String(found.id) : search.get("section") });
-      if (!found || !inProps) focusWhenPresent("add-section-button");
+      if (found && rest === "/shared_section_id") focusWhenPresent("shared-reference-panel");
+      else if (!found || !inProps) focusWhenPresent("add-section-button");
       return;
     }
     setHandledField(fieldParam);
@@ -504,6 +545,7 @@ export function PageEditor({ page, etag, onReseed }: PageEditorProps) {
                   onAdd={(position) => setPicker({ position })}
                   onToggleVisible={toggleVisible}
                   onDelete={setDeleting}
+                  onDetach={setDetaching}
                   onReorder={reorder}
                 />
               </div>
@@ -514,8 +556,23 @@ export function PageEditor({ page, etag, onReseed }: PageEditorProps) {
                       <ArrowLeftIcon className="rtl:rotate-180" />
                       {t("sections.back")}
                     </Button>
+                    {selected.shared_section_id !== null && selected.shared_section_id !== undefined ? (
+                    <SharedReferencePanel
+                      key={`${selected.id}:shared`}
+                      section={selected}
+                      writes={writes}
+                      locales={locales}
+                      locale={locale}
+                      onLocaleChange={(code) => setParams({ locale: code })}
+                      canUpdate={canSecUpdate}
+                      canReadShared={canSecRead}
+                      readOnly={trashed}
+                      onDetach={setDetaching}
+                      onConflict={onConflict}
+                    />
+                    ) : (
                     <SectionEditor
-                      key={selected.id}
+                      key={`${selected.id}:own`}
                       ref={sectionRef}
                       section={selected}
                       writes={writes}
@@ -531,6 +588,7 @@ export function PageEditor({ page, etag, onReseed }: PageEditorProps) {
                       onIssueCount={onIssueCount}
                       onConflict={onConflict}
                     />
+                    )}
                   </div>
                 ) : (
                   <div className="flex min-h-48 flex-col items-center justify-center gap-2 rounded-md border border-dashed p-6 text-center text-sm text-muted-foreground">
@@ -561,16 +619,27 @@ export function PageEditor({ page, etag, onReseed }: PageEditorProps) {
         sections={sections}
         position={picker?.position ?? 0}
         onPick={addSection}
+        pageId={canSecRead ? pageId : undefined}
+        onPickShared={canSecRead ? addSharedSection : undefined}
       />
 
       <ConfirmDialog
         open={deleting !== null}
         onOpenChange={(open) => !open && setDeleting(null)}
         title={t("sections.deleteTitle")}
-        description={t("sections.deleteDescription")}
+        description={deleting?.shared_section_id != null ? t("sections.deleteSharedDescription") : t("sections.deleteDescription")}
         confirmLabel={t("sections.deleteConfirm")}
         destructive
         onConfirm={deleteSection}
+      />
+
+      <ConfirmDialog
+        open={detaching !== null}
+        onOpenChange={(open) => !open && setDetaching(null)}
+        title={t("sections.detachTitle")}
+        description={t("sections.detachDescription")}
+        confirmLabel={t("sections.detachConfirm")}
+        onConfirm={detachSection}
       />
 
       <ConflictDialog open={conflictOpen} onOpenChange={setConflictOpen} onReload={reload} isReloading={isReloading} />

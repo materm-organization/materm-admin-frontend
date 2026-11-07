@@ -5,6 +5,7 @@ import { API_ENDPOINTS } from "@/lib/constants/api-endpoints";
 import type { WithEtag } from "@/lib/etag";
 import { revisionsQueryKey } from "@/lib/revision-resources";
 import { pageQueryKey, writeThroughPage } from "@/hooks/use-pages";
+import { SHARED_ROOT } from "@/hooks/use-shared-sections";
 import { PageSectionsAPI, PagesAPI } from "@/services/pages.api";
 import type { ApiResponse } from "@/types/api";
 import type {
@@ -86,6 +87,8 @@ export function applySectionWrite(queryClient: QueryClient, pageId: number | str
   // The page list shows the pending-changes flag and the section count; the History has a checkpoint now.
   void queryClient.invalidateQueries({ queryKey: [API_ENDPOINTS.PAGES.LIST] });
   void queryClient.invalidateQueries({ queryKey: revisionsQueryKey("pages", pageId) });
+  // A section that references (or stopped referencing) a shared section changes its "used in N pages" and its usages (05 18.7).
+  void queryClient.invalidateQueries({ queryKey: [SHARED_ROOT] });
 }
 
 // The writes of the page editor. They run ONE AT A TIME (a chain of promises) and each reads the page's ETag when its
@@ -116,6 +119,14 @@ export function usePageWrites(pageId: number) {
       updateSection: (sectionId: number, payload: UpdateSectionPayload) =>
         run(async (etag) => {
           const response = await PageSectionsAPI.Update(pageId, sectionId, payload, etag);
+          const result = response.data.data;
+          applySectionWrite(queryClient, pageId, { etag: response.etag, aggregate: result.aggregate, order: result.sections, section: result.section });
+          return result;
+        }),
+      // Page-side detach: the answer is a section write (the page's new ETag + aggregate), plus the warnings the caller shows.
+      detachSection: (sectionId: number) =>
+        run(async (etag) => {
+          const response = await PageSectionsAPI.Detach(pageId, sectionId, etag);
           const result = response.data.data;
           applySectionWrite(queryClient, pageId, { etag: response.etag, aggregate: result.aggregate, order: result.sections, section: result.section });
           return result;
