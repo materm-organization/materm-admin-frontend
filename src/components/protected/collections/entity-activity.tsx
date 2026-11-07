@@ -8,9 +8,9 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useEntityAuditLogs } from "@/hooks/use-audit";
 import { isNoPermissionError } from "@/lib/api-error";
 
-// The History tab of a collection (`cms.collection`) or of one entry (`cms.collection_entry`): `GET /audit-logs?entity_type=&entity_id=` with the
+// The History tab of a collection (`cms.collection`), of one entry (`cms.collection_entry`) or of a shared section (`cms.shared_section`, 05 18.14, `cms.sections:read`): `GET /audit-logs?entity_type=&entity_id=` with the
 // NUMERIC id (05 17.10), readable with `cms.collections:read` alone. Server text is shown as plain text.
-export function EntityActivity({ entityType, entityId }: { entityType: "cms.collection" | "cms.collection_entry"; entityId: number }) {
+export function EntityActivity({ entityType, entityId }: { entityType: "cms.collection" | "cms.collection_entry" | "cms.shared_section"; entityId: number }) {
   const t = useTranslations("collections.activity");
   const format = useFormatter();
   const { data, isLoading, error, refetch, isFetching } = useEntityAuditLogs({ entity_type: entityType, entity_id: entityId, limit: 20 });

@@ -27,6 +27,8 @@ import {
   type MockAlbum,
   type MockCollectionEntry,
   type MockEntrySnapshot,
+  type MockSharedSection,
+  type MockSharedSnapshot,
   type MockAlbumSnapshot,
   type MockDb,
   type MockFaqGroup,
@@ -40,9 +42,9 @@ import type { SaveLiveWarning } from "@/types/media";
 import type { AggregateStamp, PublishIssue } from "@/types/publishing";
 import type { RevisionSummary } from "@/types/revisions";
 
-export type Kind = "albums" | "faq-groups" | "collection-entries";
-export type Root = MockAlbum | MockFaqGroup | MockCollectionEntry;
-export type Snap = MockAlbumSnapshot | MockFaqSnapshot | MockEntrySnapshot;
+export type Kind = "albums" | "faq-groups" | "collection-entries" | "shared-sections";
+export type Root = MockAlbum | MockFaqGroup | MockCollectionEntry | MockSharedSection;
+export type Snap = MockAlbumSnapshot | MockFaqSnapshot | MockEntrySnapshot | MockSharedSnapshot;
 
 export const TRASH_DAYS = 30;
 const MAX_ISSUES = 100;
@@ -85,8 +87,10 @@ export function findReferences(db: MockDb, key: "album_id" | "album_item_id" | "
   return out;
 }
 
-export const entityReferenced = (references: Reference[]) =>
-  fail(409, "ENTITY_REFERENCED", "The record is still used.", { details: { references: references.slice(0, 50), total_references: references.length } });
+export const entityReferenced = (references: Array<Reference | Record<string, unknown>>, reason?: string) =>
+  fail(409, "ENTITY_REFERENCED", "The record is still used.", {
+    details: { ...(reason ? { reason } : {}), total_references: references.length, truncated: references.length > 50, references: references.slice(0, 50) },
+  });
 
 export type Adapter<R extends Root, V extends object> = {
   kind: Kind;
@@ -109,10 +113,16 @@ export type Adapter<R extends Root, V extends object> = {
   restoreConflicts?: (db: MockDb, root: R) => ApiFieldError[];
   // Rights beyond "translator": the action is refused when this returns false (the collections `viewer` role).
   allowed?: (db: MockDb, action: string) => boolean;
+  // Shared sections (05 18.6): `ENTITY_REFERENCED` of a delete carries this `details.reason`.
+  referencedReason?: string;
+  // Shared sections (SS-4): an unpublish NEVER fails because of who references it and takes no `confirm_references`; instead it answers
+  // these warnings (the engine adds `draft_kept_as_history` itself).
+  unpublishWarnings?: (db: MockDb, root: R) => SaveLiveWarning[];
 };
 
 export function makeEngine<R extends Root, V extends object>(a: Adapter<R, V>) {
-  const translator = (db: MockDb) => db.translateOnly.includes(a.kind) || (a.kind === "collection-entries" && db.collectionRole === "viewer");
+  const translator = (db: MockDb) =>
+    db.translateOnly.includes(a.kind) || (a.kind === "collection-entries" && db.collectionRole === "viewer") || (a.kind === "shared-sections" && db.sharedSectionRole === "viewer");
   const deny = (action: string, method: string, path = a.path) => forbidden(`${a.permission}:${action} ${method} ${path}`);
 
   const revList = (db: MockDb, root: R) => (db.revisions[keyOf(a.kind, root.id)] ??= []);
@@ -191,7 +201,7 @@ export function makeEngine<R extends Root, V extends object>(a: Adapter<R, V>) {
     if (isTrashed(root)) return { data: null, etag: etagOfRoot(root) };
     // Always refused while anybody names it: nothing confirms it (BR-19).
     const refs = a.references(db, root);
-    if (refs.length > 0) throw entityReferenced(refs);
+    if (refs.length > 0) throw entityReferenced(refs, a.referencedReason);
     const warnings: SaveLiveWarning[] = [];
     const stamp = touch(db, root);
     if (root.status === "published") {
@@ -268,16 +278,16 @@ export function makeEngine<R extends Root, V extends object>(a: Adapter<R, V>) {
   }
 
   function unpublish(db: MockDb, id: string, params: Params, ifMatch: string | null) {
-    rejectUnknown(params, ["confirm_references"]);
+    rejectUnknown(params, a.unpublishWarnings ? [] : ["confirm_references"]);
     const confirm = boolParam(params, "confirm_references") ?? false;
     const root = find(db, id);
     if (translator(db)) throw deny("unpublish", "POST", `${a.path}/unpublish`);
     requireMatch(ifMatch, root);
     trashedCheck(root);
     if (root.status !== "published" && root.status !== "scheduled") throw invalidState("not_published");
-    const refs = a.references(db, root);
+    const refs = a.unpublishWarnings ? [] : a.references(db, root);
     if (refs.length > 0 && !confirm) throw entityReferenced(refs);
-    const warnings: SaveLiveWarning[] = refs.length > 0 ? [{ path: "", code: a.referencedWarning, params: { total_references: refs.length } }] : [];
+    const warnings: SaveLiveWarning[] = a.unpublishWarnings ? a.unpublishWarnings(db, root) : refs.length > 0 ? [{ path: "", code: a.referencedWarning, params: { total_references: refs.length } }] : [];
     const stamp = touch(db, root);
     warnings.push(...keepDraftAsHistory(db, root, "unpublish"));
     root.status = "archived";

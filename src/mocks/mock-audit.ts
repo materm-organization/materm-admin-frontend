@@ -23,6 +23,7 @@ export const AUDIT_ENTITY_PERMISSION: Record<string, string> = {
   "cms.author": "cms.blog",
   "cms.collection": "cms.collections",
   "cms.collection_entry": "cms.collections",
+  "cms.shared_section": "cms.sections",
   "ops.webhook": "ops.webhooks",
   "cms.faq_group": "cms.faq",
   "forms.form": "cms.forms",
@@ -79,6 +80,7 @@ const ROWS: AuditLogEntry[] = [
   // Webhooks (doc/05 16.9): the audit `after` never holds the secret; `disabled` is written by the system.
   entry(17, 31, { action: "cms.collection.created", entity_type: "cms.collection", entity_id: 1, summary: "Collection team created" }),
   entry(18, 32, { action: "cms.collection_entry.created", entity_type: "cms.collection_entry", entity_id: 1, summary: "Entry Somsak created" }),
+  entry(19, 34, { action: "cms.shared_section.created", entity_type: "cms.shared_section", entity_id: 1, summary: "Shared section Gallery teaser created" }),
   entry(12, 33, { action: "ops.webhook.created", entity_type: "ops.webhook", entity_id: 1, summary: "Webhook CRM sync created" }),
   entry(13, 36, { action: "ops.webhook.updated", entity_type: "ops.webhook", entity_id: 1, summary: "events changed" }),
   entry(14, 39, { action: "ops.webhook.tested", entity_type: "ops.webhook", entity_id: 1, summary: "test sent: ok" }),

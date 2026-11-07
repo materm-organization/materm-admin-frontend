@@ -32,6 +32,7 @@ import {
 import { MENU_NEXT_ITEM_ID, restoreMenu, seedMenuRevisions, seedMenus } from "@/mocks/mock-menus";
 import { seedAlbumRevisions, seedAlbums } from "@/mocks/mock-albums";
 import { restoreCollectionRevision, seedCollections } from "@/mocks/mock-collections";
+import { seedSharedSections } from "@/mocks/mock-shared-sections";
 import { seedFaqGroups, seedFaqRevisions } from "@/mocks/mock-faq";
 import { seedPageRevisions, seedPages } from "@/mocks/mock-pages";
 import { seedPreviewLinks } from "@/mocks/mock-preview";
@@ -189,6 +190,9 @@ export function createMockDb(): MockDb {
     collectionEntries: [],
     nextCollectionEntryId: 1,
     collectionRole: "admin",
+    sharedSections: [],
+    nextSharedSectionId: 1,
+    sharedSectionRole: "admin",
     nextFaqGroupId: 5,
     nextFaqItemId: 11,
     idempotency: {},
@@ -243,6 +247,7 @@ export function createMockDb(): MockDb {
   db.albums = seedAlbums();
   db.faqGroups = seedFaqGroups();
   seedCollections(db);
+  seedSharedSections(db);
   seedUiStrings(db);
   seedTaxonomy(db);
   seedRedirects(db);

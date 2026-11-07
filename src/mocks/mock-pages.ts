@@ -65,6 +65,7 @@ import type {
   SectionSummary,
 } from "@/types/pages";
 import { autoRedirectWarnings, type PathMove } from "@/mocks/mock-auto-redirects";
+import { sharedHasDraft, sharedIsLive, sharedRefBlock, sharedRow, sharedState, sharedWorking } from "@/mocks/mock-shared-core";
 import type { AggregateStamp, PublishIssue } from "@/types/publishing";
 import type { RevisionSummary } from "@/types/revisions";
 import type { SaveLiveWarning } from "@/types/media";
@@ -375,7 +376,8 @@ function sectionsMissing(snapshot: MockPageSnapshot): Record<string, number> {
   const out: Record<string, number> = Object.fromEntries(MOCK_ACTIVE_LOCALE_CODES.map((c) => [c, 0]));
   for (const s of snapshot.sections) {
     const type = SECTION_TYPE_FIXTURES[s.section_type];
-    if (!type || !s.is_visible) continue;
+    // A reference to a shared section has no props of its own: the shared section checks itself when it is published (SS-12).
+    if (!type || !s.is_visible || s.shared_section_id !== null) continue;
     const result = computeCompleteness(type.json_schema, s.props, [...MOCK_ACTIVE_LOCALE_CODES]);
     for (const code of MOCK_ACTIVE_LOCALE_CODES) out[code] += result[code]?.missing.length ?? 0;
   }
@@ -452,22 +454,26 @@ function sectionSummary(db: MockDb, root: MockPageRoot, s: MockSnapshotSection, 
   const type = SECTION_TYPE_FIXTURES[s.section_type];
   const snap = working(db, root);
   const required = isRequiredSection(snap, s);
-  const completeness = type ? computeCompleteness(type.json_schema, s.props, [...MOCK_ACTIVE_LOCALE_CODES]) : {};
+  // 05 18.9.3: a reference has `props = {}`, `variant = null`, no translation status; the effective variant and the block `shared_section` are the shared section's.
+  const shared = s.shared_section_id !== null ? sharedRow(db, s.shared_section_id) : undefined;
+  const block = s.shared_section_id !== null ? sharedRefBlock(db, s.shared_section_id) : null;
+  const completeness = type && s.shared_section_id === null ? computeCompleteness(type.json_schema, s.props, [...MOCK_ACTIVE_LOCALE_CODES]) : {};
   return {
     id: s.id,
     public_id: s.public_id,
     page_id: root.id,
     section_type: { id: 100 + (Object.keys(SECTION_TYPE_FIXTURES).indexOf(s.section_type) + 1), key: s.section_type, version: s.section_version, name: type?.name ?? s.section_type, is_active: Boolean(type), code_registered: Boolean(type) },
     variant: s.variant,
-    effective_variant: s.variant,
+    effective_variant: shared ? (block?.variant ?? null) : s.variant,
     sort_order: s.sort_order,
     is_visible: s.is_visible,
     anchor_id: s.anchor_id,
     props_bytes: JSON.stringify(s.props).length,
-    shared_section_id: null,
+    shared_section_id: s.shared_section_id,
+    shared_section: s.shared_section_id !== null ? block : null,
     required,
     unsupported: !type,
-    translation_status: Object.fromEntries(MOCK_ACTIVE_LOCALE_CODES.map((c) => [c, { missing: completeness[c]?.missing.length ?? 0 }])),
+    translation_status: shared ? {} : Object.fromEntries(MOCK_ACTIVE_LOCALE_CODES.map((c) => [c, { missing: completeness[c]?.missing.length ?? 0 }])),
     ...(withProps ? { props: structuredClone(s.props) } : {}),
   };
 }
@@ -873,6 +879,13 @@ function placementOf(templateKey: string, key: string): { allowed: boolean; max:
   };
 }
 
+// What a page template says about a section type for a SHARED section (05 18.4 `placeable_on_page`, SS-7): allowed at all, and whether the type
+// fills a slot the template requires (hero group, `contact_section`, `post_list`), which a shared section can not.
+export function sharedPlacement(templateKey: string, key: string): { allowed: boolean; requiredSlot: boolean } {
+  const template = TEMPLATE_DEFS.find((t) => t.key === templateKey);
+  return { allowed: Boolean(template?.allowed.includes(key)), requiredSlot: Boolean(template?.required.some((r) => r.section_type_keys.includes(key))) };
+}
+
 // The structure rules checked at save time (PG-8): the same four codes for POST, PUT order and PATCH template.
 function templateViolations(
   templateKey: string,
@@ -900,7 +913,7 @@ function templateViolations(
 }
 
 // Draft-level checks of a props object, as `/props/...` field errors.
-function propsErrors(db: MockDb, typeKey: string, props: Record<string, unknown>): ApiFieldError[] {
+export function propsErrors(db: MockDb, typeKey: string, props: Record<string, unknown>): ApiFieldError[] {
   const type = SECTION_TYPE_FIXTURES[typeKey];
   const errors: ApiFieldError[] = [];
   if (JSON.stringify(props).length > MAX_PROPS_BYTES) return [{ in: "body", path: "/props", code: "too_long", params: { unit: "bytes", max: MAX_PROPS_BYTES } }];
@@ -954,7 +967,7 @@ function changedPointers(a: unknown, b: unknown, pointer = ""): string[] {
 }
 
 // 05 12.5.6 (S-4): a translator may change only what sits under an `x-localized` node.
-function translatableViolation(typeKey: string, before: Record<string, unknown>, after: Record<string, unknown>): string | null {
+export function translatableViolation(typeKey: string, before: Record<string, unknown>, after: Record<string, unknown>): string | null {
   const type = SECTION_TYPE_FIXTURES[typeKey];
   const leaves = new Set<string>();
   for (const props of [before, after]) {
@@ -989,14 +1002,20 @@ export function getSection(db: MockDb, id: string, sectionId: string) {
   return { data: sectionSummary(db, root, s, true), etag: etagOfPage(root) };
 }
 
-function writeAnswer(db: MockDb, root: MockPageRoot, snapshot: MockPageSnapshot, section: MockSnapshotSection) {
+function writeAnswer(db: MockDb, root: MockPageRoot, snapshot: MockPageSnapshot, section: MockSnapshotSection, warnings: SaveLiveWarning[] = []) {
   return {
     section: sectionSummary(db, root, section, true),
     sections: sectionOrder(snapshot),
     aggregate: stampOf(db, root),
-    warnings: [] as SaveLiveWarning[],
+    warnings,
   };
 }
+
+// 18.9.1: the warning of a section that now shows a shared section which is not live (the page publish is blocked until it is).
+const notLiveWarning = (db: MockDb, sharedId: number): SaveLiveWarning[] =>
+  sharedIsLive(db, sharedId)
+    ? []
+    : [{ path: "/shared_section_id", code: "shared_section_not_live", message: "The shared section is not published: publishing the page is blocked until it is.", params: { shared_section_id: sharedId, shared_state: sharedState(db, sharedId) } }];
 
 export function createSection(db: MockDb, id: string, body: unknown, ifMatch: string | null) {
   const root = findRoot(db, id);
@@ -1009,11 +1028,33 @@ export function createSection(db: MockDb, id: string, body: unknown, ifMatch: st
   for (const k of Object.keys(body)) {
     if (!["section_type_key", "position", "variant", "props", "is_visible", "anchor_id", "shared_section_id"].includes(k)) errors.push({ in: "body", path: `/${k}`, code: "unknown_field" });
   }
-  const key = body.section_type_key;
+  // 05 18.9.1: a section is either of a type or a reference to a shared section (whose type it takes).
+  const referencing = body.shared_section_id !== undefined && body.shared_section_id !== null;
+  let shared: ReturnType<typeof sharedRow>;
+  let key = body.section_type_key;
+  if (referencing) {
+    const sid = body.shared_section_id;
+    if (typeof sid !== "number" || !Number.isInteger(sid) || sid < 1) errors.push({ in: "body", path: "/shared_section_id", code: "invalid_type" });
+    else {
+      shared = sharedRow(db, sid);
+      if (!shared || shared.deleted_at) errors.push({ in: "body", path: "/shared_section_id", code: "unknown_reference", params: { ref_type: "cms_shared_sections", ref_id: sid } });
+      else {
+        const sharedType = SECTION_TYPE_FIXTURES[shared.section_type];
+        if (!sharedType) errors.push({ in: "body", path: "/shared_section_id", code: "section_type_unknown" });
+        else if (sharedType.is_active === false) errors.push({ in: "body", path: "/shared_section_id", code: "section_type_inactive" });
+        else if (!(sharedType.allowed_scopes ?? []).includes("page")) errors.push({ in: "body", path: "/shared_section_id", code: "not_in_enum", params: { expected: sharedType.allowed_scopes ?? [] } });
+        if (key !== undefined && key !== shared.section_type) errors.push({ in: "body", path: "/section_type_key", code: "not_in_enum", params: { expected: [shared.section_type] } });
+        key = shared.section_type;
+      }
+    }
+    if (body.variant !== undefined && body.variant !== null) errors.push({ in: "body", path: "/variant", code: "not_applicable", params: { reason: "shared_reference" } });
+    if (body.props !== undefined && !(isObject(body.props) && Object.keys(body.props).length === 0)) errors.push({ in: "body", path: "/props", code: "not_applicable", params: { reason: "shared_reference" } });
+  }
   const type = typeof key === "string" ? SECTION_TYPE_FIXTURES[key] : undefined;
-  if (typeof key !== "string") errors.push({ in: "body", path: "/section_type_key", code: key === undefined ? "required" : "invalid_type" });
-  else if (!type) errors.push({ in: "body", path: "/section_type_key", code: "unknown_reference" });
-  if (body.shared_section_id !== undefined && body.shared_section_id !== null) errors.push({ in: "body", path: "/shared_section_id", code: "not_applicable" });
+  if (!referencing) {
+    if (typeof key !== "string") errors.push({ in: "body", path: "/section_type_key", code: key === undefined ? "required" : "invalid_type" });
+    else if (!type) errors.push({ in: "body", path: "/section_type_key", code: "unknown_reference" });
+  }
   const count = now.sections.length;
   let position = count;
   if (body.position !== undefined) {
@@ -1021,26 +1062,31 @@ export function createSection(db: MockDb, id: string, body: unknown, ifMatch: st
     else if ((body.position as number) > count) errors.push({ in: "body", path: "/position", code: "out_of_range", params: { max: count } });
     else position = body.position as number;
   }
-  if (type && body.variant !== undefined && body.variant !== null && !type.variants.includes(body.variant as string)) {
+  if (!referencing && type && body.variant !== undefined && body.variant !== null && !type.variants.includes(body.variant as string)) {
     errors.push({ in: "body", path: "/variant", code: "not_in_enum", params: { expected: type.variants } });
   }
-  if (type && body.variant !== undefined && body.variant !== null && typeof body.variant !== "string") errors.push({ in: "body", path: "/variant", code: "invalid_type" });
-  if (body.props !== undefined && !isObject(body.props)) errors.push({ in: "body", path: "/props", code: "invalid_type", params: { expected: "object" } });
+  if (!referencing && type && body.variant !== undefined && body.variant !== null && typeof body.variant !== "string") errors.push({ in: "body", path: "/variant", code: "invalid_type" });
+  if (!referencing && body.props !== undefined && !isObject(body.props)) errors.push({ in: "body", path: "/props", code: "invalid_type", params: { expected: "object" } });
   if (body.is_visible !== undefined && typeof body.is_visible !== "boolean") errors.push({ in: "body", path: "/is_visible", code: "invalid_type" });
   if (body.anchor_id !== undefined && body.anchor_id !== null && (typeof body.anchor_id !== "string" || !ANCHOR.test(body.anchor_id))) errors.push({ in: "body", path: "/anchor_id", code: "pattern_mismatch" });
-  if (type && isObject(body.props)) errors.push(...propsErrors(db, type.key, body.props));
+  if (!referencing && type && isObject(body.props)) errors.push(...propsErrors(db, type.key, body.props));
   if (count >= MAX_SECTIONS) errors.push({ in: "body", path: "", code: "limit_exceeded", params: { max: MAX_SECTIONS } });
   if (type && errors.length === 0) {
     const order: Array<{ key: string; id?: number }> = now.sections.slice().sort((a, b) => a.sort_order - b.sort_order).map((s) => ({ key: s.section_type, id: s.id }));
     order.splice(position, 0, { key: type.key });
-    errors.push(
-      ...templateViolations(now.page.template, order, {
-        allowed: "/section_type_key",
-        max: "/section_type_key",
-        hero_first: () => "/position",
-        after_hero: () => "/position",
-      })
-    );
+    if (referencing && sharedPlacement(now.page.template, type.key).requiredSlot) {
+      // SS-7: a shared section can not fill a slot the template requires.
+      errors.push({ in: "body", path: "/shared_section_id", code: "template_violation", params: { rule: "shared_in_required_slot", template: now.page.template, section_key: type.key } });
+    } else {
+      errors.push(
+        ...templateViolations(now.page.template, order, {
+          allowed: referencing ? "/shared_section_id" : "/section_type_key",
+          max: referencing ? "/shared_section_id" : "/section_type_key",
+          hero_first: () => "/position",
+          after_hero: () => "/position",
+        })
+      );
+    }
   }
   if (errors.length) throw validationFailed(errors);
   if (typeof body.anchor_id === "string" && now.sections.some((s) => s.anchor_id === body.anchor_id)) {
@@ -1053,20 +1099,20 @@ export function createSection(db: MockDb, id: string, body: unknown, ifMatch: st
     id: newId,
     public_id: sectionPublicId(newId),
     section_type: type!.key,
-    section_version: type!.version,
-    variant: (body.variant as string | null | undefined) ?? null,
+    section_version: shared ? shared.section_version : type!.version,
+    variant: shared ? null : ((body.variant as string | null | undefined) ?? null),
     sort_order: position,
     is_visible: body.is_visible === undefined ? true : (body.is_visible as boolean),
     anchor_id: (body.anchor_id as string | null | undefined) ?? null,
-    props: structuredClone((isObject(body.props) ? body.props : type!.default_props) as Record<string, unknown>),
-    shared_section_id: null,
+    props: shared ? {} : structuredClone((isObject(body.props) ? body.props : type!.default_props) as Record<string, unknown>),
+    shared_section_id: shared ? shared.id : null,
   };
   const ordered = snapshot.sections.slice().sort((a, b) => a.sort_order - b.sort_order);
   ordered.splice(position, 0, created);
   renumberSections(ordered);
   snapshot.sections = ordered;
   commitWrite(root, stamp);
-  return { data: writeAnswer(db, root, snapshot, created), etag: etagOfPage(root), location: `/api/v1/pages/${root.id}/sections/${newId}` };
+  return { data: writeAnswer(db, root, snapshot, created, shared && created.is_visible ? notLiveWarning(db, shared.id) : []), etag: etagOfPage(root), location: `/api/v1/pages/${root.id}/sections/${newId}` };
 }
 
 export function patchSection(db: MockDb, id: string, sectionId: string, body: unknown, ifMatch: string | null) {
@@ -1083,12 +1129,17 @@ export function patchSection(db: MockDb, id: string, sectionId: string, body: un
     else if (!["props", "variant", "is_visible", "anchor_id"].includes(k)) errors.push({ in: "body", path: `/${k}`, code: "unknown_field" });
   }
   const type = SECTION_TYPE_FIXTURES[current.section_type];
-  if (body.props !== undefined && !isObject(body.props)) errors.push({ in: "body", path: "/props", code: "invalid_type", params: { expected: "object" } });
+  // 05 18.9.2: only `is_visible` and `anchor_id` of a section that references a shared section can change.
+  const isRef = current.shared_section_id !== null;
+  if (isRef) {
+    for (const f of ["props", "variant"] as const) if (body[f] !== undefined) errors.push({ in: "body", path: `/${f}`, code: "not_applicable", params: { reason: "shared_reference" } });
+  }
+  if (!isRef && body.props !== undefined && !isObject(body.props)) errors.push({ in: "body", path: "/props", code: "invalid_type", params: { expected: "object" } });
   if (body.is_visible !== undefined && typeof body.is_visible !== "boolean") errors.push({ in: "body", path: "/is_visible", code: "invalid_type" });
   if (body.anchor_id !== undefined && body.anchor_id !== null && (typeof body.anchor_id !== "string" || !ANCHOR.test(body.anchor_id))) errors.push({ in: "body", path: "/anchor_id", code: "pattern_mismatch" });
-  if (type && body.variant !== undefined && body.variant !== null && !type.variants.includes(body.variant as string)) errors.push({ in: "body", path: "/variant", code: "not_in_enum", params: { expected: type.variants } });
-  if (!type && (body.props !== undefined || body.variant !== undefined)) errors.push({ in: "body", path: body.props !== undefined ? "/props" : "/variant", code: "section_type_unknown" });
-  if (type && isObject(body.props)) errors.push(...propsErrors(db, type.key, body.props));
+  if (!isRef && type && body.variant !== undefined && body.variant !== null && !type.variants.includes(body.variant as string)) errors.push({ in: "body", path: "/variant", code: "not_in_enum", params: { expected: type.variants } });
+  if (!isRef && !type && (body.props !== undefined || body.variant !== undefined)) errors.push({ in: "body", path: body.props !== undefined ? "/props" : "/variant", code: "section_type_unknown" });
+  if (!isRef && type && isObject(body.props)) errors.push(...propsErrors(db, type.key, body.props));
   if (errors.length) throw validationFailed(errors);
 
   // A translator (S-4): only text under `x-localized`; variant / visibility / anchor are structure.
@@ -1112,6 +1163,7 @@ export function patchSection(db: MockDb, id: string, sectionId: string, body: un
     (body.is_visible === undefined || body.is_visible === current.is_visible) &&
     (body.anchor_id === undefined || body.anchor_id === current.anchor_id);
   if (same) return { data: writeAnswer(db, root, working(db, root), current), etag: etagOfPage(root) };
+  const showsNow = isRef && body.is_visible === true && !current.is_visible;
 
   const { snapshot, stamp } = beginWrite(db, root);
   const s = snapshot.sections.find((x) => String(x.id) === sectionId)!;
@@ -1120,7 +1172,41 @@ export function patchSection(db: MockDb, id: string, sectionId: string, body: un
   if (body.variant !== undefined) s.variant = body.variant as string | null;
   if (body.anchor_id !== undefined) s.anchor_id = body.anchor_id as string | null;
   commitWrite(root, stamp);
-  return { data: writeAnswer(db, root, snapshot, s), etag: etagOfPage(root) };
+  return { data: writeAnswer(db, root, snapshot, s, showsNow ? notLiveWarning(db, current.shared_section_id!) : []), etag: etagOfPage(root) };
+}
+
+// 05 18.10 (SS-5): the shared section's WORKING copy (its draft if it has one) becomes the page section's own props; idempotent for a section that
+// references nothing. Page ETag in `If-Match`; a page that is published gets the change in its draft.
+export function detachSection(db: MockDb, id: string, sectionId: string, body: unknown, ifMatch: string | null) {
+  const root = findRoot(db, id);
+  requireMatch(ifMatch, root);
+  trashedCheck(root);
+  if (body !== undefined && body !== null && !isObject(body)) throw validationFailed([{ in: "body", path: "", code: "invalid_type" }]);
+  const extra = Object.keys((body ?? {}) as Record<string, unknown>).map((k) => ({ in: "body" as const, path: `/${k}`, code: "unknown_field" }));
+  if (extra.length) throw validationFailed(extra);
+  if (db.translateOnly.includes("sections") || db.sharedSectionRole === "viewer") throw forbidden("cms.sections:update POST /pages/{pageId}/sections/{id}/detach");
+  const now = working(db, root);
+  const current = now.sections.find((x) => String(x.id) === sectionId);
+  if (!current) throw notFound();
+  if (current.shared_section_id === null) return { data: writeAnswer(db, root, now, current), etag: etagOfPage(root) };
+  const shared = sharedRow(db, current.shared_section_id);
+  if (!shared) throw validationFailed([{ in: "entity", path: `/sections/${current.public_id}/shared_section_id`, code: "unknown_reference", params: { ref_type: "cms_shared_sections", ref_id: current.shared_section_id } }]);
+  const copy = sharedWorking(db, shared);
+  const bad = propsErrors(db, shared.section_type, copy.props);
+  if (bad.length) throw validationFailed(bad.map((e) => ({ ...e, in: "entity" as const, params: { ...(e.params ?? {}), shared_section_id: shared.id } })));
+  const draftRevision = shared.status === "published" ? db.revisions[keyOf("shared-sections", shared.id)]?.find((r) => r.kind === "draft") : undefined;
+
+  const { snapshot, stamp } = beginWrite(db, root);
+  const s = snapshot.sections.find((x) => String(x.id) === sectionId)!;
+  s.props = structuredClone(copy.props);
+  s.variant = copy.variant;
+  s.shared_section_id = null;
+  commitWrite(root, stamp);
+  const warnings: SaveLiveWarning[] =
+    sharedHasDraft(db, shared) && draftRevision
+      ? [{ path: "/props", code: "shared_draft_copied", message: "The unpublished draft of the shared section was copied; the website changes when this page is published.", params: { shared_section_id: shared.id, revision_id: draftRevision.id } }]
+      : [];
+  return { data: writeAnswer(db, root, snapshot, s, warnings), etag: etagOfPage(root) };
 }
 
 export function reorderSections(db: MockDb, id: string, body: unknown, ifMatch: string | null) {
@@ -1368,6 +1454,16 @@ export function validateForPublish(db: MockDb, root: MockPageRoot): { blockers: 
     const base = `/sections/${s.public_id}`;
     const params = { section_id: s.id, section_key: s.section_type, section_index: index };
     const type = SECTION_TYPE_FIXTURES[s.section_type];
+    // SS-2 / 18.11.2: a reference needs its shared section to be live (the view hides it otherwise); its props are `{}` and are never checked here (SS-12).
+    if (s.shared_section_id !== null) {
+      const state = sharedState(db, s.shared_section_id);
+      const refParams = { ...params, ref_type: "cms_shared_sections", ref_id: s.shared_section_id, shared_state: state };
+      if (state === "missing") blockers.push(issue(`${base}/shared_section_id`, "unknown_reference", refParams));
+      else if (s.is_visible && state === "trashed") blockers.push(issue(`${base}/shared_section_id`, "unknown_reference", refParams));
+      else if (s.is_visible && state !== "published") blockers.push(issue(`${base}/shared_section_id`, "reference_not_published", refParams));
+      else if (!s.is_visible && state !== "published") warnings.push(issue(base, "section_hidden_unchecked", params, false));
+      return;
+    }
     const found: PublishIssue[] = [];
     const found_w: PublishIssue[] = [];
     if (!type) found.push(issue(`${base}/section_type`, "section_type_unknown", params));
@@ -1409,7 +1505,8 @@ export function validateForPublish(db: MockDb, root: MockPageRoot): { blockers: 
 
   // template rules
   if (template) {
-    const visible = ordered.filter((s) => s.is_visible);
+    // A reference to a shared section never fills a required slot (SS-12).
+    const visible = ordered.filter((s) => s.is_visible && s.shared_section_id === null);
     for (const r of template.required) {
       const count = visible.filter((s) => r.section_type_keys.includes(s.section_type)).length;
       if (count < r.min) {
@@ -1569,6 +1666,10 @@ export function restorePageRevision(db: MockDb, id: string, revId: string, body:
   const errors: ApiFieldError[] = [];
   for (const s of snapshot.sections) {
     if (!SECTION_TYPE_FIXTURES[s.section_type]) errors.push({ in: "entity", path: `/sections/${s.public_id}/section_type`, code: "section_type_unknown" });
+    // 18.9.4: a revision that names a shared section which is gone or in the trash can not come back.
+    if (s.shared_section_id !== null && ["missing", "trashed"].includes(sharedState(db, s.shared_section_id))) {
+      errors.push({ in: "entity", path: `/sections/${s.public_id}/shared_section_id`, code: "unknown_reference", params: { ref_type: "cms_shared_sections", ref_id: s.shared_section_id } });
+    }
     deepFind(s.props, "page_id", `/sections/${s.public_id}/props`, (v, pointer) => {
       const target = typeof v === "number" ? db.pages.find((p) => p.id === v) : undefined;
       if (!target || isTrashed(target)) errors.push({ in: "entity", path: pointer, code: "unknown_reference" });

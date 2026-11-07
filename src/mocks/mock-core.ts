@@ -75,7 +75,8 @@ export type MockSnapshotSection = {
   is_visible: boolean;
   anchor_id: string | null;
   props: Record<string, unknown>;
-  shared_section_id: null;
+  // 05 18: a reference to a shared section (props are then `{}` and the variant `null`).
+  shared_section_id: number | null;
 };
 export type MockSnapshotTranslation = {
   locale_code: string;
@@ -170,6 +171,9 @@ export type MockCollection = {
   updated_at: string;
   deleted_at: string | null;
 };
+// A shared section (05 18.8.1): the snapshot is `{name, section_type, section_version, variant, props}` (04 5.2). The type is fixed for the life of the row (SS-13).
+export type MockSharedSnapshot = { name: string; section_type: string; section_version: number; variant: string | null; props: Record<string, unknown> };
+export type MockSharedSection = MockPublishableRoot<MockSharedSnapshot> & { section_type: string; section_version: number };
 export type MockAlbum = MockPublishableRoot<MockAlbumSnapshot>;
 export type MockFaqGroup = MockPublishableRoot<MockFaqSnapshot>;
 // A collection entry: `key` is its id as text (the engine's restore check is replaced by the slug rule), `collection_key` its collection.
@@ -313,6 +317,11 @@ export type MockDb = {
   collectionEntries: MockCollectionEntry[];
   nextCollectionEntryId: number;
   collectionRole: "admin" | "editor" | "viewer";
+  // Shared sections (05 18): `sharedSectionRole` drives the 403 rules (05 18.15: editor = everything but manage_schema, author / viewer = read only);
+  // `translateOnly` containing "shared-sections" makes the caller a translator (read + translate), and containing "sections" does the same for the page sections.
+  sharedSections: MockSharedSection[];
+  nextSharedSectionId: number;
+  sharedSectionRole: "admin" | "editor" | "viewer";
   nextFaqItemId: number;
   idempotency: Record<string, MockIdempotent>;
   posts: MockPostRoot[];

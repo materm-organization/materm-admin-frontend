@@ -61,7 +61,7 @@ describe("POST /pages/{id}/sections", () => {
     expect(errorsOf(fails(() => createSection(db, "8", { section_type_key: "intro_heading", props: { image: { media_id: 99999 } } }, etag(8)), 422))[0]).toMatchObject({ path: "/props/image/media_id", code: "unknown_reference" });
     createSection(db, "8", { section_type_key: "faq", anchor_id: "questions" }, etag(8));
     fails(() => createSection(db, "8", { section_type_key: "faq", anchor_id: "questions" }, etag(8)), 409, "CONFLICT_DUPLICATE");
-    expect(errorsOf(fails(() => createSection(db, "8", { section_type_key: "faq", shared_section_id: 3 }, etag(8)), 422))[0]).toMatchObject({ path: "/shared_section_id", code: "not_applicable" });
+    expect(errorsOf(fails(() => createSection(db, "8", { section_type_key: "faq", shared_section_id: 99 }, etag(8)), 422))[0]).toMatchObject({ path: "/shared_section_id", code: "unknown_reference" });
   });
 
   it("on a published page the write goes to the draft and the page then has unpublished changes", () => {

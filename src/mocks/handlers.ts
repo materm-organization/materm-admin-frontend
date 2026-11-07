@@ -18,6 +18,7 @@ import {
   createSection,
   deletePage,
   deleteSection,
+  detachSection,
   reorderSections,
   discardDraft,
   getPage,
@@ -135,6 +136,21 @@ import {
   restoreEntryRevision,
   unpublishEntry,
 } from "@/mocks/mock-collections";
+import {
+  createSharedSection,
+  deleteSharedSection,
+  discardSharedDraft,
+  getSharedRevision,
+  getSharedSection,
+  getUsages,
+  listSharedRevisions,
+  listSharedSections,
+  patchSharedSection,
+  publishSharedSection,
+  restoreSharedRevision,
+  restoreSharedSection,
+  unpublishSharedSection,
+} from "@/mocks/mock-shared-sections";
 import { importRedirects } from "@/mocks/mock-redirects-import";
 import { checkRedirect, createRedirect, deleteRedirect, exportRedirects, getRedirect, listRedirects, patchRedirect, restoreRedirectFromTrash } from "@/mocks/mock-redirects";
 import { bundleSync, deleteUiString, listUiStrings, putUiString, uiStringKeyEtag } from "@/mocks/mock-ui-strings";
@@ -428,6 +444,10 @@ const pageHandlers: HttpHandler[] = [
   })),
   http.delete(P("/pages/:id/sections/:sectionId"), guard(({ request, params }) => {
     const { data, etag } = deleteSection(getMockDb(), param(params, "id"), param(params, "sectionId"), request.headers.get("If-Match"));
+    return ok(data, { etag });
+  })),
+  http.post(P("/pages/:id/sections/:sectionId/detach"), guard(async ({ request, params }) => {
+    const { data, etag } = detachSection(getMockDb(), param(params, "id"), param(params, "sectionId"), await jsonBody(request), request.headers.get("If-Match"));
     return ok(data, { etag });
   })),
   http.post(P("/pages/:id/publish"), guard(async ({ request, params }) => {
@@ -725,6 +745,58 @@ const collectionHandlers: HttpHandler[] = [
   })),
 ];
 
+// Shared sections (05 section 18): the publish engine's routes plus the list, usages and the page-side detach (registered with the pages above).
+const sharedSectionHandlers: HttpHandler[] = [
+  http.get(P("/shared-sections"), guard(({ request }) => {
+    const { data, meta } = listSharedSections(getMockDb(), searchOf(request));
+    return ok(data, { meta });
+  })),
+  http.post(P("/shared-sections"), guard(async ({ request, params }) => {
+    const body = await jsonBody(request);
+    return idempotent(request, params, () => {
+      const done = createSharedSection(getMockDb(), body);
+      return { status: 201, ...done };
+    });
+  })),
+  http.get(P("/shared-sections/:id"), guard(({ params }) => {
+    const { data, etag } = getSharedSection(getMockDb(), param(params, "id"));
+    return ok(data, { etag });
+  })),
+  http.patch(P("/shared-sections/:id"), guard(async ({ request, params }) => {
+    const { data, etag } = patchSharedSection(getMockDb(), param(params, "id"), await jsonBody(request), request.headers.get("If-Match"));
+    return ok(data, { etag });
+  })),
+  http.delete(P("/shared-sections/:id"), guard(({ request, params }) => {
+    const { data, etag } = deleteSharedSection(getMockDb(), param(params, "id"), searchOf(request), request.headers.get("If-Match"));
+    return ok(data, { etag });
+  })),
+  http.post(P("/shared-sections/:id/restore"), guard(({ request, params }) => {
+    const { data, etag } = restoreSharedSection(getMockDb(), param(params, "id"), request.headers.get("If-Match"));
+    return ok(data, { etag });
+  })),
+  http.get(P("/shared-sections/:id/usages"), guard(({ request, params }) => ok(getUsages(getMockDb(), param(params, "id"), searchOf(request)).data))),
+  http.post(P("/shared-sections/:id/publish"), guard(async ({ request, params }) => {
+    const body = await jsonBody(request);
+    return idempotent(request, params, () => ({ status: 200, ...publishSharedSection(getMockDb(), param(params, "id"), searchOf(request), body, request.headers.get("If-Match")) }));
+  })),
+  http.post(P("/shared-sections/:id/unpublish"), guard(({ request, params }) =>
+    idempotent(request, params, () => ({ status: 200, ...unpublishSharedSection(getMockDb(), param(params, "id"), searchOf(request), request.headers.get("If-Match")) }))
+  )),
+  http.post(P("/shared-sections/:id/discard-draft"), guard(({ request, params }) => {
+    const { data, etag } = discardSharedDraft(getMockDb(), param(params, "id"), request.headers.get("If-Match"));
+    return ok(data, { etag });
+  })),
+  http.get(P("/shared-sections/:id/revisions"), guard(({ request, params }) => {
+    const { data, meta } = listSharedRevisions(getMockDb(), param(params, "id"), searchOf(request));
+    return ok(data, { meta });
+  })),
+  http.get(P("/shared-sections/:id/revisions/:revId"), guard(({ params }) => ok(getSharedRevision(getMockDb(), param(params, "id"), param(params, "revId"))))),
+  http.post(P("/shared-sections/:id/revisions/:revId/restore"), guard(async ({ request, params }) => {
+    const { data, etag } = restoreSharedRevision(getMockDb(), param(params, "id"), param(params, "revId"), await jsonBody(request), request.headers.get("If-Match"));
+    return ok(data, { etag });
+  })),
+];
+
 // Preview links (T1.4.4, doc/05 12.9; posts 13.3.8). The creation answer carries the raw token in `url` and must not be cached.
 const previewLinkHandlers: HttpHandler[] = [
   http.post(P("/pages/:id/preview-links"), guard(async ({ request, params }) => {
@@ -925,6 +997,7 @@ export const saveLiveApiHandlers: HttpHandler[] = [
   ...albumHandlers,
   ...faqHandlers,
   ...collectionHandlers,
+  ...sharedSectionHandlers,
   ...previewLinkHandlers,
   ...cmsLookupHandlers,
   ...settingsHandlers,
