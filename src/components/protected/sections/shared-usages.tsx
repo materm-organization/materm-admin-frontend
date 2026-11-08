@@ -141,28 +141,28 @@ export function SharedPublishExtra({ id }: { id: number }) {
 export function SharedUnpublishExtra({ id }: { id: number }) {
   const t = useTranslations("sharedSections.confirm");
   const query = useSharedSectionUsages(id);
-  if (query.isPending) return <span className="mt-2 block"><Skeleton className="h-10 w-full" /></span>;
+  if (query.isPending) return <Skeleton className="h-10 w-full" />;
   if (query.error) return null;
   const live = query.data.data.pages.filter((p) => p.live_on_site);
   const all = query.data.data.pages.filter((p) => !p.deleted_at);
-  if (all.length === 0) return <span className="mt-2 block text-sm" data-testid="unpublish-shared-none">{t("unpublishNone")}</span>;
+  if (all.length === 0) return <div className="text-sm" data-testid="unpublish-shared-none">{t("unpublishNone")}</div>;
   return (
-    <span className="mt-2 block space-y-1 text-sm" data-testid="unpublish-shared-extra">
-      <span className="flex items-center gap-1.5 font-medium text-amber-800 dark:text-amber-200">
+    <div className="space-y-1 text-sm" data-testid="unpublish-shared-extra">
+      <div className="flex items-center gap-1.5 font-medium text-amber-800 dark:text-amber-200">
         <AlertTriangleIcon className="size-4" aria-hidden />
         {t("unpublishTitle", { count: live.length })}
-      </span>
+      </div>
       {live.length > 0 ? (
-        <span className="block">
+        <div>
           <ul className="list-disc space-y-0.5 ps-5" data-testid="unpublish-shared-pages">
             {live.map((p) => (
               <li key={p.page_id}>{p.title ?? `#${p.page_id}`} <span className="font-mono text-xs">{p.path}</span></li>
             ))}
           </ul>
-        </span>
+        </div>
       ) : null}
-      <span className="block text-muted-foreground">{t("unpublishBlocked")}</span>
-    </span>
+      <p className="text-muted-foreground">{t("unpublishBlocked")}</p>
+    </div>
   );
 }
 

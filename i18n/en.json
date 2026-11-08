@@ -3569,6 +3569,8 @@
           "visible": "Publishing this page is blocked until the shared section is published, or this section is hidden or detached.",
           "hidden": "This section is hidden, so it does not block publishing. It shows nothing until the shared section is published."
         },
+        "inTrashNoAccess": "The shared section is in the trash, so its content is not shown here. Ask someone who can restore it, or detach this section.",
+        "notFound": "The shared section could not be found. It may have been removed.",
         "editSource": "Edit source",
         "detach": "Detach to a copy",
         "hiddenSwitch": "Hidden on the website",

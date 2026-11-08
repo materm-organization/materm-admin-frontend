@@ -29,7 +29,8 @@ import { useApiErrorHandler } from "@/hooks/use-api-error";
 import { useAutosavePreference } from "@/hooks/use-autosave";
 import { useLocales } from "@/hooks/use-locales";
 import { useCan } from "@/hooks/use-permission";
-import { useSharedSectionWrites, writeThroughShared } from "@/hooks/use-shared-sections";
+import { useUnsavedChangesGuard } from "@/hooks/use-unsaved-changes-guard";
+import { SHARED_ROOT, useSharedSectionWrites, writeThroughShared } from "@/hooks/use-shared-sections";
 import { isConflictError, parseApiError } from "@/lib/api-error";
 import { translateFieldError } from "@/lib/api-error-messages";
 import { PERMISSION_ACTIONS, PERMISSION_KEYS } from "@/lib/constants/permissions";
@@ -122,8 +123,11 @@ export function SharedSectionEditor({ section, etag, onReseed }: SharedSectionEd
   const nameProblem = !trimmedName ? "required" : [...trimmedName].length > MAX_SHARED_NAME ? "too_long" : null;
   const nameDirty = nameDraft !== null && trimmedName !== section.name;
 
+  const nameSavingRef = useRef(false);
   const saveName = useCallback(async (): Promise<boolean> => {
+    if (nameSavingRef.current) return false;
     if (!nameDirty || nameProblem) return !nameDirty;
+    nameSavingRef.current = true;
     const sent = trimmedName;
     setNameSaving(true);
     setNameError(null);
@@ -142,9 +146,12 @@ export function SharedSectionEditor({ section, etag, onReseed }: SharedSectionEd
       else toastError(error, t("nameFailed"));
       return false;
     } finally {
+      nameSavingRef.current = false;
       setNameSaving(false);
     }
   }, [nameDirty, nameProblem, trimmedName, writes, tErr, toastError, t]);
+
+  useUnsavedChangesGuard(nameDirty && canUpdate && !trashed, { onSave: saveName });
 
   // ---- the open editor ---------------------------------------------------------------------------------------------------
   const sectionRef = useRef<SectionEditorHandle>(null);
@@ -211,6 +218,7 @@ export function SharedSectionEditor({ section, etag, onReseed }: SharedSectionEd
       }
       const parsed = parseApiError(error);
       if (parsed.code === "ENTITY_REFERENCED" && parsed.status === 409) {
+        void queryClient.invalidateQueries({ queryKey: [SHARED_ROOT] });
         const details = (parsed.details ?? {}) as { references?: SharedSectionReference[]; total_references?: number };
         setBlocked({ references: details.references ?? [], total: details.total_references ?? details.references?.length ?? 0 });
       } else if (parsed.code === "INVALID_STATE") {
@@ -418,7 +426,7 @@ export function SharedSectionEditor({ section, etag, onReseed }: SharedSectionEd
               onClick={() => {
                 setBlocked(null);
                 setTab("usage");
-                void queryClient.invalidateQueries({ queryKey: ["/shared-sections"] });
+                void queryClient.invalidateQueries({ queryKey: [SHARED_ROOT] });
               }}
             >
               {t("delete.showPages")}

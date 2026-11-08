@@ -441,9 +441,9 @@ export function PublishBar({
           <>
             <span>{t("unpublish.description", { noun })}</span>
             {pending ? <span className="mt-2 block">{t("unpublish.withDraft")}</span> : null}
-            {confirmExtras?.unpublish}
           </>
         }
+        extra={confirmExtras?.unpublish}
         confirmLabel={t("unpublish.confirm")}
         destructive
         isPending={busy === "unpublishing"}

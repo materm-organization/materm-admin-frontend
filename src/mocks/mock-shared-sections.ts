@@ -144,7 +144,7 @@ function view(db: MockDb, root: MockSharedSection, detail: boolean): SharedSecti
     name: snap.name,
     section_type: sectionTypeLite(root),
     variant: snap.variant,
-    effective_variant: snap.variant,
+    effective_variant: snap.variant ?? type?.variants?.[0] ?? null,
     props_bytes: JSON.stringify(snap.props).length,
     unsupported: !type,
     translation_status: Object.fromEntries(MOCK_ACTIVE_LOCALE_CODES.map((c) => [c, { missing: completeness[c]?.missing.length ?? 0 }])),

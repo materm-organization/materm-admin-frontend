@@ -28,6 +28,7 @@ export function ConfirmDialog({
   onOpenChange,
   title,
   description,
+  extra,
   confirmLabel,
   cancelLabel,
   destructive = false,
@@ -39,6 +40,8 @@ export function ConfirmDialog({
   onOpenChange: (open: boolean) => void;
   title: string;
   description?: ReactNode;
+  // Block content (lists, boxes) shown under the description: the description is a <p>, so it can not hold it.
+  extra?: ReactNode;
   confirmLabel?: string;
   cancelLabel?: string;
   destructive?: boolean;
@@ -81,6 +84,8 @@ export function ConfirmDialog({
           <AlertDialogTitle>{title}</AlertDialogTitle>
           {description ? <AlertDialogDescription>{description}</AlertDialogDescription> : null}
         </AlertDialogHeader>
+
+        {extra}
 
         {requireTyping ? (
           <div className="space-y-2">

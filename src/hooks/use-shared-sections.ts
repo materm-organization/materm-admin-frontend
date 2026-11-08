@@ -1,17 +1,16 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient, type QueryClient } from "@tanstack/react-query";
 import { useCallback, useMemo, useRef } from "react";
 
-import { API_ENDPOINTS } from "@/lib/constants/api-endpoints";
 import type { WithEtag } from "@/lib/etag";
 import { revisionsQueryKey } from "@/lib/revision-resources";
 import { SharedSectionsAPI } from "@/services/shared-sections.api";
 import type { ApiResponse } from "@/types/api";
 import type { CreateSharedSectionPayload, SharedSection, SharedSectionsQuery, UpdateSharedSectionPayload } from "@/types/shared-sections";
 
-// Every shared-sections list and usages query starts with "/shared-sections" so a publish command (which refreshes `listPath`) and a page
-// section write (which changes the usage counts) refresh them all. The detail key is the detail URL, a different first element.
+// Every shared-sections list, usages and detail query starts with "/shared-sections" so a publish command (which refreshes `listPath`) and a page
+// section write (which changes the usage counts) refresh them all.
 export const SHARED_ROOT = "/shared-sections";
-export const sharedSectionQueryKey = (id: number | string) => [API_ENDPOINTS.SHARED_SECTIONS.DETAIL(id)] as const;
+export const sharedSectionQueryKey = (id: number | string) => [SHARED_ROOT, "detail", String(id)] as const;
 
 export const useSharedSections = (query: SharedSectionsQuery, enabled = true) =>
   useQuery({ queryKey: [SHARED_ROOT, "list", query], queryFn: () => SharedSectionsAPI.List(query), enabled, placeholderData: keepPreviousData });

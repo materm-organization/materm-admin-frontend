@@ -140,6 +140,8 @@ describe("SharedSectionEditor (SCR-22)", () => {
     expect(dialog).toHaveTextContent("The page is in the trash.");
     expect(dialog).toHaveTextContent("restore the page first");
     expect(shared(1).deleted_at).toBeNull();
+    // the 409 refetched the detail: the editor now knows it is used, so Delete is disabled
+    await waitFor(() => expect(screen.getByTestId("delete-button")).toBeDisabled());
   });
 
   it("a trashed shared section is read only with a Restore button for those who may delete", async () => {

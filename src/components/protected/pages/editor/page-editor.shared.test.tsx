@@ -128,6 +128,18 @@ describe("PageEditor: shared sections (SCR-20, 05 18.9)", () => {
     expect(nav.replace.mock.calls.at(-1)![0]).toContain(encodeURIComponent(`/sections/${created.public_id}/shared_section_id`));
   });
 
+  it("a reference to a TRASHED shared section, opened without cms.sections:delete: a small inline note, no Retry, no links to a 404 page", async () => {
+    const created = place(1).data.section as { id: number };
+    db().sharedSections.find((x) => x.id === 1)!.deleted_at = "2026-11-08T10:00:00.000000+07:00";
+    me.current = { id: 6, roleID: 2, permissions: grants({ "cms.pages": ["read", "update"], "cms.sections": ["read", "create", "update"] }) };
+    await open(`section=${created.id}`);
+    const panel = await screen.findByTestId("shared-reference-panel");
+    expect(await within(panel).findByTestId("shared-in-trash-inline")).toHaveTextContent("in the trash");
+    expect(within(panel).getByTestId("shared-trashed-alert")).toBeInTheDocument();
+    expect(within(panel).queryByRole("button", { name: /Try again|Retry/i })).not.toBeInTheDocument();
+    expect(within(panel).queryByTestId("edit-source-link")).not.toBeInTheDocument();
+  });
+
   it("without cms.sections:update there is neither Detach nor the visibility switch; without read there is no Shared tab", async () => {
     const user = userEvent.setup();
     const created = place(1).data.section as { id: number };

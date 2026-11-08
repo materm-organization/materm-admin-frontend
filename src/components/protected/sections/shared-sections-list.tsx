@@ -4,6 +4,7 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { PlusIcon, RotateCcwIcon } from "lucide-react";
 import Link from "next/link";
 import { useFormatter, useTranslations } from "next-intl";
+import { useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState, type SetStateAction } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -20,7 +21,7 @@ import { useApiErrorHandler } from "@/hooks/use-api-error";
 import { useListParams } from "@/hooks/use-list-params";
 import { useCan } from "@/hooks/use-permission";
 import { useSectionTypes } from "@/hooks/use-section-types";
-import { useSharedSections } from "@/hooks/use-shared-sections";
+import { SHARED_ROOT, useSharedSections } from "@/hooks/use-shared-sections";
 import { isConflictError, parseApiError } from "@/lib/api-error";
 import { PERMISSION_ACTIONS, PERMISSION_KEYS } from "@/lib/constants/permissions";
 import { MAX_FILTER_VALUES, type ListParamsConfig } from "@/lib/list-params";
@@ -61,6 +62,7 @@ export function SharedSectionsList() {
   const filters = list.params.filters;
   const trashed = filters.trashed === "true";
   const query = list.query as SharedSectionsQuery;
+  const queryClient = useQueryClient();
   const { data, isLoading, isFetching, error, refetch } = useSharedSections(query);
   const types = useSectionTypes({ is_active: true, scope: "shared" });
   const [createOpen, setCreateOpen] = useState(false);
@@ -81,7 +83,7 @@ export function SharedSectionsList() {
     try {
       await SharedSectionsAPI.Restore(row.id, sharedSectionEtag(row));
       toast.success(t("restore.done", { name: row.name }));
-      void refetch();
+      void queryClient.invalidateQueries({ queryKey: [SHARED_ROOT] });
     } catch (err) {
       const parsed = parseApiError(err);
       if (isConflictError(err) || parsed.code === "INVALID_STATE") {

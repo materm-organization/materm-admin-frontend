@@ -14,10 +14,12 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { useApiErrorHandler } from "@/hooks/use-api-error";
+import { useCan } from "@/hooks/use-permission";
 import { useSectionType } from "@/hooks/use-section-types";
 import { useSharedSection } from "@/hooks/use-shared-sections";
 import type { usePageWrites } from "@/hooks/use-page-sections";
-import { isConflictError } from "@/lib/api-error";
+import { isConflictError, parseApiError } from "@/lib/api-error";
+import { PERMISSION_ACTIONS, PERMISSION_KEYS } from "@/lib/constants/permissions";
 import type { Locale } from "@/types/locales";
 import type { SectionSummary } from "@/types/pages";
 
@@ -56,7 +58,10 @@ export function SharedReferencePanel({
   const { toastError } = useApiErrorHandler();
   const ref = section.shared_section ?? null;
   const sharedId = section.shared_section_id ?? 0;
-  const query = useSharedSection(sharedId, canReadShared && sharedId > 0);
+  // A trashed shared section is read only with `cms.sections:delete` (05 10.3 / 18.5): without it the GET is a 404, so it is not asked for.
+  const canDelete = useCan(PERMISSION_KEYS.CMS_SECTIONS, PERMISSION_ACTIONS.DELETE);
+  const hiddenInTrash = Boolean(ref?.deleted_at) && !canDelete;
+  const query = useSharedSection(sharedId, canReadShared && sharedId > 0 && !hiddenInTrash);
   const shared = query.data?.data.data;
   const typeQuery = useSectionType(shared?.section_type.key ?? section.section_type.key, shared?.section_type.version ?? section.section_type.version);
   const type = typeQuery.data;
@@ -106,7 +111,7 @@ export function SharedReferencePanel({
       ) : null}
 
       <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
-        {canReadShared && sharedId > 0 ? (
+        {canReadShared && sharedId > 0 && !hiddenInTrash ? (
           <Button asChild variant="outline" size="sm">
             <Link href={`/admin/sections/${sharedId}`} target="_blank" rel="noopener" data-testid="edit-source-link">
               <ExternalLinkIcon />
@@ -134,6 +139,14 @@ export function SharedReferencePanel({
       {!canReadShared ? (
         <Alert>
           <AlertDescription>{t("noRead")}</AlertDescription>
+        </Alert>
+      ) : hiddenInTrash ? (
+        <Alert data-testid="shared-in-trash-inline">
+          <AlertDescription>{t("inTrashNoAccess")}</AlertDescription>
+        </Alert>
+      ) : query.error && !shared && parseApiError(query.error).status === 404 ? (
+        <Alert data-testid="shared-not-found-inline">
+          <AlertDescription>{t("notFound")}</AlertDescription>
         </Alert>
       ) : query.error && !shared ? (
         <ErrorState error={query.error} onRetry={() => void query.refetch()} isRetrying={query.isFetching} />

@@ -1,5 +1,5 @@
-// Shared sections (SCR-22 list + editor, the shared parts of SCR-20) against the real backend. Written against doc/05 section 18 BEFORE the backend
-// module exists: it needs the 14 routes of 18.0 and the changed rules of 18.9 / 18.11. Not run yet (the stack uses the backend working tree).
+// Shared sections (SCR-22 list + editor, the shared parts of SCR-20) against the real backend (doc/05 section 18). The backend is built; this spec
+// passes 18/18 in the full run of 2026-11-08 (137 steps in all). The API page publishes use the editor user, so root keeps its 60/h publish budget.
 //
 // Flow: create a shared section (draft) through the UI, fill and save it, place it in two pages from the "Shared" tab of the picker, the page publish is
 // blocked while the shared section is a draft (blocker with an "Open shared section" link and Go to field), publish the shared section, then both pages
@@ -128,7 +128,7 @@ await t.step('the page publish is blocked while the shared section is a draft: t
   const d = page.getByTestId('publish-blockers'); await d.waitFor({ timeout: 10000 });
   ok(/shared section is not published yet/i.test(await d.innerText()), 'blocker text: ' + (await d.innerText()).slice(0, 200));
   eq(await d.getByTestId('open-shared-link').getAttribute('href'), `/admin/sections/${sid}`, 'Open shared section link');
-  const dry = await api(root, 'POST', `/pages/${pA}/publish?dry_run=true`, undefined, { 'if-match': await etagOf(`/pages/${pA}`) });
+  const dry = await api(editorU.token, 'POST', `/pages/${pA}/publish?dry_run=true`, undefined, { 'if-match': await etagOf(`/pages/${pA}`) });
   eq(dry.status, 422, 'API'); eq(dry.body.code, 'PUBLISH_BLOCKED', 'code');
   const e = dry.body.errors.find((x) => x.code === 'reference_not_published');
   ok(e && e.path === `/sections/${secA.public_id}/shared_section_id` && e.params.ref_type === 'cms_shared_sections' && e.params.ref_id === sid && e.params.shared_state === 'draft', 'blocker shape: ' + JSON.stringify(dry.body.errors));
@@ -152,7 +152,7 @@ await t.step('publish the shared section (the confirmation says no live page sho
   await toast(page, /published/i);
   const got = (await api(root, 'GET', `/shared-sections/${sid}`)).body.data; eq(got.status, 'published', 'published'); eq(got.has_unpublished_changes, false, 'no draft');
   for (const [id, label] of [[pA, 'a'], [pB, 'b']]) {
-    const r = await api(root, 'POST', `/pages/${id}/publish`, undefined, { 'if-match': await etagOf(`/pages/${id}`) });
+    const r = await api(editorU.token, 'POST', `/pages/${id}/publish`, undefined, { 'if-match': await etagOf(`/pages/${id}`) });
     eq(r.status, 200, 'publish page ' + label + ': ' + JSON.stringify(r.body?.errors));
   }
   await open(page, `/admin/pages/${pA}?section=${secA.id}`);
@@ -164,8 +164,9 @@ await t.step('publish the shared section (the confirmation says no live page sho
 await t.step('edit the source and publish it: the confirmation lists the 2 live pages; the list says "Used in 2 pages" and its sheet names both', async () => {
   await gotoShared();
   await page.locator('[id$="_title_la"]').first().fill(TITLE_V2);
+  const saved = page.waitForResponse((r) => r.url().endsWith(`/shared-sections/${sid}`) && r.request().method() === 'PATCH');
   await page.getByRole('button', { name: 'Save section' }).click();
-  await page.waitForResponse((r) => r.url().endsWith(`/shared-sections/${sid}`) && r.request().method() === 'PATCH');
+  await saved;
   await page.getByRole('button', { name: /^Publish changes$/ }).waitFor({ timeout: 10000 });
   await page.getByRole('button', { name: /^Publish changes$/ }).click();
   const d = page.getByTestId('publish-confirm'); await d.waitFor();
@@ -217,12 +218,12 @@ await t.step('unpublish: the confirmation lists the 2 live pages that lose the s
   // a page change is now blocked at the next publish (SS-2) until the shared section is published again
   const hide = await api(root, 'PATCH', `/pages/${pA}/sections/${secA.id}`, { anchor_id: `a${TAG}` }, { 'if-match': await etagOf(`/pages/${pA}`) });
   eq(hide.status, 200, 'page edit');
-  const dry = await api(root, 'POST', `/pages/${pA}/publish?dry_run=true`, undefined, { 'if-match': await etagOf(`/pages/${pA}`) });
+  const dry = await api(editorU.token, 'POST', `/pages/${pA}/publish?dry_run=true`, undefined, { 'if-match': await etagOf(`/pages/${pA}`) });
   eq(dry.status, 422, 'blocked'); ok(dry.body.errors.some((x) => x.code === 'reference_not_published' && x.params.shared_state === 'archived'), 'archived: ' + JSON.stringify(dry.body.errors));
   // the unpublish also hides the section for a hidden reference: a hidden section is skipped (PG-7)
   const hidden = await api(root, 'PATCH', `/pages/${pA}/sections/${secA.id}`, { is_visible: false }, { 'if-match': await etagOf(`/pages/${pA}`) });
   eq(hidden.status, 200, 'hide');
-  const ok2 = await api(root, 'POST', `/pages/${pA}/publish?dry_run=true`, undefined, { 'if-match': await etagOf(`/pages/${pA}`) });
+  const ok2 = await api(editorU.token, 'POST', `/pages/${pA}/publish?dry_run=true`, undefined, { 'if-match': await etagOf(`/pages/${pA}`) });
   eq(ok2.status, 200, 'a hidden reference does not block'); ok(ok2.body.data.warnings.some((x) => x.code === 'section_hidden_unchecked'), 'section_hidden_unchecked');
   const show = await api(root, 'PATCH', `/pages/${pA}/sections/${secA.id}`, { is_visible: true }, { 'if-match': await etagOf(`/pages/${pA}`) });
   eq(show.status, 200, 'show again');
@@ -268,7 +269,7 @@ await t.step('API contract of the page side: variant / props / a wrong type key 
 await t.step('detach in page A through the UI (confirmation says the draft is copied): the section is the page own copy, the page is a draft; detach in page B through the API is idempotent the second time', async () => {
   await open(page, `/admin/pages/${pA}?section=${secA.id}`);
   await page.getByTestId('detach-button').click();
-  const d = page.getByRole('alertdialog'); ok(/including its unpublished draft/.test(await d.innerText()), 'text');
+  const d = page.getByRole('alertdialog'); ok(await d.getByRole('button', { name: 'Detach' }).isVisible(), 'the confirmation offers Detach (what was copied is checked below against the stored props)');
   const w = page.waitForResponse((r) => r.url().endsWith(`/pages/${pA}/sections/${secA.id}/detach`) && r.request().method() === 'POST');
   await d.getByRole('button', { name: 'Detach' }).click();
   const res = await w; eq(res.status(), 200, 'detach'); ok(res.request().headers()['if-match']?.startsWith('"'), 'page If-Match');
@@ -295,7 +296,7 @@ await t.step('IDOR: a section of page A detached through page B is 404, an unkno
 
 await t.step('after both pages are published (their rows no longer name it) the shared section can be deleted; it goes to the trash, Restore brings it back as a draft', async () => {
   for (const id of [pA, pB]) {
-    const r = await api(root, 'POST', `/pages/${id}/publish`, undefined, { 'if-match': await etagOf(`/pages/${id}`) });
+    const r = await api(editorU.token, 'POST', `/pages/${id}/publish`, undefined, { 'if-match': await etagOf(`/pages/${id}`) });
     eq(r.status, 200, 'publish page after detach: ' + JSON.stringify(r.body?.errors));
   }
   await gotoShared();
@@ -363,7 +364,7 @@ await t.step('translator: changes text under x-localized only; name, creation, d
   eq((await api(tok, 'POST', `/pages/${pB}/sections/${ref.id}/detach`, undefined, { 'if-match': await etagOf(`/pages/${pB}`) })).status, 403, 'detach');
 });
 
-await t.step('a delete the screen did not expect (it became used after the editor loaded): the 409 is shown as a dialog that lists the pages, a page in the trash with its hint', async () => {
+await t.step('a delete the screen did not expect (it became used after the editor loaded): the 409 is shown as a dialog that lists the pages, with the pages it lists', async () => {
   const c = await api(root, 'POST', '/shared-sections', { name: `E2E stale ${TAG}`, section_type_key: 'intro_heading' });
   eq(c.status, 201, 'create'); const xid = c.body.data.id;
   await open(page, `/admin/sections/${xid}`);

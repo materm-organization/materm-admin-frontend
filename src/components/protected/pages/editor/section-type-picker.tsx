@@ -1,5 +1,6 @@
 "use client";
 
+import { useDebouncedValue } from "@/components/schema-form/widgets/use-debounced";
 import { useTranslations } from "next-intl";
 import { Link2Icon } from "lucide-react";
 import { useState } from "react";
@@ -49,8 +50,9 @@ export function SectionTypePicker({
   const [busy, setBusy] = useState<string | null>(null);
   const [tab, setTab] = useState<"types" | "shared">("types");
   const [keyword, setKeyword] = useState("");
+  const debouncedKeyword = useDebouncedValue(keyword, 250);
   const sharedEnabled = Boolean(pageId && onPickShared);
-  const shared = useSharedSections({ placeable_on_page: pageId, keyword: keyword.trim() || undefined, limit: 30, sort: "name" }, open && sharedEnabled && tab === "shared");
+  const shared = useSharedSections({ placeable_on_page: pageId, keyword: debouncedKeyword.trim() || undefined, limit: 30, sort: "name" }, open && sharedEnabled && tab === "shared");
   const types = useSectionTypes({ is_active: true, scope: "page" }, open);
   const options = addOptions(template, sections);
   const describe = (typeKey: string) => types.data?.data.find((x) => x.key === typeKey);
@@ -135,7 +137,7 @@ export function SectionTypePicker({
         <ErrorState error={shared.error} onRetry={() => void shared.refetch()} isRetrying={shared.isFetching} />
       ) : (shared.data?.data ?? []).length === 0 ? (
         <p className="rounded-md border border-dashed p-4 text-center text-sm text-muted-foreground" data-testid="shared-picker-empty">
-          {keyword.trim() ? t("shared.noMatch") : t("shared.empty")}
+          {debouncedKeyword.trim() ? t("shared.noMatch") : t("shared.empty")}
         </p>
       ) : (
         <ul className="grid gap-2 sm:grid-cols-2" aria-label={t("shared.list")}>

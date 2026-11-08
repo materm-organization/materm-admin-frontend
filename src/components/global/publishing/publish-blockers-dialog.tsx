@@ -114,6 +114,8 @@ export function PublishBlockersDialog({
   const groups = useMemo(() => groupIssues(tp, blockers, resource), [tp, blockers, resource]);
   const count = blockerCount ?? blockers.length;
   const canOpenShared = useCan(PERMISSION_KEYS.CMS_SECTIONS, PERMISSION_ACTIONS.READ);
+  // A trashed shared section is read only with `cms.sections:delete` (05 10.3 / 18.5): without it the link would be a 404.
+  const canOpenTrashedShared = useCan(PERMISSION_KEYS.CMS_SECTIONS, PERMISSION_ACTIONS.DELETE);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -144,7 +146,8 @@ export function PublishBlockersDialog({
                         <p className="text-muted-foreground">{issueMessage(tp, issue)}</p>
                       </div>
                       <div className="flex flex-wrap items-center gap-2">
-                      {issue.params?.ref_type === "cms_shared_sections" && typeof issue.params.ref_id === "number" && canOpenShared ? (
+                      {issue.params?.ref_type === "cms_shared_sections" && typeof issue.params.ref_id === "number" && canOpenShared &&
+                      issue.params.shared_state !== "missing" && (issue.params.shared_state !== "trashed" || canOpenTrashedShared) ? (
                         <Button asChild variant="outline" size="sm">
                           <Link href={`/admin/sections/${issue.params.ref_id}`} target="_blank" rel="noopener" data-testid="open-shared-link">
                             {t("openShared")}
