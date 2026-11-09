@@ -1282,7 +1282,7 @@
     },
     "actorTypes": {
       "user": "ຜູ້ໃຊ້",
-      "api_key": "API key",
+      "api_key": "ລະຫັດ API",
       "system": "ລະບົບ",
       "public": "ສາທາລະນະ"
     },
@@ -1300,7 +1300,7 @@
       "actorType": "ປະເພດຜູ້ດຳເນີນການ",
       "actorTypes": {
         "user": "ຜູ້ໃຊ້",
-        "api_key": "API key",
+        "api_key": "ລະຫັດ API",
         "system": "ລະບົບ",
         "public": "ສາທາລະນະ"
       },
