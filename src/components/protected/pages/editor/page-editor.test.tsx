@@ -20,7 +20,7 @@ vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: vi.fn(), replace: nav.replace }),
   useSearchParams: () => new URLSearchParams(nav.search),
 }));
-const toast = vi.hoisted(() => ({ success: vi.fn(), error: vi.fn(), info: vi.fn() }));
+const toast = vi.hoisted(() => ({ success: vi.fn(), error: vi.fn(), info: vi.fn(), warning: vi.fn() }));
 vi.mock("sonner", () => ({ toast }));
 
 const ALL = {
@@ -135,6 +135,21 @@ describe("PageEditor: the Content tab (T1.4.8)", () => {
     expect(screen.getByTestId(`section-row-${sectionsOf(8)[1].id}`)).toHaveTextContent("Hidden");
     await user.click(screen.getByRole("button", { name: "Show Intro text on the website" }));
     await waitFor(() => expect(sectionsOf(8)[1].is_visible).toBe(true));
+    // an ordinary section: hiding it needs no warning
+    expect(toast.warning).not.toHaveBeenCalled();
+  });
+
+  it("hiding the hero (required by the template) works but warns at once that the page cannot be published until one is shown", async () => {
+    const user = userEvent.setup();
+    await open();
+    await user.click(screen.getByRole("button", { name: "Hide Hero (brand) on the website" }));
+    await waitFor(() => expect(sectionsOf(8)[0].is_visible).toBe(false));
+    expect(toast.warning).toHaveBeenCalledWith(expect.stringContaining("required by the page template"));
+    expect(toast.warning).toHaveBeenCalledTimes(1);
+    // showing it again is silent
+    await user.click(screen.getByRole("button", { name: "Show Hero (brand) on the website" }));
+    await waitFor(() => expect(sectionsOf(8)[0].is_visible).toBe(true));
+    expect(toast.warning).toHaveBeenCalledTimes(1);
   });
 
   it("deletes a section after a confirmation; a required section (the hero) has no Delete", async () => {
@@ -288,6 +303,16 @@ describe("PageEditor: the section editor (SCR-21)", () => {
     const editor = await screen.findByTestId("section-editor");
     await user.click(within(editor).getByRole("switch", { name: /Hidden on the website/ }));
     await waitFor(() => expect(sectionsOf(8)[1].is_visible).toBe(false));
+    expect(toast.warning).not.toHaveBeenCalled();
+  });
+
+  it("the hidden switch of the hero's editor warns that the template requires it", async () => {
+    const user = userEvent.setup();
+    await open(8, `section=${sectionsOf(8)[0].id}`);
+    const editor = await screen.findByTestId("section-editor");
+    await user.click(within(editor).getByRole("switch", { name: /Hidden on the website/ }));
+    await waitFor(() => expect(sectionsOf(8)[0].is_visible).toBe(false));
+    expect(toast.warning).toHaveBeenCalledWith(expect.stringContaining("required by the page template"));
   });
 
   it("Go to field: the section opens and the blocker is shown at its field; the pointer leaves the address", async () => {

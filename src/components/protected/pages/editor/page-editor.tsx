@@ -354,6 +354,8 @@ export function PageEditor({ page, etag, onReseed }: PageEditorProps) {
   const toggleVisible = async (section: SectionSummary) => {
     try {
       await writes.updateSection(section.id, { is_visible: !section.is_visible });
+      // A hidden section the template requires (the hero) blocks publishing: say it now, not at the 422 of Publish.
+      if (section.is_visible && section.required) toast.warning(t("sections.hideRequiredWarning"));
     } catch (error) {
       explain(error, t("sections.toggleFailed"));
     }

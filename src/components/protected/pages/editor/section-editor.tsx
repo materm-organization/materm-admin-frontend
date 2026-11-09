@@ -171,6 +171,8 @@ export const SectionEditor = forwardRef<SectionEditorHandle, Props>(function Sec
     setTogglingVisible(true);
     try {
       await writes.updateSection(section.id, { is_visible: visible });
+      // A hidden section the template requires (the hero) blocks publishing: say it now, not at the 422 of Publish.
+      if (!visible && section.required) toast.warning(t("hideRequiredWarning"));
     } catch (error) {
       if (isConflictError(error)) onConflict();
       else toastError(error, t("saveFailed"));
