@@ -40,7 +40,7 @@ describe("TaxonomyPage - categories (SCR-26)", () => {
     const table = await screen.findByRole("table");
     await within(table).findByText("Music");
     const names = within(table).getAllByRole("row").slice(1).map((r) => within(r).getAllByRole("cell")[0].textContent);
-    expect(names).toEqual(["Music", "Camping", "Outdoor", "Avenger", "Hiking"]);
+    expect(names).toEqual(["Music", "Camping", "Outdoor", "Adventure", "Hiking"]);
     expect(within(within(table).getAllByRole("row")[1]).getAllByRole("cell")[2]).toHaveTextContent("1 (1)");
     expect(screen.getByRole("link", { name: "Tags" })).toHaveAttribute("href", "/admin/blog/tags");
     expect(screen.getByRole("link", { name: "Categories" })).toHaveAttribute("aria-current", "page");
@@ -106,21 +106,21 @@ describe("TaxonomyPage - categories (SCR-26)", () => {
   it("deleting an unused category moves it to the trash; the trash view lists it and restores it (a clash with a newer item is explained)", async () => {
     const user = userEvent.setup();
     const { unmount } = renderApp(<TaxonomyPage kind="categories" />);
-    await user.click(await screen.findByRole("button", { name: "Delete Avenger" }));
+    await user.click(await screen.findByRole("button", { name: "Delete Adventure" }));
     await user.click(within(await screen.findByRole("alertdialog")).getByRole("button", { name: "Delete" }));
     await waitFor(() => expect(toast.success).toHaveBeenCalledWith("Moved to the trash for 30 days."));
     expect(cats()[3].deleted_at).toBeTruthy();
     unmount();
     nav.search = "trashed=true";
     renderApp(<TaxonomyPage kind="categories" />);
-    expect(await screen.findByText("Avenger")).toBeInTheDocument();
+    expect(await screen.findByText("Adventure")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /^Edit / })).not.toBeInTheDocument();
     // somebody re-creates the key meanwhile
-    getMockDb().categories.push({ ...structuredClone(cats()[0]), id: 77, key: "avenger", translations: { la: { name: "N", slug: "avenger-2" }, en: { name: "N", slug: "avenger-2" } }, deleted_at: null });
-    await user.click(screen.getByRole("button", { name: "Restore Avenger" }));
+    getMockDb().categories.push({ ...structuredClone(cats()[0]), id: 77, key: "adventure", translations: { la: { name: "N", slug: "adventure-2" }, en: { name: "N", slug: "adventure-2" } }, deleted_at: null });
+    await user.click(screen.getByRole("button", { name: "Restore Adventure" }));
     await waitFor(() => expect(toast.error).toHaveBeenCalledWith("It can not be restored: the key is already used by another item."));
     getMockDb().categories.pop();
-    await user.click(screen.getByRole("button", { name: "Restore Avenger" }));
+    await user.click(screen.getByRole("button", { name: "Restore Adventure" }));
     await waitFor(() => expect(toast.success).toHaveBeenCalledWith("Restored."));
     expect(cats()[3].deleted_at).toBeNull();
   });
@@ -133,7 +133,7 @@ describe("TaxonomyPage - categories (SCR-26)", () => {
     await user.click(await screen.findByRole("button", { name: "Move Camping up" }));
     await waitFor(() => expect(bodies).toHaveLength(2));
     expect(bodies).toEqual([{ sort_order: 1 }, { sort_order: 2 }]);
-    expect(cats().map((c) => [c.key, c.sort_order])).toEqual([["music", 2], ["camping", 1], ["outdoor", 3], ["avenger", 4], ["hiking", 5]]);
+    expect(cats().map((c) => [c.key, c.sort_order])).toEqual([["music", 2], ["camping", 1], ["outdoor", 3], ["adventure", 4], ["hiking", 5]]);
     await waitFor(() => expect(within(screen.getByRole("table")).getAllByRole("row")[1]).toHaveTextContent("Camping"));
     expect(screen.getByRole("button", { name: "Move Camping up" })).toBeDisabled();
   });

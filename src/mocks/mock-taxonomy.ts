@@ -1,6 +1,6 @@
 // In-memory model of the categories and tags endpoints (doc/05 section 11.5; shapes: doc/api/openapi-admin.yaml
 // Category, Tag, Create/Update requests). Seeded with the five categories of the admin backend seed
-// (`0050_reference_content.sql`: music, camping, outdoor, avenger, hiking; slug = key; the Lao name is the English
+// (`0050_reference_content.sql`: music, camping, outdoor, adventure, hiking; slug = key; the Lao name is the English
 // copy). INVENTED: the tags (the seed has none), the posts that make the "in use" rules visible (post 1 is the real
 // seeded one), and one trashed tag.
 // Soft delete with the 30-day trash, `If-Match` mandatory on PATCH / DELETE / restore, unique key / slug, the in-use
@@ -39,7 +39,7 @@ const SLUG = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 const TRASH_DAYS = 30;
 
 export function seedTaxonomy(db: MockDb) {
-  const names: Array<[string, string]> = [["music", "Music"], ["camping", "Camping"], ["outdoor", "Outdoor"], ["avenger", "Avenger"], ["hiking", "Hiking"]];
+  const names: Array<[string, string]> = [["music", "Music"], ["camping", "Camping"], ["outdoor", "Outdoor"], ["adventure", "Adventure"], ["hiking", "Hiking"]];
   db.categories = names.map(([key, name], i) => ({
     id: i + 1,
     public_id: `0192d3a4-7c1e-7b52-9d0a-0000000000c${i + 1}`,

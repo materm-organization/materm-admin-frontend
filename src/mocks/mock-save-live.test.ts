@@ -417,7 +417,7 @@ describe("categories and tags (05 11.5)", () => {
   it("is seeded: five categories music..hiking with slug = key, no tags in the seed (three invented, one trashed)", () => {
     const db = getMockDb();
     const list = listTaxonomy(db, "categories", q(""));
-    expect(list.data.map((c) => c.key)).toEqual(["music", "camping", "outdoor", "avenger", "hiking"]);
+    expect(list.data.map((c) => c.key)).toEqual(["music", "camping", "outdoor", "adventure", "hiking"]);
     expect(list.data[0].translations.en).toMatchObject({ name: "Music", slug: "music" });
     expect(list.data[0]).toMatchObject({ post_count: 1, published_post_count: 1 });
     expect(listTaxonomy(db, "tags", q("")).data.map((t) => t.key)).toEqual(["family", "night-sky", "trail"]);
