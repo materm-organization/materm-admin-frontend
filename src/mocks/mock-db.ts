@@ -223,6 +223,9 @@ export function createMockDb(): MockDb {
     nextPreviewLinkId: 1,
     previewIssued: [],
     previewUnconfigured: false,
+    schedules: {},
+    scheduleCalls: [],
+    workflowRole: "full",
   };
   const stamp = micros(Date.UTC(2026, 9, 26, 9, 0, 0), 900);
   db.folders = FOLDER_DEFS.map((f) => ({

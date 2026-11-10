@@ -4,6 +4,7 @@ import { http } from "msw";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { EntryHost } from "@/components/protected/collections/entry-host";
+import { getEntry, scheduleEntry } from "@/mocks/mock-collections";
 import { getMockDb } from "@/mocks/mock-db";
 import { useMockApi } from "@/mocks/test-setup";
 import { server } from "@/test/msw-server";
@@ -265,5 +266,29 @@ describe("EntryEditor: rights and the trash", () => {
     await u.click(within(dialog).getByRole("button", { name: /^Restore version/ }));
     expect(await within(dialog).findByTestId("restore-issue")).toHaveTextContent(/year/i);
     expect(root(1).lock_version).toBe(1);
+  });
+});
+
+// D1: collection entries have a schedule but no review workflow; their id is the composite "<key>:<id>".
+describe("EntryEditor: schedule in the PublishBar (D1)", () => {
+  useMockApi();
+
+  it("a scheduled entry shows its time; Cancel schedule goes through the composite address; no review buttons", async () => {
+    const u = userEvent.setup();
+    me.current = { id: 6, name: "Noy Keomany", roleID: 2, permissions: grants({ "cms.collections": ["read", "update", "publish", "unpublish", "schedule", "review"], "cms.locales": ["read"], "media.library": ["read"] }) };
+    const entry = getMockDb().collectionEntries.find((e) => e.id === 1)!;
+    entry.status = "draft";
+    entry.first_published_at = "2026-10-20T09:00:00.000000+07:00";
+    const urls: string[] = [];
+    server.use(http.delete(`${API}/collections/team/entries/1/schedule`, ({ request }) => { urls.push(new URL(request.url).pathname); return undefined; }));
+    scheduleEntry(getMockDb(), "team", "1", { scheduled_at: new Date(Date.now() + 2 * 3_600_000).toISOString() }, getEntry(getMockDb(), "team", "1").etag);
+    await open(1);
+    expect(screen.getByTestId("status-badge")).toHaveTextContent("Scheduled");
+    expect(screen.queryByRole("button", { name: "Submit for review" })).not.toBeInTheDocument();
+    await u.click(screen.getByRole("button", { name: "Cancel schedule" }));
+    await u.click(within(await screen.findByRole("alertdialog")).getByRole("button", { name: "Cancel schedule" }));
+    // the entry was published once, so cancelling the schedule puts it back to Archived (not Draft)
+    await waitFor(() => expect(screen.getByTestId("status-badge")).toHaveTextContent("Archived"));
+    expect(urls).toEqual(["/api/v1/collections/team/entries/1/schedule"]);
   });
 });

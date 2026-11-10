@@ -16,6 +16,20 @@ export type AggregateStamp = {
   updated_at: string;
 };
 
+// The `schedule` member of a detail (D1; pages, posts, albums, collection entries; `null` = nothing scheduled): the newest pending /
+// running / failed row of the server's schedule table. `run_at` is `+07:00`. `failed` = the server tried 3 times and gave up; the
+// entity stays `scheduled` with a past `run_at` (overdue) until somebody unschedules, reschedules or publishes it now.
+export type ScheduleAction = "publish" | "apply_revision";
+export type ScheduleStatus = "pending" | "running" | "failed";
+export type ScheduleInfo = {
+  action: ScheduleAction;
+  run_at: string;
+  status: ScheduleStatus;
+  attempts: number;
+  // A short summary (blocker codes), never row content.
+  last_error: string | null;
+};
+
 // The lifecycle block every list row and detail of a publishable root has (05 10.2).
 export type PublishableMeta = {
   status: PublishableStatus;
@@ -32,6 +46,8 @@ export type PublishableMeta = {
   // Only on `?trashed=true` rows.
   deleted_at?: string | null;
   purge_at?: string | null;
+  // Only on the detail of a schedulable kind (D1).
+  schedule?: ScheduleInfo | null;
 };
 
 // What PublishBar needs to know about an entity (a subset of PublishableMeta + the two flags a page has).
@@ -42,6 +58,11 @@ export type PublishableState = Pick<PublishableMeta, "status" | "has_unpublished
   // The home page can not be unpublished (BR-16); a system page can not be deleted (BR-18).
   is_home?: boolean;
   is_system?: boolean;
+  // D1: what the bar shows for a scheduled entity (the detail's `schedule`, and the root's `scheduled_at` as a fallback) and whether it
+  // was ever published (`first_published_at`: the target of an unschedule is `archived` then, else `draft`).
+  schedule?: ScheduleInfo | null;
+  scheduled_at?: string | null;
+  first_published_at?: string | null;
   // Who created it (`created_by.id`): a kind with `update_own` (posts) lets the creator save / discard / preview.
   owner_id?: number | null;
 };
@@ -80,6 +101,12 @@ export type PublishableCommandResult = {
 };
 
 export type PublishedRevisionRef = { id: number; version: number };
+
+// `POST .../reject` also names the history revision that holds the comment (its change note).
+export type RejectResult = PublishableCommandResult & { review_revision?: PublishedRevisionRef };
+
+// 409 `INVALID_STATE` `details.reason` of the D1 commands (plus `trashed`, shared with the rest).
+export type ReviewScheduleInvalidReason = "not_draft" | "not_in_review" | "not_scheduled" | "nothing_to_publish" | "trashed";
 
 // `?dry_run=true` that passed: no ETag, nothing changed.
 export type PublishDryRunResult = { publishable: true; warnings: PublishIssue[] };

@@ -6,6 +6,7 @@
 // Rights: the model has two writers only. `db.translateOnly` containing the resource makes it a translate-only writer (read + translate,
 // 05 13.4.2 / 13.5.2); otherwise every action is allowed.
 import { draftRowOf as pageDraftRow } from "@/mocks/mock-pages";
+import { clearSchedule, makeReviewSchedule } from "@/mocks/mock-review-schedule";
 import {
   DEFAULT_LOCALE_CODE,
   MOCK_USER,
@@ -235,11 +236,12 @@ export function makeEngine<R extends Root, V extends object>(a: Adapter<R, V>) {
     });
   }
 
-  function publish(db: MockDb, id: string, params: Params, body: unknown, ifMatch: string | null) {
+  // `system`: the scheduler worker publishing at the time (no rights check).
+  function publish(db: MockDb, id: string, params: Params, body: unknown, ifMatch: string | null, system = false) {
     rejectUnknown(params, ["dry_run"]);
     const dryRun = boolParam(params, "dry_run") ?? false;
     const root = find(db, id);
-    if (translator(db)) throw deny("publish", "POST", `${a.path}/publish`);
+    if (!system && translator(db)) throw deny("publish", "POST", `${a.path}/publish`);
     requireMatch(ifMatch, root);
     if (body !== undefined && body !== null && !isObject(body)) throw validationFailed([{ in: "body", path: "", code: "invalid_type" }]);
     const input = (body ?? {}) as Record<string, unknown>;
@@ -255,6 +257,7 @@ export function makeEngine<R extends Root, V extends object>(a: Adapter<R, V>) {
     if (dryRun) return { data: { publishable: true as const, warnings }, etag: undefined };
 
     const stamp = touch(db, root);
+    clearSchedule(db, a.kind, root.id);
     const note = typeof input.change_note === "string" && input.change_note ? input.change_note : null;
     const draft = hasDraft(db, root) ? draftRow(db, root) : undefined;
     const snapshot = structuredClone(working(db, root));
@@ -289,6 +292,7 @@ export function makeEngine<R extends Root, V extends object>(a: Adapter<R, V>) {
     if (refs.length > 0 && !confirm) throw entityReferenced(refs);
     const warnings: SaveLiveWarning[] = a.unpublishWarnings ? a.unpublishWarnings(db, root) : refs.length > 0 ? [{ path: "", code: a.referencedWarning, params: { total_references: refs.length } }] : [];
     const stamp = touch(db, root);
+    clearSchedule(db, a.kind, root.id);
     warnings.push(...keepDraftAsHistory(db, root, "unpublish"));
     root.status = "archived";
     root.unpublished_at = stamp;
@@ -306,6 +310,7 @@ export function makeEngine<R extends Root, V extends object>(a: Adapter<R, V>) {
     draft.change_note = "discarded";
     draft.is_preview = false;
     touch(db, root);
+    clearSchedule(db, a.kind, root.id);
     return { data: writeResult(db, root), etag: etagOfRoot(root) };
   }
 
@@ -396,7 +401,31 @@ export function makeEngine<R extends Root, V extends object>(a: Adapter<R, V>) {
     return root.lock_version;
   }
 
+  // D1 (05 12.11): the schedule commands. No review workflow here (albums, FAQ groups, entries have none).
+  const d1 = makeReviewSchedule<R>({
+    kind: a.kind,
+    entityType: a.entityType,
+    permission: a.permission,
+    path: a.path,
+    review: false,
+    find: (db, id) => find(db, id),
+    requireMatch,
+    touch,
+    trashedCheck,
+    hasDraft,
+    validate: a.validate,
+    blockedError: blockedError as never,
+    writeResult: (db, root, warnings) => writeResult(db, root, warnings as SaveLiveWarning[]),
+    etag: etagOfRoot,
+    snapshot: (db, root) => working(db, root) as unknown as Record<string, unknown>,
+    denied: (db, _root, action) => (translator(db) ? action : null),
+    publishNow: (db, id) => {
+      publish(db, id, new URLSearchParams(), undefined, etagOfRoot(find(db, id)), true);
+    },
+  });
+
   return {
+    d1,
     translator,
     deny,
     revList,

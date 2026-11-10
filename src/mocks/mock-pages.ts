@@ -65,6 +65,7 @@ import type {
   SectionSummary,
 } from "@/types/pages";
 import { autoRedirectWarnings, type PathMove } from "@/mocks/mock-auto-redirects";
+import { clearSchedule, makeReviewSchedule, scheduleMember, scheduledAtOf } from "@/mocks/mock-review-schedule";
 import { sharedHasDraft, sharedIsLive, sharedRefBlock, sharedRow, sharedState, sharedWorking } from "@/mocks/mock-shared-core";
 import type { AggregateStamp, PublishIssue } from "@/types/publishing";
 import type { RevisionSummary } from "@/types/revisions";
@@ -416,7 +417,7 @@ export function listItemOf(db: MockDb, root: MockPageRoot, locale = DEFAULT_LOCA
     has_unpublished_changes: hasDraft(db, root),
     published_at: root.published_at,
     first_published_at: root.first_published_at,
-    scheduled_at: null,
+    scheduled_at: scheduledAtOf(db, "pages", root.id),
     unpublished_at: root.unpublished_at,
     created_by: root.created_by,
     updated_by: root.updated_by,
@@ -439,6 +440,7 @@ export function detailOf(db: MockDb, root: MockPageRoot, locale = DEFAULT_LOCALE
     ),
     missing_locales: MOCK_ACTIVE_LOCALE_CODES.filter((c) => blank(snap.translations.find((t) => t.locale_code === c)?.title)),
     sections_missing: sectionsMissing(snap),
+    schedule: scheduleMember(db, "pages", root.id),
   };
 }
 
@@ -1544,6 +1546,8 @@ export function publishPage(db: MockDb, id: string, params: Params, body: unknow
   if (dryRun) return { data: { publishable: true as const, warnings }, etag: undefined };
 
   const stamp = touch(db, root);
+  // A publish supersedes a booking (a scheduled publish, or an `apply_revision` of this very draft).
+  clearSchedule(db, "pages", root.id);
   const note = typeof input.change_note === "string" && input.change_note ? input.change_note : null;
   const draft = hasDraft(db, root) ? draftRowOf(db, root) : undefined;
   const oldPath = root.live.page.path;
@@ -1581,6 +1585,7 @@ export function unpublishPage(db: MockDb, id: string, params: Params, ifMatch: s
   if (working(db, root).page.is_home) throw invalidState("is_home");
   const warnings = referenced(db, root, confirm);
   const stamp = touch(db, root);
+  clearSchedule(db, "pages", root.id);
   warnings.push(...keepDraftAsHistory(db, root, "unpublish"));
   root.status = "archived";
   root.unpublished_at = stamp;
@@ -1597,6 +1602,8 @@ export function discardDraft(db: MockDb, id: string, ifMatch: string | null) {
   draft.change_note = "discarded";
   draft.is_preview = false;
   touch(db, root);
+  // The booking was for this draft (`apply_revision`); the server would cancel it at the fire (`no_draft`).
+  clearSchedule(db, "pages", root.id);
   return { data: writeResult(db, root), etag: etagOfPage(root) };
 }
 
@@ -1710,3 +1717,35 @@ export function touchPageAsSomeoneElse(db: MockDb, id: number): number {
   root.updated_by = { id: 4, name: "Somchai Vongsa" };
   return root.lock_version;
 }
+
+// ---------------------------------------------------------------------------------------------------------------
+// D1: review and schedule (05 12.10 - 12.11), the generic model of `mock-review-schedule.ts`
+// ---------------------------------------------------------------------------------------------------------------
+const d1 = makeReviewSchedule<MockPageRoot>({
+  kind: "pages",
+  entityType: "cms.pages",
+  permission: "cms.pages",
+  path: "/pages/{id}",
+  review: true,
+  find: findRoot,
+  requireMatch,
+  touch,
+  trashedCheck,
+  hasDraft,
+  validate: validateForPublish,
+  blockedError,
+  writeResult: (db, root, warnings) => writeResult(db, root, warnings as SaveLiveWarning[]),
+  etag: etagOfPage,
+  snapshot: (db, root) => working(db, root) as unknown as Record<string, unknown>,
+  denied: () => null,
+  publishNow: (db, id) => {
+    publishPage(db, id, new URLSearchParams(), undefined, etagOfPage(findRoot(db, id)));
+  },
+});
+export const submitPageForReview = d1.submitReview;
+export const rejectPage = d1.reject;
+export const schedulePage = d1.schedule;
+export const unschedulePage = d1.unschedule;
+export const firePageSchedule = d1.fire;
+export const failPageSchedule = d1.fail3;
+export const makePageScheduleOverdue = d1.makeOverdue;

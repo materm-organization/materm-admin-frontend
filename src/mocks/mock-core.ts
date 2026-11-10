@@ -230,6 +230,10 @@ export type MockPostRoot = {
 };
 // Who the signed-in user is for the posts model (05 13.3.2): an editor (every action), an author (`create`, `update_own`,
 // `delete_own`, `translate`: only their own posts, and no publish) or a translator (`read` + `translate`).
+export type MockWorkflowRole = "full" | "writer" | "reviewer" | "scheduler";
+// A booked time (05 12.11): `run_at` is a wall-clock instant in ms. `failed` = the server tried 3 times and gave up (the entity stays `scheduled`,
+// overdue).
+export type MockSchedule = { action: "publish" | "apply_revision"; run_at: number; status: "pending" | "running" | "failed"; attempts: number; last_error: string | null };
 export type MockPostRole = "editor" | "author" | "translator";
 
 export type MockMenu = Omit<MenuDetail, "items" | "limits" | "options"> & {
@@ -360,6 +364,15 @@ export type MockDb = {
   previewIssued: number[];
   // The server has no `preview.portalUrl` / `revalidate.url`: creating a link is a 503 (toggled by `__MATERM_MOCK__`).
   previewUnconfigured: boolean;
+  // --- D1 review and schedule (doc/05 12.10 - 12.11) -------------------------------------------------------------
+  // The schedule rows (the server's schedule table) of the pages, posts, albums and collection entries, by `"<kind>/<id>"`.
+  schedules: Record<string, MockSchedule>;
+  // Wall-clock instants of the schedule calls (60 per hour for the signed-in user, every kind together).
+  scheduleCalls: number[];
+  // Who the signed-in user is for the review / schedule routes (on top of each model's own roles): `full` = every action; `writer` =
+  // `update` only (can submit for review, can not reject, can not schedule); `reviewer` = `read` + `review` (can reject only);
+  // `scheduler` = `schedule` WITHOUT `publish` (BR-11: the schedule routes refuse).
+  workflowRole: MockWorkflowRole;
 };
 
 export function tick(db: { clock: number }): string {

@@ -643,3 +643,44 @@ describe("PostEditor: conflicts, preview links, history", () => {
     void u;
   });
 });
+
+// D1 (doc/05 12.10, BR-10): while a post is in review or scheduled, an author who holds only `update_own` can not touch it (the server answers 403 to a
+// PATCH, even a translation): the editor is read only and says why; the editor (`update`) keeps working.
+describe("PostEditor: BR-10, a post in review or scheduled is read only for an update_own author", () => {
+  useMockApi();
+
+  it.each([
+    ["in_review", "This post is in review, so you cannot edit it."],
+    ["scheduled", "This post is scheduled for publishing, so you cannot edit it."],
+  ] as const)("%s: the banner, no form to type in, no Save draft / Submit for review", async (status, text) => {
+    root(3).status = status;
+    me.current = { id: 6, name: "Noy Keomany", roleID: 3, permissions: AUTHOR };
+    setPostRole(getMockDb(), "author");
+    await open(3);
+    expect(screen.getByTestId("author-locked-note")).toHaveTextContent(text);
+    expect(screen.queryByTestId("read-only-note")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("translate-mode-note")).not.toBeInTheDocument();
+    expect(screen.getByLabelText(/^Title/)).toBeDisabled();
+    expect(screen.queryByRole("button", { name: "Save draft" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Submit for review" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Publish" })).not.toBeInTheDocument();
+  });
+
+  it("the same author can still edit and submit her own DRAFT; the editor edits a post in review", async () => {
+    me.current = { id: 6, name: "Noy Keomany", roleID: 3, permissions: AUTHOR };
+    setPostRole(getMockDb(), "author");
+    const draft = await open(3);
+    expect(screen.queryByTestId("author-locked-note")).not.toBeInTheDocument();
+    expect(screen.getByLabelText(/^Title/)).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Submit for review" })).toBeEnabled();
+    draft.unmount();
+
+    root(3).status = "in_review";
+    me.current = { id: 6, name: "Noy Keomany", roleID: 2, permissions: EDITOR };
+    setPostRole(getMockDb(), "editor");
+    await open(3);
+    expect(screen.queryByTestId("author-locked-note")).not.toBeInTheDocument();
+    expect(screen.getByLabelText(/^Title/)).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Reject…" })).toBeInTheDocument();
+  });
+});

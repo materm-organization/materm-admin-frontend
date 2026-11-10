@@ -222,7 +222,15 @@ export function AlbumEditor({ album, etag, onReseed }: AlbumEditorProps) {
     <div className="space-y-4">
       <PublishBar
         resource="albums"
-        entity={{ id: album.id, status: album.status, has_unpublished_changes: album.has_unpublished_changes, deleted_at: album.deleted_at }}
+        entity={{
+          id: album.id,
+          status: album.status,
+          has_unpublished_changes: album.has_unpublished_changes,
+          deleted_at: album.deleted_at,
+          schedule: album.schedule,
+          scheduled_at: album.scheduled_at,
+          first_published_at: album.first_published_at,
+        }}
         etag={etag}
         isDirty={dirty}
         flush={flush}

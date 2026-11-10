@@ -39,6 +39,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useApiErrorHandler } from "@/hooks/use-api-error";
 import { useAutosave, useAutosavePreference } from "@/hooks/use-autosave";
 import { useLocales } from "@/hooks/use-locales";
+import { usePublishCapabilities } from "@/hooks/use-publish-capabilities";
 import { useCan } from "@/hooks/use-permission";
 import { usePostWrites, writeThroughPost } from "@/hooks/use-posts";
 import { useUnsavedChangesGuard } from "@/hooks/use-unsaved-changes-guard";
@@ -110,6 +111,7 @@ export type PostEditorProps = {
 export function PostEditor({ post, etag, onReseed }: PostEditorProps) {
   const t = useTranslations("posts.editor");
   const tProblem = useTranslations("posts.problems");
+  const tPublishing = useTranslations("publishing");
   const tErrors = useTranslations("errors");
   const router = useRouter();
   const pathname = usePathname();
@@ -123,7 +125,9 @@ export function PostEditor({ post, etag, onReseed }: PostEditorProps) {
   // `update`, or `update_own` of my own post: everything. `translate`: the texts of the languages that are not the default one.
   const canUpdate = useCan(PERMISSION_KEYS.CMS_BLOG, PERMISSION_ACTIONS.UPDATE, { ownerId: post.created_by?.id });
   const canTranslate = useCan(PERMISSION_KEYS.CMS_BLOG, PERMISSION_ACTIONS.TRANSLATE);
-  const mode: PostEditMode = trashed ? "none" : canUpdate ? "full" : canTranslate ? "translate" : "none";
+  // BR-10: an author who holds only `update_own` can not touch a post that is in review or scheduled (not even to translate it): read only.
+  const { authorLocked } = usePublishCapabilities("posts", { status: post.status, owner_id: post.created_by?.id ?? null });
+  const mode: PostEditMode = trashed || authorLocked ? "none" : canUpdate ? "full" : canTranslate ? "translate" : "none";
 
   // ---- data ----------------------------------------------------------------------------------------------------------------------
   const writes = usePostWrites(postId);
@@ -351,7 +355,16 @@ export function PostEditor({ post, etag, onReseed }: PostEditorProps) {
     <div className="space-y-4">
       <PublishBar
         resource="posts"
-        entity={{ id: post.id, status: post.status, has_unpublished_changes: post.has_unpublished_changes, deleted_at: post.deleted_at, owner_id: post.created_by?.id ?? null }}
+        entity={{
+          id: post.id,
+          status: post.status,
+          has_unpublished_changes: post.has_unpublished_changes,
+          deleted_at: post.deleted_at,
+          owner_id: post.created_by?.id ?? null,
+          schedule: post.schedule,
+          scheduled_at: post.scheduled_at,
+          first_published_at: post.first_published_at,
+        }}
         etag={etag}
         isDirty={dirty}
         flush={flush}
@@ -370,7 +383,13 @@ export function PostEditor({ post, etag, onReseed }: PostEditorProps) {
           <AlertDescription>{canUpdate ? t("translateOnlyNote") : t("translateNote", { owner: ownerName })}</AlertDescription>
         </Alert>
       ) : null}
-      {mode === "none" && !trashed ? (
+      {authorLocked && !trashed ? (
+        <Alert data-testid="author-locked-note">
+          <LockIcon />
+          <AlertDescription>{tPublishing(`review.locked.${post.status === "scheduled" ? "scheduled" : "in_review"}`, { noun: tPublishing("noun.posts") })}</AlertDescription>
+        </Alert>
+      ) : null}
+      {mode === "none" && !trashed && !authorLocked ? (
         <Alert data-testid="read-only-note">
           <LockIcon />
           <AlertDescription>{t("readOnlyNote", { owner: ownerName })}</AlertDescription>

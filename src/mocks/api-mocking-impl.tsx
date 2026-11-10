@@ -12,7 +12,8 @@ import { touchPageAsSomeoneElse } from "@/mocks/mock-pages";
 import { getPost, postsSummary, setPostRole, touchPostAsSomeoneElse } from "@/mocks/mock-posts";
 import { exhaustPreviewRate, fillPreviewLinks, previewLinkSummary, setPreviewUnconfigured } from "@/mocks/mock-preview";
 import { axiosInstance, axiosPublicInstance } from "@/lib/axios";
-import type { MockPostRole } from "@/mocks/mock-core";
+import type { MockPostRole, MockWorkflowRole } from "@/mocks/mock-core";
+import { WORKFLOW_ACTIONS, failSchedule, fireSchedule, makeScheduleOverdue, setWorkflowRole, type ScheduleKind } from "@/mocks/mock-schedule-helpers";
 import { API_ENDPOINTS } from "@/lib/constants/api-endpoints";
 
 // Points the admin's axios instances at the in-memory API (`mocks/mock-db.ts`) while mounted, and says so in a
@@ -83,6 +84,18 @@ export default function ApiMockingImpl({ children }: { children: ReactNode }) {
       albums: () => albumsSummary(getMockDb()),
       faqGroups: () => faqSummary(getMockDb()),
       posts: () => postsSummary(getMockDb()),
+      // D1 review and schedule (05 12.10 - 12.11): `fireSchedule("pages", 9)` = the server's scheduler worker publishes it now (kinds: pages, posts,
+      // albums, collection-entries with the id "<key>:<id>"); `failSchedule(kind, id)` = it gave up after 3 attempts; `makeScheduleOverdue(kind, id)`
+      // = the time passed before it got there. `setWorkflowRole("writer" | "reviewer" | "scheduler" | "full")` changes the model AND the cached
+      // `/auth/me` of pages, posts, galleries and collections (the scheduler holds `schedule` without `publish`: BR-11).
+      fireSchedule: (kind: ScheduleKind, id: number | string) => fireSchedule(getMockDb(), kind, id),
+      failSchedule: (kind: ScheduleKind, id: number | string, lastError?: string) => failSchedule(getMockDb(), kind, id, lastError),
+      makeScheduleOverdue: (kind: ScheduleKind, id: number | string) => makeScheduleOverdue(getMockDb(), kind, id),
+      setWorkflowRole: (role: MockWorkflowRole) => {
+        setWorkflowRole(getMockDb(), role);
+        const actions = WORKFLOW_ACTIONS[role];
+        rewriteMe({ "cms.pages": actions, "cms.blog": actions, "cms.galleries": actions, "cms.collections": actions }, undefined);
+      },
       // One post as the editor reads it (the working copy): for a click-through script that checks what was saved.
       post: (id: number) => getPost(getMockDb(), String(id)).data,
     };

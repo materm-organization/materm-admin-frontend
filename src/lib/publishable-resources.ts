@@ -23,6 +23,10 @@ export type PublishableConfig = {
   // The kind has `update_own` (the creator may save, discard and issue preview links of their own thing, 05 13.3.2). Publish and
   // unpublish never count the creator: they need `publish` / `unpublish`.
   ownActions: boolean;
+  // D1 (05 12.10 - 12.11): the review workflow (submit for review / reject; `{key}:review` rejects) exists for pages and posts only.
+  review: boolean;
+  // D1: `POST` / `DELETE .../schedule`; needs `{permissionKey}:schedule` AND `{permissionKey}:publish` (BR-11). FAQ groups, forms and shared sections have none.
+  schedule: boolean;
 };
 
 export const PUBLISHABLE_RESOURCES: Record<PublishableResource, PublishableConfig> = {
@@ -34,6 +38,8 @@ export const PUBLISHABLE_RESOURCES: Record<PublishableResource, PublishableConfi
     previewActions: [PERMISSION_ACTIONS.UPDATE, PERMISSION_ACTIONS.REVIEW],
     previewLinks: true,
     ownActions: false,
+    review: true,
+    schedule: true,
   },
   posts: {
     base: (id) => `/posts/${id}`,
@@ -43,6 +49,8 @@ export const PUBLISHABLE_RESOURCES: Record<PublishableResource, PublishableConfi
     previewActions: [PERMISSION_ACTIONS.UPDATE, PERMISSION_ACTIONS.REVIEW],
     previewLinks: true,
     ownActions: true,
+    review: true,
+    schedule: true,
   },
   // T1.5.6 (05 13.2): no preview links (PT-18), no `update_own`.
   albums: {
@@ -53,6 +61,8 @@ export const PUBLISHABLE_RESOURCES: Record<PublishableResource, PublishableConfi
     previewActions: [PERMISSION_ACTIONS.UPDATE, PERMISSION_ACTIONS.REVIEW],
     previewLinks: false,
     ownActions: false,
+    review: false,
+    schedule: true,
   },
   "faq-groups": {
     base: (id) => `/faq-groups/${id}`,
@@ -62,6 +72,8 @@ export const PUBLISHABLE_RESOURCES: Record<PublishableResource, PublishableConfi
     previewActions: [PERMISSION_ACTIONS.UPDATE, PERMISSION_ACTIONS.REVIEW],
     previewLinks: false,
     ownActions: false,
+    review: false,
+    schedule: false,
   },
   // T1.5.7 (05 13.2 / 13.6.5): no preview links (PT-18), no `update_own`. The recipients are not part of the draft (13.6.4).
   forms: {
@@ -72,6 +84,8 @@ export const PUBLISHABLE_RESOURCES: Record<PublishableResource, PublishableConfi
     previewActions: [PERMISSION_ACTIONS.UPDATE, PERMISSION_ACTIONS.REVIEW],
     previewLinks: false,
     ownActions: false,
+    review: false,
+    schedule: false,
   },
   // Collection entries (05 17): the id is the composite `"<collection key>:<entry id>"` (`lib/collections/ref.ts`). No preview links (05 17.14), no `update_own`.
   "collection-entries": {
@@ -85,6 +99,8 @@ export const PUBLISHABLE_RESOURCES: Record<PublishableResource, PublishableConfi
     previewActions: [PERMISSION_ACTIONS.UPDATE],
     previewLinks: false,
     ownActions: false,
+    review: false,
+    schedule: true,
   },
   // Shared sections (05 18.8): publishable, addressed by the numeric id. `previewLinks` is false by SS-10 (the portal's preview takes pages and posts
   // only); if the contract adds a preview for them (SS-16) this is the one switch to flip.
@@ -96,6 +112,8 @@ export const PUBLISHABLE_RESOURCES: Record<PublishableResource, PublishableConfi
     previewActions: [PERMISSION_ACTIONS.UPDATE],
     previewLinks: false,
     ownActions: false,
+    review: false,
+    schedule: false,
   },
 };
 

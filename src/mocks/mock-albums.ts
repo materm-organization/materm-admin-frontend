@@ -42,6 +42,7 @@ import {
   type MockDb,
   type Params,
 } from "@/mocks/mock-core";
+import { scheduleMember, scheduledAtOf } from "@/mocks/mock-review-schedule";
 import { blank, entityReferenced, findReferences, isObject, issue, makeEngine, TRASH_DAYS, type Reference } from "@/mocks/mock-faq-album-engine";
 import type { AlbumDetail, AlbumItem, AlbumListItem } from "@/types/albums";
 import type { ApiFieldError } from "@/types/api";
@@ -237,7 +238,7 @@ export function albumListItem(db: MockDb, root: MockAlbum, locale = DEFAULT_LOCA
     has_unpublished_changes: engine.hasDraft(db, root),
     published_at: root.published_at,
     first_published_at: root.first_published_at,
-    scheduled_at: null,
+    scheduled_at: scheduledAtOf(db, "albums", root.id),
     unpublished_at: root.unpublished_at,
     created_by: root.created_by,
     updated_by: root.updated_by,
@@ -255,6 +256,7 @@ export function albumDetail(db: MockDb, root: MockAlbum, locale = DEFAULT_LOCALE
     cover_media_id: snap.album.cover_media_id,
     translations: Object.fromEntries(snap.translations.map((t) => [t.locale_code, { title: t.title, description: t.description }])),
     missing_locales: MOCK_ACTIVE_LOCALE_CODES.filter((c) => blank(snap.translations.find((t) => t.locale_code === c)?.title)),
+    schedule: scheduleMember(db, "albums", root.id),
   };
 }
 
@@ -701,6 +703,12 @@ export const restoreAlbum = engine.restoreFromTrash;
 export const publishAlbum = engine.publish;
 export const unpublishAlbum = engine.unpublish;
 export const discardAlbumDraft = engine.discardDraft;
+// D1: schedule / unschedule (no review workflow for albums) and the helpers of the tests.
+export const scheduleAlbum = engine.d1.schedule;
+export const unscheduleAlbum = engine.d1.unschedule;
+export const fireAlbumSchedule = engine.d1.fire;
+export const failAlbumSchedule = engine.d1.fail3;
+export const makeAlbumScheduleOverdue = engine.d1.makeOverdue;
 export const listAlbumRevisions = engine.listRevisions;
 export const getAlbumRevision = engine.getRevision;
 export const restoreAlbumRevision = engine.restoreRevision;

@@ -70,6 +70,7 @@ import type { ApiFieldError } from "@/types/api";
 import type { SaveLiveWarning, UserRef } from "@/types/media";
 import type { PostDetail, PostListItem, PostMediaItem, PostTranslation, PostTranslationStatus } from "@/types/posts";
 import { autoRedirectWarnings, type PathMove } from "@/mocks/mock-auto-redirects";
+import { clearSchedule, makeReviewSchedule, scheduleMember, scheduledAtOf } from "@/mocks/mock-review-schedule";
 import type { AggregateStamp, PublishIssue } from "@/types/publishing";
 import type { RevisionSummary } from "@/types/revisions";
 
@@ -283,6 +284,9 @@ const isOwner = (root: MockPostRoot) => root.created_by !== null && root.created
 // `update`, or `update_own` of my own post.
 const canUpdate = (db: MockDb, root: MockPostRoot) => roleOf(db) === "editor" || (roleOf(db) === "author" && isOwner(root));
 const deny = (action: string, method: string, path: string) => forbidden(`cms.blog:${action} ${method} ${path}`);
+// BR-10 (doc/01): while a post is `in_review` or `scheduled`, a caller who holds `update_own` but not `update` (the `author` role) may not change it, not even
+// to translate it (403 on PATCH, PUT media and discard-draft).
+const authorLocked = (db: MockDb, root: MockPostRoot) => roleOf(db) === "author" && (root.status === "in_review" || root.status === "scheduled");
 
 // ---------------------------------------------------------------------------------------------------------------
 // Working copy and views
@@ -361,7 +365,7 @@ export function postListItem(db: MockDb, root: MockPostRoot, locale = DEFAULT_LO
     has_unpublished_changes: hasDraft(db, root),
     published_at: root.published_at,
     first_published_at: root.first_published_at,
-    scheduled_at: null,
+    scheduled_at: scheduledAtOf(db, "posts", root.id),
     unpublished_at: root.unpublished_at,
     created_by: root.created_by,
     updated_by: root.updated_by,
@@ -400,6 +404,7 @@ export function postDetail(db: MockDb, root: MockPostRoot, locale = DEFAULT_LOCA
     tags: snap.tag_ids.map((id) => ({ id, key: db.tags.find((t) => t.id === id)?.key ?? String(id), name: nameOf("tags", db, id, locale) })),
     media: snap.media.slice().sort((a, b) => a.sort_order - b.sort_order).map((m) => mediaItem(db, m)),
     missing_locales: MOCK_ACTIVE_LOCALE_CODES.filter((c) => blank(snap.translations.find((t) => t.locale_code === c)?.title)),
+    schedule: scheduleMember(db, "posts", root.id),
   };
 }
 
@@ -892,6 +897,7 @@ function serpWarnings(snap: MockPostSnapshot): SaveLiveWarning[] {
 // ---------------------------------------------------------------------------------------------------------------
 export function patchPost(db: MockDb, id: string, body: unknown, ifMatch: string | null) {
   const root = findPost(db, id);
+  if (authorLocked(db, root)) throw deny("update_own", "PATCH", "/posts/{id}");
   // Route policy: `update` | `update_own` (owner) | `translate`. Every role of this model holds `translate`, so nobody is
   // refused here; the VALUES decide below.
   requireMatch(ifMatch, root);
@@ -1034,6 +1040,7 @@ export function patchPost(db: MockDb, id: string, body: unknown, ifMatch: string
 // ---------------------------------------------------------------------------------------------------------------
 export function replacePostMedia(db: MockDb, id: string, body: unknown, ifMatch: string | null) {
   const root = findPost(db, id);
+  if (authorLocked(db, root)) throw deny("update_own", "PUT", "/posts/{id}/media");
   // `update` | `update_own` (owner); `translate` alone does not do (05 13.3.7).
   if (!canUpdate(db, root)) throw deny(roleOf(db) === "author" ? "update_own" : "update", "PUT", "/posts/{id}/media");
   requireMatch(ifMatch, root);
@@ -1242,11 +1249,12 @@ function blockedError(blockers: PublishIssue[], warnings: PublishIssue[]) {
   });
 }
 
-export function publishPost(db: MockDb, id: string, params: Params, body: unknown, ifMatch: string | null) {
+// `system`: the scheduler worker publishing at the time (no rights check).
+export function publishPost(db: MockDb, id: string, params: Params, body: unknown, ifMatch: string | null, system = false) {
   rejectUnknown(params, ["dry_run"]);
   const dryRun = boolParam(params, "dry_run") ?? false;
   const root = findPost(db, id);
-  if (roleOf(db) !== "editor") throw deny("publish", "POST", "/posts/{id}/publish");
+  if (!system && (roleOf(db) !== "editor" || db.workflowRole !== "full")) throw deny("publish", "POST", "/posts/{id}/publish");
   requireMatch(ifMatch, root);
   if (body !== undefined && body !== null && !isObject(body)) throw validationFailed([{ in: "body", path: "", code: "invalid_type" }]);
   const input = (body ?? {}) as Record<string, unknown>;
@@ -1262,6 +1270,7 @@ export function publishPost(db: MockDb, id: string, params: Params, body: unknow
   if (dryRun) return { data: { publishable: true as const, warnings }, etag: undefined };
 
   const stamp = touch(db, root);
+  clearSchedule(db, "posts", root.id);
   const note = typeof input.change_note === "string" && input.change_note ? input.change_note : null;
   const draft = hasDraft(db, root) ? postDraftRow(db, root) : undefined;
   const snapshot = structuredClone(postWorking(db, root));
@@ -1306,6 +1315,7 @@ export function unpublishPost(db: MockDb, id: string, params: Params, ifMatch: s
   if (root.status !== "published" && root.status !== "scheduled") throw invalidState("not_published");
   const warnings = referencedWarning(db, root);
   const stamp = touch(db, root);
+  clearSchedule(db, "posts", root.id);
   warnings.push(...keepDraftAsHistory(db, root, "unpublish"));
   root.status = "archived";
   root.unpublished_at = stamp;
@@ -1314,6 +1324,7 @@ export function unpublishPost(db: MockDb, id: string, params: Params, ifMatch: s
 
 export function discardPostDraft(db: MockDb, id: string, ifMatch: string | null) {
   const root = findPost(db, id);
+  if (authorLocked(db, root)) throw deny("update_own", "POST", "/posts/{id}/discard-draft");
   if (!canUpdate(db, root)) throw deny(roleOf(db) === "author" ? "update_own" : "update", "POST", "/posts/{id}/discard-draft");
   requireMatch(ifMatch, root);
   trashedCheck(root);
@@ -1323,6 +1334,7 @@ export function discardPostDraft(db: MockDb, id: string, ifMatch: string | null)
   draft.change_note = "discarded";
   draft.is_preview = false;
   touch(db, root);
+  clearSchedule(db, "posts", root.id);
   return { data: writeResult(db, root), etag: etagOfPost(root) };
 }
 
@@ -1443,3 +1455,36 @@ export function postPreviewPath(db: MockDb, root: MockPostRoot, locale: string):
 }
 
 export { canUpdate as canUpdatePost, isOwner as isPostOwner };
+
+// ---------------------------------------------------------------------------------------------------------------
+// D1: review and schedule (05 12.10 - 12.11), the generic model of `mock-review-schedule.ts`
+// ---------------------------------------------------------------------------------------------------------------
+const d1 = makeReviewSchedule<MockPostRoot>({
+  kind: "posts",
+  entityType: "cms.posts",
+  permission: "cms.blog",
+  path: "/posts/{id}",
+  review: true,
+  find: findPost,
+  requireMatch,
+  touch,
+  trashedCheck,
+  hasDraft,
+  validate: validatePostForPublish,
+  blockedError,
+  writeResult: (db, root, warnings) => writeResult(db, root, warnings as SaveLiveWarning[]),
+  etag: etagOfPost,
+  snapshot: (db, root) => postWorking(db, root) as unknown as Record<string, unknown>,
+  // `update` | `update_own` of mine (submit); `review`, `publish` and `schedule` are the editor's only.
+  denied: (db, root, action) => ((action === "update" ? canUpdate(db, root) : roleOf(db) === "editor") ? null : action),
+  publishNow: (db, id) => {
+    publishPost(db, id, new URLSearchParams(), undefined, etagOfPost(findPost(db, id)), true);
+  },
+});
+export const submitPostForReview = d1.submitReview;
+export const rejectPost = d1.reject;
+export const schedulePost = d1.schedule;
+export const unschedulePost = d1.unschedule;
+export const firePostSchedule = d1.fire;
+export const failPostSchedule = d1.fail3;
+export const makePostScheduleOverdue = d1.makeOverdue;

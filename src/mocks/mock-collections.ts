@@ -37,6 +37,7 @@ import {
   type MockEntryTranslation,
   type Params,
 } from "@/mocks/mock-core";
+import { scheduleMember, scheduledAtOf } from "@/mocks/mock-review-schedule";
 import { TRASH_DAYS, blank, isObject, issue, makeEngine } from "@/mocks/mock-faq-album-engine";
 import type { ApiFieldError } from "@/types/api";
 import type { JsonSchema } from "@/types/cms";
@@ -512,7 +513,7 @@ export function entryView(db: MockDb, root: MockCollectionEntry, detail: boolean
     has_unpublished_changes: engine.hasDraft(db, root),
     published_at: root.published_at,
     first_published_at: root.first_published_at,
-    scheduled_at: null,
+    scheduled_at: scheduledAtOf(db, "collection-entries", root.id),
     unpublished_at: root.unpublished_at,
     created_by: root.created_by,
     updated_by: root.updated_by,
@@ -530,6 +531,7 @@ export function entryView(db: MockDb, root: MockCollectionEntry, detail: boolean
       const row = snap.translations.find((x) => x.locale_code === code);
       return !row || !row.is_enabled || blank(row.title);
     }),
+    schedule: scheduleMember(db, "collection-entries", root.id),
   };
 }
 
@@ -766,6 +768,12 @@ export const restoreEntry = guarded("delete", "POST", "/restore", (db, id, ifMat
   if (root.deleted_at !== null && errors.length > 0 && ifMatch === engine.etagOfRoot(root)) throw validationFailed(errors);
   return engine.restoreFromTrash(db, id, ifMatch);
 });
+// D1 (05 17.x): schedule / unschedule. The rights are `cms.collections:schedule` AND `:publish` (BR-11): the `workflowRole` and the collection role decide.
+export const scheduleEntry = guarded("publish", "POST", "/schedule", (db, id, body: unknown, ifMatch: string | null) => engine.d1.schedule(db, id, body, ifMatch));
+export const unscheduleEntry = guarded("publish", "DELETE", "/schedule", (db, id, ifMatch: string | null) => engine.d1.unschedule(db, id, ifMatch));
+export const fireEntrySchedule = guarded("read", "POST", "", (db, id) => engine.d1.fire(db, id));
+export const failEntrySchedule = guarded("read", "POST", "", (db, id, lastError?: string) => engine.d1.fail3(db, id, lastError));
+export const makeEntryScheduleOverdue = guarded("read", "POST", "", (db, id) => engine.d1.makeOverdue(db, id));
 export const unpublishEntry = guarded("unpublish", "POST", "/unpublish", (db, id, params: Params, ifMatch: string | null) => engine.unpublish(db, id, params, ifMatch));
 export const discardEntryDraft = guarded("update", "POST", "/discard-draft", (db, id, ifMatch: string | null) => engine.discardDraft(db, id, ifMatch));
 export const listEntryRevisions = (db: MockDb, key: string, id: string, params: Params) => {

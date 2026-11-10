@@ -307,7 +307,15 @@ export function EntryEditor({ collection, entry, etag, onReseed }: { collection:
     <div className="space-y-4">
       <PublishBar
         resource="collection-entries"
-        entity={{ id: entryRef(key, entry.id), status: entry.status, has_unpublished_changes: entry.has_unpublished_changes, deleted_at: entry.deleted_at }}
+        entity={{
+          id: entryRef(key, entry.id),
+          status: entry.status,
+          has_unpublished_changes: entry.has_unpublished_changes,
+          deleted_at: entry.deleted_at,
+          schedule: entry.schedule,
+          scheduled_at: entry.scheduled_at,
+          first_published_at: entry.first_published_at,
+        }}
         etag={etag}
         isDirty={dirty}
         flush={flush}

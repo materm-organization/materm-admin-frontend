@@ -4,7 +4,7 @@ import { http } from "msw";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { AlbumHost } from "@/components/protected/albums/album-host";
-import { referenceAlbumItemFromPage, touchAlbumAsSomeoneElse } from "@/mocks/mock-albums";
+import { getAlbum, referenceAlbumItemFromPage, scheduleAlbum, touchAlbumAsSomeoneElse } from "@/mocks/mock-albums";
 import { getMockDb } from "@/mocks/mock-db";
 import { useMockApi } from "@/mocks/test-setup";
 import { server } from "@/test/msw-server";
@@ -318,5 +318,28 @@ describe("AlbumHost", () => {
   it("an album that does not exist is a not-found state, a trashed one says it is in the trash", async () => {
     renderApp(<AlbumHost id={999} />);
     expect(await screen.findByText("Album not found")).toBeInTheDocument();
+  });
+});
+
+// D1: albums have a schedule but no review workflow.
+describe("AlbumEditor: schedule in the PublishBar (D1)", () => {
+  useMockApi();
+
+  it("Schedule… only with schedule + publish, never Submit for review / Reject…; a scheduled album shows its time and can be cancelled", async () => {
+    const u = user();
+    const first = await open(3);
+    expect(screen.queryByRole("button", { name: "Schedule…" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Submit for review" })).not.toBeInTheDocument();
+    first.unmount();
+
+    me.current = { id: 6, name: "Noy Keomany", roleID: 2, permissions: grants({ "cms.galleries": ["read", "update", "publish", "unpublish", "schedule", "review"], "cms.locales": ["read"], "media.library": ["read"] }) };
+    scheduleAlbum(getMockDb(), "3", { scheduled_at: new Date(Date.now() + 2 * 3_600_000).toISOString() }, getAlbum(getMockDb(), "3").etag);
+    await open(3);
+    expect(screen.getByTestId("status-badge")).toHaveTextContent("Scheduled");
+    expect(screen.getByTestId("schedule-status")).toHaveTextContent(/Scheduled for/);
+    expect(screen.queryByRole("button", { name: "Reject…" })).not.toBeInTheDocument();
+    await u.click(screen.getByRole("button", { name: "Cancel schedule" }));
+    await u.click(within(await screen.findByRole("alertdialog")).getByRole("button", { name: "Cancel schedule" }));
+    await waitFor(() => expect(screen.getByTestId("status-badge")).toHaveTextContent("Draft only"));
   });
 });

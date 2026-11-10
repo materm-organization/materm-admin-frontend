@@ -2821,7 +2821,9 @@
       "published": "Published",
       "pending": "Published, changes pending",
       "archived": "Archived",
-      "trashed": "In the trash"
+      "trashed": "In the trash",
+      "scheduled_overdue": "Scheduled, overdue",
+      "scheduled_failed": "Scheduled, failed"
     },
     "translation": {
       "label": "Languages",
@@ -2849,14 +2851,23 @@
       "publishChanges": "Publish changes",
       "unpublish": "Unpublish",
       "discard": "Discard changes",
-      "preview": "Preview"
+      "preview": "Preview",
+      "submitReview": "Submit for review",
+      "reject": "Reject…",
+      "schedule": "Schedule…",
+      "scheduleChanges": "Schedule changes…",
+      "reschedule": "Reschedule…",
+      "cancelSchedule": "Cancel schedule",
+      "publishNow": "Publish now"
     },
     "hints": {
       "loading": "Loading the current version...",
       "dirty": "Save your changes first. The draft is what gets published.",
       "unsaved": "You have unsaved changes.",
       "nothingToSave": "There is nothing to save.",
-      "previewUnavailable": "Preview links are not available yet."
+      "previewUnavailable": "Preview links are not available yet.",
+      "dirtyReview": "Save your changes first. The saved draft is what goes to the reviewer.",
+      "dirtySchedule": "Save your changes first. The saved draft is what gets published at the chosen time."
     },
     "confirm": {
       "title": "Publish this {noun}?",
@@ -3102,7 +3113,17 @@
       "publishFailed": "It could not be published.",
       "unpublishFailed": "It could not be unpublished.",
       "discardFailed": "The changes could not be discarded.",
-      "saveFirst": "Your changes could not be saved, so nothing was published."
+      "saveFirst": "Your changes could not be saved, so nothing was published.",
+      "submit_review": "Submitted for review.",
+      "reject": "Sent back with your comment.",
+      "schedule": "Scheduled.",
+      "unschedule": "Schedule cancelled.",
+      "submitReviewFailed": "It could not be submitted for review.",
+      "rejectFailed": "It could not be sent back.",
+      "scheduleFailed": "It could not be scheduled.",
+      "unscheduleFailed": "The schedule could not be cancelled.",
+      "saveFirstReview": "Your changes could not be saved, so nothing was submitted.",
+      "saveFirstSchedule": "Your changes could not be saved, so nothing was scheduled."
     },
     "invalidState": {
       "nothing_to_publish": "There is nothing to publish: no changes since the last publish.",
@@ -3112,7 +3133,10 @@
       "trashed": "This {noun} is in the trash.",
       "system_page": "A system page cannot be deleted.",
       "section_required": "A section the template requires cannot be removed.",
-      "other": "The {noun} is not in the state this screen showed. It was reloaded."
+      "other": "The {noun} is not in the state this screen showed. It was reloaded.",
+      "not_draft": "Only a draft can be submitted for review. This {noun} is not a draft any more.",
+      "not_in_review": "This {noun} is not waiting for review any more.",
+      "not_scheduled": "This {noun} has no schedule any more."
     },
     "previewLinks": {
       "title": "Preview link",
@@ -3211,6 +3235,79 @@
       "auto_redirect_created": "A redirect from {source_path} to {target}{scope} was created automatically.",
       "auto_redirect_updated": "The automatic redirect from {source_path} to {target}{scope} was updated.",
       "auto_redirect_cleanup": "Old automatic redirects for {source_path}{scope} were tidied up. Old links go straight to {target}."
+    },
+    "review": {
+      "submit": {
+        "title": "Submit this {noun} for review?",
+        "description": "It moves to \"In review\". A reviewer can publish it or send it back to you with a comment.",
+        "noteLabel": "Message to the reviewer (optional)",
+        "notePlaceholder": "Anything the reviewer should know?",
+        "confirm": "Submit for review"
+      },
+      "reject": {
+        "title": "Send this {noun} back?",
+        "description": "The {noun} goes back to Draft. Your comment is kept in the History tab for whoever edits it next.",
+        "commentLabel": "Reason (required)",
+        "commentPlaceholder": "Tell the author what needs to change",
+        "counter": "{count} / {max}",
+        "required": "Write a reason first.",
+        "tooLong": "The reason is too long (at most {max} characters).",
+        "confirm": "Send back"
+      },
+      "locked": {
+        "in_review": "This {noun} is in review, so you cannot edit it. The reviewer will publish it or send it back to you.",
+        "scheduled": "This {noun} is scheduled for publishing, so you cannot edit it. Someone who can publish has to cancel the schedule first."
+      }
+    },
+    "schedule": {
+      "dialog": {
+        "title": {
+          "schedule": "Schedule this {noun}",
+          "reschedule": "Change the time of this {noun}",
+          "changes": "Schedule the changes to this {noun}"
+        },
+        "description": {
+          "schedule": "The {noun} goes live by itself at the chosen time. The publish rules are checked again when the time comes.",
+          "reschedule": "The new time replaces the one set before.",
+          "changes": "The edited version replaces the one on the website at the chosen time. Until then the website keeps showing the current one."
+        },
+        "timeLabel": "Go live at",
+        "rangeHint": "Pick a time between {min} and {max} (Asia/Vientiane, UTC+7).",
+        "confirm": {
+          "schedule": "Schedule",
+          "reschedule": "Save new time",
+          "changes": "Schedule changes"
+        }
+      },
+      "errors": {
+        "empty": "Pick a date and a time.",
+        "invalid": "The date or time is not valid.",
+        "too_soon": "Pick a time at least 1 minute from now.",
+        "too_far": "Pick a time within the next year.",
+        "serverRange": "The time has to be between {min} and {max}.",
+        "range": "This time is outside the allowed range.",
+        "rateMinutes": "Too many schedules. Try again in {minutes, plural, one {# minute} other {# minutes}}.",
+        "rateSeconds": "Too many schedules. Try again in {seconds, plural, one {# second} other {# seconds}}."
+      },
+      "status": {
+        "scheduledFor": "Scheduled for {when}",
+        "changesAt": "Changes go live at {when}",
+        "overdue": "Scheduled for {when} - overdue. The server should publish it any moment.",
+        "overdueChanges": "Changes were due at {when} - overdue. The server should apply them any moment.",
+        "failed": "Publishing at {when} failed after {attempts, plural, one {# attempt} other {# attempts}}.",
+        "failedChanges": "Applying the changes at {when} failed after {attempts, plural, one {# attempt} other {# attempts}}.",
+        "running": "Publishing right now...",
+        "zone": "Asia/Vientiane, UTC+7",
+        "reason": "Reason: {reason}.",
+        "failedHint": "You can cancel the schedule, pick a new time, or publish now."
+      },
+      "cancel": {
+        "title": "Cancel the schedule of this {noun}?",
+        "descriptionDraft": "The {noun} goes back to Draft and will not be published by itself.",
+        "descriptionArchived": "The {noun} goes back to Archived and will not be published by itself.",
+        "descriptionChanges": "The unpublished changes stay as a draft and will not go live by themselves.",
+        "confirm": "Cancel schedule"
+      }
     }
   },
   "pages": {

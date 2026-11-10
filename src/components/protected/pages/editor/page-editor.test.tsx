@@ -5,7 +5,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { PageHost } from "@/components/protected/pages/page-host";
 import { getMockDb } from "@/mocks/mock-db";
-import { touchPageAsSomeoneElse } from "@/mocks/mock-pages";
+import { getPage, schedulePage, touchPageAsSomeoneElse } from "@/mocks/mock-pages";
 import { useMockApi } from "@/mocks/test-setup";
 import { server } from "@/test/msw-server";
 import { grants, renderApp } from "@/test/render-app";
@@ -607,5 +607,38 @@ describe("PageEditor: Details, SEO and the publishing bar", () => {
     expect(screen.queryByRole("button", { name: "Add section" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /^Hide / })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Save draft" })).not.toBeInTheDocument();
+  });
+});
+
+// D1: the PublishBar of the page editor gets the schedule of the detail and writes every answer back.
+describe("PageEditor: review and schedule in the PublishBar (D1)", () => {
+  useMockApi();
+  const inTwoHours = () => new Date(Date.now() + 2 * 3_600_000).toISOString();
+
+  it("a scheduled page shows its time and the schedule commands; cancelling it writes the answer through (Draft again, no refetch of the page)", async () => {
+    me.current = { id: 6, roleID: 2, permissions: grants({ ...ALL, "cms.pages": [...ALL["cms.pages"], "schedule"] }) };
+    schedulePage(getMockDb(), "8", { scheduled_at: inTwoHours() }, getPage(getMockDb(), "8").etag);
+    let gets = 0;
+    server.use(http.get(`${API}/pages/8`, () => { gets += 1; return undefined; }));
+    const u = userEvent.setup();
+    await open(8);
+    expect(screen.getByTestId("status-badge")).toHaveTextContent("Scheduled");
+    expect(screen.getByTestId("schedule-status")).toHaveTextContent(/Scheduled for/);
+    expect(screen.getByRole("button", { name: "Reschedule…" })).toBeInTheDocument();
+    await u.click(screen.getByRole("button", { name: "Cancel schedule" }));
+    await u.click(within(await screen.findByRole("alertdialog")).getByRole("button", { name: "Cancel schedule" }));
+    await waitFor(() => expect(screen.getByTestId("status-badge")).toHaveTextContent("Draft only"));
+    expect(screen.queryByTestId("schedule-status")).not.toBeInTheDocument();
+    expect(gets).toBe(1);
+  });
+
+  it("without the schedule action there is no Schedule…; Submit for review moves a draft to In review in place", async () => {
+    const u = userEvent.setup();
+    await open(8);
+    expect(screen.queryByRole("button", { name: "Schedule…" })).not.toBeInTheDocument();
+    await u.click(screen.getByRole("button", { name: "Submit for review" }));
+    await u.click(within(await screen.findByRole("dialog")).getByRole("button", { name: "Submit for review" }));
+    await waitFor(() => expect(screen.getByTestId("status-badge")).toHaveTextContent("In review"));
+    expect(screen.getByRole("button", { name: "Reject…" })).toBeInTheDocument();
   });
 });

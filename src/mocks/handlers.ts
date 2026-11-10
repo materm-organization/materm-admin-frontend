@@ -35,7 +35,11 @@ import {
   restorePage,
   restorePageRevision,
   setHome,
+  rejectPage,
+  schedulePage,
+  submitPageForReview,
   unpublishPage,
+  unschedulePage,
   withIdempotency,
 } from "@/mocks/mock-pages";
 import {
@@ -51,8 +55,12 @@ import {
   publishPost,
   replacePostMedia,
   restorePost,
+  rejectPost,
   restorePostRevision,
+  schedulePost,
+  submitPostForReview,
   unpublishPost,
+  unschedulePost,
 } from "@/mocks/mock-posts";
 import {
   createAlbum,
@@ -72,6 +80,8 @@ import {
   restoreAlbum,
   restoreAlbumRevision,
   unpublishAlbum,
+  scheduleAlbum,
+  unscheduleAlbum,
 } from "@/mocks/mock-albums";
 import {
   createFaqGroup,
@@ -135,6 +145,8 @@ import {
   restoreEntry,
   restoreEntryRevision,
   unpublishEntry,
+  scheduleEntry,
+  unscheduleEntry,
 } from "@/mocks/mock-collections";
 import {
   createSharedSection,
@@ -990,13 +1002,68 @@ const webhookHandlers: HttpHandler[] = [
   http.post(P("/webhook-deliveries/:id/retry"), guard(({ params }) => ok(retryWebhookDelivery(getMockDb(), param(params, "id"))))),
 ];
 
+// D1 (05 12.10 - 12.11): submit-review / reject (pages, posts) and schedule / unschedule (pages, posts, albums, entries). `Idempotency-Key` is honoured on
+// the POSTs only; the DELETE never carries one. Mounted next to each kind's publish routes.
+type D1Fns = {
+  review?: {
+    submit: (db: ReturnType<typeof getMockDb>, id: string, body: unknown, ifMatch: string | null) => { data: unknown; etag: string | undefined };
+    reject: (db: ReturnType<typeof getMockDb>, id: string, body: unknown, ifMatch: string | null) => { data: unknown; etag: string | undefined };
+  };
+  schedule: (db: ReturnType<typeof getMockDb>, id: string, body: unknown, ifMatch: string | null) => { data: unknown; etag: string | undefined };
+  unschedule: (db: ReturnType<typeof getMockDb>, id: string, ifMatch: string | null) => { data: unknown; etag: string | undefined };
+};
+function d1Handlers(base: string, fns: D1Fns): HttpHandler[] {
+  const out: HttpHandler[] = [];
+  if (fns.review) {
+    const review = fns.review;
+    out.push(
+      http.post(P(`${base}/:id/submit-review`), guard(async ({ request, params }) => {
+        const body = await jsonBody(request);
+        return idempotent(request, params, () => ({ status: 200, ...review.submit(getMockDb(), param(params, "id"), body, request.headers.get("If-Match")) }));
+      })),
+      http.post(P(`${base}/:id/reject`), guard(async ({ request, params }) => {
+        const body = await jsonBody(request);
+        return idempotent(request, params, () => ({ status: 200, ...review.reject(getMockDb(), param(params, "id"), body, request.headers.get("If-Match")) }));
+      }))
+    );
+  }
+  out.push(
+    http.post(P(`${base}/:id/schedule`), guard(async ({ request, params }) => {
+      const body = await jsonBody(request);
+      return idempotent(request, params, () => ({ status: 200, ...fns.schedule(getMockDb(), param(params, "id"), body, request.headers.get("If-Match")) }));
+    })),
+    http.delete(P(`${base}/:id/schedule`), guard(({ request, params }) => {
+      const { data, etag } = fns.unschedule(getMockDb(), param(params, "id"), request.headers.get("If-Match"));
+      return ok(data, { etag });
+    }))
+  );
+  return out;
+}
+const d1PageHandlers = d1Handlers("/pages", { review: { submit: submitPageForReview, reject: rejectPage }, schedule: schedulePage, unschedule: unschedulePage });
+const d1PostHandlers = d1Handlers("/posts", { review: { submit: submitPostForReview, reject: rejectPost }, schedule: schedulePost, unschedule: unschedulePost });
+const d1AlbumHandlers = d1Handlers("/albums", { schedule: scheduleAlbum, unschedule: unscheduleAlbum });
+const d1EntryHandlers: HttpHandler[] = [
+  http.post(P("/collections/:key/entries/:id/schedule"), guard(async ({ request, params }) => {
+    const body = await jsonBody(request);
+    return idempotent(request, params, () => ({ status: 200, ...scheduleEntry(getMockDb(), param(params, "key"), param(params, "id"), body, request.headers.get("If-Match")) }));
+  })),
+  http.delete(P("/collections/:key/entries/:id/schedule"), guard(({ request, params }) => {
+    const { data, etag } = unscheduleEntry(getMockDb(), param(params, "key"), param(params, "id"), request.headers.get("If-Match"));
+    return ok(data, { etag });
+  })),
+];
+
 export const saveLiveApiHandlers: HttpHandler[] = [
   ...menuHandlers,
   ...pageHandlers,
+  ...d1PageHandlers,
   ...postHandlers,
+  ...d1PostHandlers,
   ...albumHandlers,
+  ...d1AlbumHandlers,
   ...faqHandlers,
   ...collectionHandlers,
+  ...d1EntryHandlers,
   ...sharedSectionHandlers,
   ...previewLinkHandlers,
   ...cmsLookupHandlers,

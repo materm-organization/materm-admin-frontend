@@ -104,6 +104,10 @@ export const API_ENDPOINTS = {
     PUBLISH: (base: string) => `${base}/publish`,
     UNPUBLISH: (base: string) => `${base}/unpublish`,
     DISCARD_DRAFT: (base: string) => `${base}/discard-draft`,
+    // D1 (doc/05 12.10 - 12.11): review (pages, posts) and the schedule (`POST` = schedule / reschedule, `DELETE` = unschedule).
+    SUBMIT_REVIEW: (base: string) => `${base}/submit-review`,
+    REJECT: (base: string) => `${base}/reject`,
+    SCHEDULE: (base: string) => `${base}/schedule`,
   },
   // Preview links (doc/05 section 12.9): `base` = the entity's URL like PUBLISHING (`/pages/12`); a revoke names only the link.
   PREVIEW_LINKS: {

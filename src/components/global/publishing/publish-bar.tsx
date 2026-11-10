@@ -1,10 +1,10 @@
 "use client";
 
-import { EyeIcon, EyeOffIcon, PackageOpenIcon, RocketIcon, SaveIcon, Undo2Icon, XIcon } from "lucide-react";
+import { CalendarClockIcon, CalendarXIcon, EyeIcon, EyeOffIcon, PackageOpenIcon, RocketIcon, SaveIcon, SendIcon, Undo2Icon, XIcon } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { toast } from "sonner";
 
 import { ConfirmDialog } from "@/components/global/confirm-dialog";
@@ -12,6 +12,10 @@ import { ConflictDialog } from "@/components/global/conflict-dialog";
 import { PublishBlockersDialog } from "@/components/global/publishing/publish-blockers-dialog";
 import { PublishConfirmDialog } from "@/components/global/publishing/publish-confirm-dialog";
 import { ReferencedDialog, type ReferencedItem } from "@/components/global/publishing/referenced-dialog";
+import { RejectDialog } from "@/components/global/publishing/reject-dialog";
+import { ScheduleDialog, type ScheduleDialogMode } from "@/components/global/publishing/schedule-dialog";
+import { ScheduleStatusLine } from "@/components/global/publishing/schedule-status";
+import { SubmitReviewDialog } from "@/components/global/publishing/submit-review-dialog";
 import { StatusBadge } from "@/components/global/status/status-badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -20,10 +24,20 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { useApiErrorHandler } from "@/hooks/use-api-error";
 import { useIdempotencyKey } from "@/hooks/use-idempotency-key";
 import { useCan } from "@/hooks/use-permission";
-import { useMutationDiscardDraft, useMutationPublish, useMutationUnpublish } from "@/hooks/use-publishing";
+import { usePublishCapabilities } from "@/hooks/use-publish-capabilities";
+import {
+  useMutationDiscardDraft,
+  useMutationPublish,
+  useMutationReject,
+  useMutationSchedule,
+  useMutationSubmitReview,
+  useMutationUnpublish,
+  useMutationUnschedule,
+} from "@/hooks/use-publishing";
 import { isConflictError, parseApiError } from "@/lib/api-error";
 import { PERMISSION_ACTIONS, PERMISSION_KEYS } from "@/lib/constants/permissions";
 import { PUBLISHABLE_RESOURCES, type PublishableResource } from "@/lib/publishable-resources";
+import { classifyScheduleError, scheduleHealth, type ScheduleProblem } from "@/lib/publishing-schedule";
 import { cn } from "@/lib/utils";
 import type {
   CommandWarning,
@@ -33,9 +47,11 @@ import type {
   PublishIssueTarget,
   PublishableCommandResult,
   PublishableState,
+  ScheduleInfo,
 } from "@/types/publishing";
 
-export type PublishBarAction = "publish" | "unpublish" | "discard";
+// D1 adds the review and schedule commands.
+export type PublishBarAction = "publish" | "unpublish" | "discard" | "submit_review" | "reject" | "schedule" | "unschedule";
 
 // What a command hands back to the host: the root in the shape of its own GET (+ `aggregate`, `warnings`) and its NEW
 // ETag. The host puts both into its cache (`setQueryData`) - no refetch, the next write must carry this ETag.
@@ -99,6 +115,16 @@ function noticeValues(notice: CommandWarning): Record<string, string | number> {
   return out;
 }
 
+// A clock for "overdue": refreshed twice a minute, so a schedule that passes its time while the page is open turns amber without a reload.
+function useNow(intervalMs: number): number {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), intervalMs);
+    return () => clearInterval(id);
+  }, [intervalMs]);
+  return now;
+}
+
 function DisabledHint({ reason, children }: { reason: string | null; children: ReactNode }) {
   if (!reason) return <>{children}</>;
   return (
@@ -126,6 +152,12 @@ function DisabledHint({ reason, children }: { reason: string | null; children: R
 //  - Discard draft asks first; the draft stays in the History.
 //  - One `Idempotency-Key` per action (per dialog open; the `confirm_references` repeat is another request, another key).
 //  - 409 `CONFLICT_LOCK_VERSION` opens the ConflictDialog; the new ETag of every answer goes to `onResult`.
+//  - D1 (doc/05 12.10 - 12.11, doc/07 2.5.7): Submit for review (draft; pages, posts), Reject... with a required comment (in review; `review`),
+//    Schedule... / Schedule changes... (draft, in review, archived, published with a draft; `schedule` AND `publish`, BR-11) and, for a booked
+//    entity, the line "Scheduled for <time>" (Asia/Vientiane; overdue / failed variants) with Reschedule..., Cancel schedule and Publish now.
+//    Schedule runs the publish DRY RUN first (blockers show before a time is picked), then `ScheduleDialog`; the server checks the rules again.
+//    Submit, Reject and Schedule are POSTs with one `Idempotency-Key` per dialog open; the unschedule DELETE has none. Rights live in
+//    `usePublishCapabilities` (also BR-10: an `update_own`-only author can not touch a post in review or scheduled).
 //  - Controls the user may not use are not shown; permission keys come from the resource (`cms.pages`: publish, unpublish,
 //    update for discard / save, read + update | review for preview).
 export function PublishBar({
@@ -149,22 +181,20 @@ export function PublishBar({
   const router = useRouter();
   const { toastError } = useApiErrorHandler();
 
-  const canPublish = useCan(config.permissionKey, PERMISSION_ACTIONS.PUBLISH);
-  const canUnpublish = useCan(config.permissionKey, PERMISSION_ACTIONS.UNPUBLISH);
   // A kind with `update_own` (posts): the creator may save, discard and issue preview links of their own thing; publish and
-  // unpublish never count the creator.
-  const own = config.ownActions ? { ownerId: entity.owner_id } : {};
-  const canUpdate = useCan(config.permissionKey, PERMISSION_ACTIONS.UPDATE, own);
-  const canTranslate = useCan(config.permissionKey, PERMISSION_ACTIONS.TRANSLATE);
-  const canRead = useCan(config.permissionKey, PERMISSION_ACTIONS.READ);
+  // unpublish never count the creator. Review / schedule rules and BR-10 (`authorLocked`) live in the hook.
+  const { canPublish, canUnpublish, canUpdate, canTranslate, canRead, canPreviewAction, canSubmitReview, canReject, canSchedule, authorLocked } = usePublishCapabilities(resource, entity);
   const canOpenRedirects = useCan(PERMISSION_KEYS.CMS_REDIRECTS, PERMISSION_ACTIONS.READ);
-  const canPreviewAction = useCan(config.permissionKey, config.previewActions, own);
 
   const publishMutation = useMutationPublish(resource, entity.id);
   const unpublishMutation = useMutationUnpublish(resource, entity.id);
   const discardMutation = useMutationDiscardDraft(resource, entity.id);
+  const submitMutation = useMutationSubmitReview(resource, entity.id);
+  const rejectMutation = useMutationReject(resource, entity.id);
+  const scheduleMutation = useMutationSchedule(resource, entity.id);
+  const unscheduleMutation = useMutationUnschedule(resource, entity.id);
 
-  const [busy, setBusy] = useState<"checking" | "publishing" | "unpublishing" | "discarding" | null>(null);
+  const [busy, setBusy] = useState<"checking" | "publishing" | "unpublishing" | "discarding" | "submitting" | "rejecting" | "scheduling" | "unscheduling" | null>(null);
   const [confirm, setConfirm] = useState<{ warnings: PublishIssue[] } | null>(null);
   const [blocked, setBlocked] = useState<{ blockers: PublishIssue[]; warnings: PublishIssue[]; count?: number; truncated: boolean } | null>(null);
   const [unpublishOpen, setUnpublishOpen] = useState(false);
@@ -173,6 +203,14 @@ export function PublishBar({
   const [conflictOpen, setConflictOpen] = useState(false);
   const [isReloading, setIsReloading] = useState(false);
   const [notices, setNotices] = useState<CommandWarning[]>([]);
+  // D1: the schedule dialog (the dry run already passed; `warnings` are its notes), the review dialogs and the cancel-schedule confirmation.
+  const [scheduleDialog, setScheduleDialog] = useState<{ mode: ScheduleDialogMode; warnings: PublishIssue[] } | null>(null);
+  const [scheduleProblem, setScheduleProblem] = useState<ScheduleProblem | null>(null);
+  const [submitOpen, setSubmitOpen] = useState(false);
+  const [rejectOpen, setRejectOpen] = useState(false);
+  const [rejectProblem, setRejectProblem] = useState<ScheduleProblem | null>(null);
+  const [cancelScheduleOpen, setCancelScheduleOpen] = useState(false);
+  const now = useNow(30_000);
 
   // One key per action: a new one whenever its dialog opens, kept for a retry of the same dialog. The repeat with
   // `confirm_references` is a different request, so it has a key of its own.
@@ -182,11 +220,23 @@ export function PublishBar({
 
   const trashed = Boolean(entity.deleted_at);
   const pending = entity.has_unpublished_changes;
-  const isPublished = entity.status === "published" || entity.status === "scheduled";
-  const showPublish = canPublish && !trashed && (entity.status !== "published" || pending);
-  const showDiscard = canUpdate && !trashed && entity.status === "published" && pending;
+  const status = entity.status;
+  const isPublished = status === "published" || status === "scheduled";
+  // D1: the schedule of the entity. A `scheduled` root whose detail carries no `schedule` member falls back to the root's `scheduled_at`.
+  const schedule: ScheduleInfo | null =
+    entity.schedule ?? (status === "scheduled" && entity.scheduled_at ? { action: "publish", run_at: entity.scheduled_at, status: "pending", attempts: 0, last_error: null } : null);
+  const isScheduled = status === "scheduled";
+  // A published entity whose pending draft is booked (`apply_revision`) keeps `published`; its time is shown and can be moved or cancelled.
+  const hasBooking = isScheduled || (status === "published" && schedule !== null);
+  const health = hasBooking ? scheduleHealth(schedule, now) : "ok";
+  const showPublish = canPublish && !trashed && (status !== "published" || pending);
+  const showDiscard = canUpdate && !authorLocked && !trashed && status === "published" && pending;
   const showUnpublish = canUnpublish && !trashed && isPublished && !entity.is_home;
-  const showSave = Boolean(onSaveDraft) && (canUpdate || canTranslate) && !trashed;
+  const showSave = Boolean(onSaveDraft) && (canUpdate || canTranslate) && !authorLocked && !trashed;
+  const showSubmit = canSubmitReview && !trashed && status === "draft";
+  const showReject = canReject && !trashed && status === "in_review";
+  const showSchedule = canSchedule && !trashed && !hasBooking && (status === "draft" || status === "in_review" || status === "archived" || (status === "published" && pending));
+  const showBookingCommands = canSchedule && !trashed && hasBooking;
   // Preview links exist only for the kinds the resource entry names (pages, posts: PT-18); the user needs read + update | review.
   const showPreview = config.previewLinks && canRead && canPreviewAction && !trashed;
   const busyAny = busy !== null;
@@ -315,6 +365,112 @@ export function PublishBar({
     }
   };
 
+  // --- Schedule (D1) -------------------------------------------------------------------------------------------------
+  // The publish DRY RUN comes first, exactly like a publish: blockers show before anybody picks a time (the server runs the rules again at the
+  // schedule and at the fire). The dry run counts toward the publish limit, as it does for Publish.
+  const startSchedule = async (mode: ScheduleDialogMode) => {
+    setNotices([]);
+    setScheduleProblem(null);
+    setBusy("checking");
+    try {
+      if (flush) {
+        const saved = await flush();
+        if (!saved) {
+          toast.error(t("toast.saveFirstSchedule"));
+          return;
+        }
+      }
+      const response = await publishMutation.mutateAsync({ etag, dryRun: true });
+      const dry = response.data.data as PublishDryRunResult;
+      setScheduleDialog({ mode, warnings: dry.warnings ?? [] });
+    } catch (error) {
+      await handleError(error, "toast.scheduleFailed");
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const doSchedule = async (scheduledAt: string, idempotencyKey: string) => {
+    setBusy("scheduling");
+    try {
+      const response = await scheduleMutation.mutateAsync({ etag, scheduledAt, idempotencyKey });
+      setScheduleDialog(null);
+      setScheduleProblem(null);
+      await finish("schedule", response);
+    } catch (error) {
+      const problem = classifyScheduleError(error);
+      // The refusals the dialog explains in place (the time is out of range, too many schedules) keep it open.
+      if (problem.kind === "range" || problem.kind === "required" || problem.kind === "format" || problem.kind === "rate") {
+        setScheduleProblem(problem);
+      } else {
+        const outcome = await handleError(error, "toast.scheduleFailed");
+        if (outcome !== "toast") setScheduleDialog(null);
+      }
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const doUnschedule = async () => {
+    setBusy("unscheduling");
+    try {
+      const response = await unscheduleMutation.mutateAsync({ etag });
+      setCancelScheduleOpen(false);
+      await finish("unschedule", response);
+    } catch (error) {
+      setCancelScheduleOpen(false);
+      await handleError(error, "toast.unscheduleFailed");
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  // --- Review (D1) ---------------------------------------------------------------------------------------------------
+  const startSubmit = async () => {
+    setNotices([]);
+    if (flush && !(await flush())) {
+      toast.error(t("toast.saveFirstReview"));
+      return;
+    }
+    setSubmitOpen(true);
+  };
+
+  const doSubmit = async (note: string | undefined, idempotencyKey: string) => {
+    setBusy("submitting");
+    try {
+      const response = await submitMutation.mutateAsync({ etag, note, idempotencyKey });
+      setSubmitOpen(false);
+      await finish("submit_review", response);
+    } catch (error) {
+      const outcome = await handleError(error, "toast.submitReviewFailed");
+      if (outcome !== "toast") setSubmitOpen(false);
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const doReject = async (comment: string, idempotencyKey: string) => {
+    setBusy("rejecting");
+    try {
+      const response = await rejectMutation.mutateAsync({ etag, comment, idempotencyKey });
+      setRejectOpen(false);
+      setRejectProblem(null);
+      await finish("reject", response);
+    } catch (error) {
+      const problem = classifyScheduleError(error);
+      if (problem.kind === "commentRequired" || problem.kind === "commentTooLong") {
+        setRejectProblem(problem);
+      } else {
+        const outcome = await handleError(error, "toast.rejectFailed");
+        if (outcome !== "toast") setRejectOpen(false);
+      }
+    } finally {
+      // The comment is the mutation's variables: drop them from the observer too (the dialog's own text is gone with its content).
+      rejectMutation.reset();
+      setBusy(null);
+    }
+  };
+
   // The text of a notice; `auto_redirect_skipped` has one per reason (and says what to do), an unknown reason the generic one.
   const noticeBody = (notice: CommandWarning): string => {
     const values = noticeValues(notice);
@@ -326,13 +482,16 @@ export function PublishBar({
   };
 
   const publishReason = noEtag ? t("hints.loading") : isDirty ? t("hints.dirty") : null;
+  // Submit for review / schedule act on the SAVED version, so they wait for unsaved edits like Publish does.
+  const reviewReason = noEtag ? t("hints.loading") : isDirty ? t("hints.dirtyReview") : null;
+  const scheduleReason = noEtag ? t("hints.loading") : isDirty ? t("hints.dirtySchedule") : null;
   const saveReason = !isDirty ? t("hints.nothingToSave") : null;
 
   return (
     <TooltipProvider delayDuration={200}>
       <div className={cn("space-y-2", className)} data-testid="publish-bar" role="group" aria-label={t("barLabel")}>
         <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-          <StatusBadge status={entity.status} hasUnpublishedChanges={pending} trashed={trashed} />
+          <StatusBadge status={entity.status} hasUnpublishedChanges={pending} trashed={trashed} scheduleHealth={health} />
           {isDirty ? (
             <span className="text-xs text-muted-foreground" data-testid="publish-dirty">
               {t("hints.unsaved")}
@@ -361,22 +520,60 @@ export function PublishBar({
                 {t("actions.discard")}
               </Button>
             ) : null}
+            {showReject ? (
+              <Button type="button" variant="outline" size="sm" disabled={busyAny || noEtag} onClick={() => setRejectOpen(true)}>
+                <Undo2Icon />
+                {t("actions.reject")}
+              </Button>
+            ) : null}
+            {showBookingCommands ? (
+              <>
+                <Button type="button" variant="outline" size="sm" disabled={busyAny || noEtag} onClick={() => setCancelScheduleOpen(true)}>
+                  <CalendarXIcon />
+                  {t("actions.cancelSchedule")}
+                </Button>
+                <DisabledHint reason={scheduleReason}>
+                  <Button type="button" variant="outline" size="sm" disabled={busyAny || Boolean(scheduleReason)} onClick={() => void startSchedule("reschedule")}>
+                    {busy === "checking" ? <Spinner /> : <CalendarClockIcon />}
+                    {t("actions.reschedule")}
+                  </Button>
+                </DisabledHint>
+              </>
+            ) : null}
             {showUnpublish ? (
               <Button type="button" variant="outline" size="sm" disabled={busyAny || noEtag} onClick={() => setUnpublishOpen(true)}>
                 <EyeOffIcon />
                 {t("actions.unpublish")}
               </Button>
             ) : null}
+            {showSubmit ? (
+              <DisabledHint reason={reviewReason}>
+                <Button type="button" variant="outline" size="sm" disabled={busyAny || Boolean(reviewReason)} onClick={() => void startSubmit()}>
+                  {busy === "submitting" ? <Spinner /> : <SendIcon />}
+                  {t("actions.submitReview")}
+                </Button>
+              </DisabledHint>
+            ) : null}
+            {showSchedule ? (
+              <DisabledHint reason={scheduleReason}>
+                <Button type="button" variant="outline" size="sm" disabled={busyAny || Boolean(scheduleReason)} onClick={() => void startSchedule(status === "published" ? "changes" : "schedule")}>
+                  {busy === "checking" ? <Spinner /> : <CalendarClockIcon />}
+                  {status === "published" ? t("actions.scheduleChanges") : t("actions.schedule")}
+                </Button>
+              </DisabledHint>
+            ) : null}
             {showPublish ? (
               <DisabledHint reason={publishReason}>
                 <Button type="button" size="sm" disabled={busyAny || Boolean(publishReason)} onClick={() => void startPublish()}>
-                  {busy === "checking" || busy === "publishing" ? <Spinner /> : pending ? <PackageOpenIcon /> : <RocketIcon />}
-                  {pending ? t("actions.publishChanges") : t("actions.publish")}
+                  {busy === "checking" || busy === "publishing" ? <Spinner /> : isScheduled ? <RocketIcon /> : pending ? <PackageOpenIcon /> : <RocketIcon />}
+                  {isScheduled ? t("actions.publishNow") : pending ? t("actions.publishChanges") : t("actions.publish")}
                 </Button>
               </DisabledHint>
             ) : null}
           </div>
         </div>
+
+        {hasBooking && !trashed ? <ScheduleStatusLine schedule={schedule} scheduledAt={entity.scheduled_at} health={health} /> : null}
 
         {notices.length > 0 ? (
           <div className="space-y-2" data-testid="publish-notices">
@@ -468,6 +665,45 @@ export function PublishBar({
         destructive
         isPending={busy === "discarding"}
         onConfirm={doDiscard}
+      />
+      <ScheduleDialog
+        open={scheduleDialog !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setScheduleDialog(null);
+            setScheduleProblem(null);
+          }
+        }}
+        mode={scheduleDialog?.mode ?? "schedule"}
+        noun={noun}
+        warnings={scheduleDialog?.warnings ?? []}
+        currentRunAt={schedule?.run_at ?? null}
+        isPending={busy === "scheduling"}
+        problem={scheduleProblem}
+        onClearProblem={() => setScheduleProblem(null)}
+        onConfirm={doSchedule}
+      />
+      <SubmitReviewDialog open={submitOpen} onOpenChange={setSubmitOpen} noun={noun} isPending={busy === "submitting"} onConfirm={doSubmit} />
+      <RejectDialog
+        open={rejectOpen}
+        onOpenChange={(open) => {
+          setRejectOpen(open);
+          if (!open) setRejectProblem(null);
+        }}
+        noun={noun}
+        isPending={busy === "rejecting"}
+        problem={rejectProblem}
+        onClearProblem={() => setRejectProblem(null)}
+        onConfirm={doReject}
+      />
+      <ConfirmDialog
+        open={cancelScheduleOpen}
+        onOpenChange={setCancelScheduleOpen}
+        title={t("schedule.cancel.title", { noun })}
+        description={t(status === "published" ? "schedule.cancel.descriptionChanges" : entity.first_published_at ? "schedule.cancel.descriptionArchived" : "schedule.cancel.descriptionDraft", { noun })}
+        confirmLabel={t("schedule.cancel.confirm")}
+        isPending={busy === "unscheduling"}
+        onConfirm={doUnschedule}
       />
       <ConflictDialog open={conflictOpen} onOpenChange={setConflictOpen} onReload={reload} isReloading={isReloading} />
     </TooltipProvider>

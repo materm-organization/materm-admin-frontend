@@ -45,3 +45,38 @@ export const useMutationDiscardDraft = (resource: PublishableResource, id: numbe
     onSuccess: () => refresh(),
   });
 };
+
+// D1 (doc/05 12.10 - 12.11). Same rules as above: the host writes the answer through, the lists and the history go stale.
+export const useMutationSubmitReview = (resource: PublishableResource, id: number | string) => {
+  const refresh = useRefresh(resource, id);
+  return useMutation({
+    mutationFn: ({ etag, note, idempotencyKey }: { etag: Etag; note?: string; idempotencyKey?: string }) => PublishingAPI.SubmitReview(resource, id, etag, { note, idempotencyKey }),
+    onSuccess: () => refresh(),
+  });
+};
+
+// `gcTime: 0`: the comment is the variables of the mutation; it is dropped from the cache as soon as nothing observes the mutation.
+export const useMutationReject = (resource: PublishableResource, id: number | string) => {
+  const refresh = useRefresh(resource, id);
+  return useMutation({
+    gcTime: 0,
+    mutationFn: ({ etag, comment, idempotencyKey }: { etag: Etag; comment: string; idempotencyKey?: string }) => PublishingAPI.Reject(resource, id, etag, { comment, idempotencyKey }),
+    onSuccess: () => refresh(),
+  });
+};
+
+export const useMutationSchedule = (resource: PublishableResource, id: number | string) => {
+  const refresh = useRefresh(resource, id);
+  return useMutation({
+    mutationFn: ({ etag, scheduledAt, idempotencyKey }: { etag: Etag; scheduledAt: string; idempotencyKey?: string }) => PublishingAPI.Schedule(resource, id, etag, { scheduledAt, idempotencyKey }),
+    onSuccess: () => refresh(),
+  });
+};
+
+export const useMutationUnschedule = (resource: PublishableResource, id: number | string) => {
+  const refresh = useRefresh(resource, id);
+  return useMutation({
+    mutationFn: ({ etag }: { etag: Etag }) => PublishingAPI.Unschedule(resource, id, etag),
+    onSuccess: () => refresh(),
+  });
+};

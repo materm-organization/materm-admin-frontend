@@ -479,7 +479,17 @@ export function PageEditor({ page, etag, onReseed }: PageEditorProps) {
     <div className="space-y-4">
       <PublishBar
         resource="pages"
-        entity={{ id: page.id, status: page.status, has_unpublished_changes: page.has_unpublished_changes, deleted_at: page.deleted_at, is_home: page.is_home, is_system: page.is_system }}
+        entity={{
+          id: page.id,
+          status: page.status,
+          has_unpublished_changes: page.has_unpublished_changes,
+          deleted_at: page.deleted_at,
+          is_home: page.is_home,
+          is_system: page.is_system,
+          schedule: page.schedule,
+          scheduled_at: page.scheduled_at,
+          first_published_at: page.first_published_at,
+        }}
         etag={etag}
         isDirty={isDirty}
         flush={async () => (isDirty ? saveAll() : true)}

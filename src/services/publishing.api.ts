@@ -4,7 +4,7 @@ import { ifMatchHeaders, withEtag } from "@/lib/etag";
 import { idempotencyKeyHeaders } from "@/lib/idempotency";
 import { publishableBase, type PublishableResource } from "@/lib/publishable-resources";
 import type { ApiResponse } from "@/types/api";
-import type { PublishDryRunResult, PublishableCommandResult } from "@/types/publishing";
+import type { PublishDryRunResult, PublishableCommandResult, RejectResult } from "@/types/publishing";
 
 // The publish engine (doc/05 section 12.7): the same three commands for every publishable entity, `POST /{e}/{id}/...`.
 // Every one needs `If-Match` (428 without it, 409 `CONFLICT_LOCK_VERSION` when stale) and answers the root in the shape
@@ -47,6 +47,42 @@ export const PublishingAPI = {
   DiscardDraft: async (resource: PublishableResource, id: number | string, etag: string | undefined) =>
     withEtag(
       await axiosInstance.post<ApiResponse<PublishableCommandResult>>(API_ENDPOINTS.PUBLISHING.DISCARD_DRAFT(publishableBase(resource, id)), undefined, {
+        headers: ifMatchHeaders(etag, { required: true }),
+      })
+    ),
+  // D1 (doc/05 12.10). `note` (<= 200) is an optional message to the reviewer. 409 `INVALID_STATE` `not_draft`. `Idempotency-Key` per dialog open.
+  SubmitReview: async (resource: PublishableResource, id: number | string, etag: string | undefined, options: { note?: string; idempotencyKey?: string } = {}) =>
+    withEtag(
+      await axiosInstance.post<ApiResponse<PublishableCommandResult>>(
+        API_ENDPOINTS.PUBLISHING.SUBMIT_REVIEW(publishableBase(resource, id)),
+        options.note ? { note: options.note } : undefined,
+        { headers: { ...ifMatchHeaders(etag, { required: true }), ...idempotencyKeyHeaders(options.idempotencyKey) } }
+      )
+    ),
+  // The comment is REQUIRED (1..200 characters; 422 at `/comment` `required` / `too_long`). 409 `INVALID_STATE` `not_in_review`. The answer
+  // names the history revision that holds the comment (`review_revision`).
+  Reject: async (resource: PublishableResource, id: number | string, etag: string | undefined, options: { comment: string; idempotencyKey?: string }) =>
+    withEtag(
+      await axiosInstance.post<ApiResponse<RejectResult>>(
+        API_ENDPOINTS.PUBLISHING.REJECT(publishableBase(resource, id)),
+        { comment: options.comment },
+        { headers: { ...ifMatchHeaders(etag, { required: true }), ...idempotencyKeyHeaders(options.idempotencyKey) } }
+      )
+    ),
+  // `scheduledAt` = RFC 3339 WITH an offset (>= now + 1 minute, <= now + 1 year; 422 `out_of_range` with `params.min` / `max`). The publish rules
+  // run again on the server (422 `PUBLISH_BLOCKED`). Scheduling an already scheduled entity moves the time. 60 per hour (429).
+  Schedule: async (resource: PublishableResource, id: number | string, etag: string | undefined, options: { scheduledAt: string; idempotencyKey?: string }) =>
+    withEtag(
+      await axiosInstance.post<ApiResponse<PublishableCommandResult>>(
+        API_ENDPOINTS.PUBLISHING.SCHEDULE(publishableBase(resource, id)),
+        { scheduled_at: options.scheduledAt },
+        { headers: { ...ifMatchHeaders(etag, { required: true }), ...idempotencyKeyHeaders(options.idempotencyKey) } }
+      )
+    ),
+  // No body, no `Idempotency-Key` (a repeat is a plain 409 `not_scheduled`), never rate limited. scheduled -> draft (never published) / archived.
+  Unschedule: async (resource: PublishableResource, id: number | string, etag: string | undefined) =>
+    withEtag(
+      await axiosInstance.delete<ApiResponse<PublishableCommandResult>>(API_ENDPOINTS.PUBLISHING.SCHEDULE(publishableBase(resource, id)), {
         headers: ifMatchHeaders(etag, { required: true }),
       })
     ),
