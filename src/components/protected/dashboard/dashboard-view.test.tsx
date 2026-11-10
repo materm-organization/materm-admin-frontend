@@ -6,6 +6,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { DashboardView } from "@/components/protected/dashboard/dashboard-view";
 import { setDashboardCards } from "@/mocks/mock-dashboard";
 import { getMockDb } from "@/mocks/mock-db";
+import { getAlbum, scheduleAlbum } from "@/mocks/mock-albums";
+import { getPage, submitPageForReview } from "@/mocks/mock-pages";
 import { useMockApi } from "@/mocks/test-setup";
 import { server } from "@/test/msw-server";
 import { grants, renderApp } from "@/test/render-app";
@@ -81,7 +83,7 @@ describe("DashboardView (SCR-05)", () => {
 
   it("no card at all: a welcome with a link to the first page the person can open", async () => {
     me.current = { ...me.current, permissions: grants({ "cms.pages": ["read"] }) };
-    setDashboardCards(getMockDb(), { omit: ["my_drafts", "submissions_new", "failed_jobs", "translation", "media_missing_alt", "content_counts", "recent_activity", "relay"] });
+    setDashboardCards(getMockDb(), { omit: ["in_review", "scheduled_7d", "my_drafts", "submissions_new", "failed_jobs", "translation", "media_missing_alt", "content_counts", "recent_activity", "relay"] });
     renderApp(<DashboardView />);
     const welcome = await screen.findByTestId("dashboard-welcome");
     expect(within(welcome).getByRole("link", { name: /Open the first page/ })).toHaveAttribute("href", "/admin/pages");
@@ -89,7 +91,7 @@ describe("DashboardView (SCR-05)", () => {
 
   it("a person who can open nothing is told so", async () => {
     me.current = { ...me.current, permissions: [] };
-    setDashboardCards(getMockDb(), { omit: ["my_drafts", "submissions_new", "failed_jobs", "translation", "media_missing_alt", "content_counts", "recent_activity", "relay"] });
+    setDashboardCards(getMockDb(), { omit: ["in_review", "scheduled_7d", "my_drafts", "submissions_new", "failed_jobs", "translation", "media_missing_alt", "content_counts", "recent_activity", "relay"] });
     renderApp(<DashboardView />);
     expect(await screen.findByText(/cannot open any page yet/)).toBeInTheDocument();
   });
@@ -115,5 +117,30 @@ describe("DashboardView (SCR-05)", () => {
     server.use(http.get("*/api/v1/dashboard/summary", () => Response.json({ success: false, code: "FORBIDDEN", message: "x" }, { status: 403 })));
     renderApp(<DashboardView />);
     expect(await screen.findByText("No permission")).toBeInTheDocument();
+  });
+
+  it("the two publishing cards (in review, scheduled in 7 days) are shown exactly when the server sends them, with links to the queue", async () => {
+    submitPageForReview(getMockDb(), "8", undefined, getPage(getMockDb(), "8").etag);
+    scheduleAlbum(getMockDb(), "3", { scheduled_at: new Date(Date.now() + 3_600_000).toISOString() }, getAlbum(getMockDb(), "3").etag);
+    me.current = { ...me.current, permissions: [...ALL, ...grants({ "cms.galleries": ["read"] })] };
+    renderApp(<DashboardView />);
+    const review = await screen.findByTestId("card-in-review");
+    expect(within(review).getByText("1")).toBeInTheDocument();
+    expect(within(review).getByRole("link", { name: /Open the queue/ })).toHaveAttribute("href", "/admin/publishing?tab=awaiting_review");
+    expect(within(screen.getByTestId("card-scheduled-7d")).getByRole("link", { name: /Open the schedule/ })).toHaveAttribute("href", "/admin/publishing?tab=scheduled");
+  });
+
+  it("without the cards in the answer there is no card; without the right to open the queue the card has no link", async () => {
+    setDashboardCards(getMockDb(), { omit: ["in_review", "scheduled_7d"] });
+    const first = renderApp(<DashboardView />);
+    await screen.findByTestId("card-submissions-new");
+    expect(screen.queryByTestId("card-in-review")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("card-scheduled-7d")).not.toBeInTheDocument();
+    first.unmount();
+    setDashboardCards(getMockDb(), { omit: [] });
+    me.current = { ...me.current, permissions: grants({ "forms.submissions": ["read"] }) };
+    renderApp(<DashboardView />);
+    const card = await screen.findByTestId("card-in-review");
+    expect(within(card).queryByRole("link", { name: /Open the queue/ })).not.toBeInTheDocument();
   });
 });

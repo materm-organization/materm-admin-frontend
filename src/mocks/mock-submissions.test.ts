@@ -331,7 +331,7 @@ describe("GET /dashboard/summary (mock)", () => {
     expect(d).not.toHaveProperty("failed_jobs");
     expect(d).not.toHaveProperty("relay");
     expect(d).toHaveProperty("submissions_new");
-    setDashboardCards(db, { omit: ["my_drafts", "submissions_new", "failed_jobs", "translation", "media_missing_alt", "content_counts", "recent_activity", "relay"] });
+    setDashboardCards(db, { omit: ["in_review", "scheduled_7d", "my_drafts", "submissions_new", "failed_jobs", "translation", "media_missing_alt", "content_counts", "recent_activity", "relay"] });
     expect(Object.keys(dashboardSummary(db))).toEqual(["generated_at"]);
   });
 });

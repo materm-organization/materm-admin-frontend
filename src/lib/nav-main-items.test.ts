@@ -125,6 +125,7 @@ describe("W1 iam/ops routes (T1.1.10)", () => {
       "/admin/blog/tags",
       // T3 authors
       "/admin/blog/authors",
+      "/admin/publishing",
       "/admin/settings",
       "/admin/seo",
       "/admin/redirects",
@@ -215,7 +216,7 @@ describe("T1.4.7 pages route (SCR-19)", () => {
 
   it("is the first entry of the content group and shows only for users who can read pages", () => {
     const urls = (keys: string[]) => buildNavMainItemsForUser(keys).flatMap((g) => (g.items ? g.items.map((i) => i.url) : [g.url]));
-    expect(urls([PERMISSION_KEYS.CMS_PAGES, PERMISSION_KEYS.CMS_MENUS])).toEqual(["/admin", "/admin/pages", "/admin/menus"]);
+    expect(urls([PERMISSION_KEYS.CMS_PAGES, PERMISSION_KEYS.CMS_MENUS])).toEqual(["/admin", "/admin/pages", "/admin/menus", "/admin/publishing"]);
     expect(urls([PERMISSION_KEYS.CMS_MENUS])).not.toContain("/admin/pages");
   });
 });

@@ -1,6 +1,7 @@
 import { Activity, Globe, Images, Inbox, Languages, LayoutDashboard, Newspaper, Type, Users, type LucideIcon } from "lucide-react";
 
 import { PERMISSION_KEYS } from "@/lib/constants/permissions";
+import { QUEUE_PERMISSION_KEYS } from "@/lib/publishing-queue";
 
 // Sidebar structure = permission-driven config, single source of truth.
 // `title` is a translation key (namespaced under `nav.*`), never display
@@ -19,7 +20,8 @@ export type NavMainSubConfig = {
   // Renders a small "Coming Soon" badge next to the label (nav-main.tsx).
   comingSoon?: boolean;
   // A live count shown as a badge (nav-main.tsx `NavBadge`): `submissions.new` = `GET /submissions/summary` `.new`.
-  badgeQuery?: "submissions.new";
+  // `publishing.awaiting` = the `awaiting_review` count of `GET /publishing/queue`, for people who may review pages or posts (SCR-39).
+  badgeQuery?: "submissions.new" | "publishing.awaiting";
 };
 
 export type NavMainGroupConfig = {
@@ -61,6 +63,9 @@ export const NAV_MAIN_CONFIG: NavMainGroupConfig[] = [
       { title: "nav.tags", url: "/admin/blog/tags", anyPermission: [PERMISSION_KEYS.CMS_CATEGORIES] },
       // Authors (SCR-27): the byline of a post. Guarded by the blog key (Q-A10: there is no `cms.authors`).
       { title: "nav.authors", url: "/admin/blog/authors", anyPermission: [PERMISSION_KEYS.CMS_BLOG] },
+      // Publishing queue (SCR-39, FR-PUB-14): awaiting review / scheduled / unpublished changes of every kind the person may read. The entry is
+      // open to a person who can read at least one publishable kind; the server leaves out the rest. The badge counts the items to review.
+      { title: "nav.publishing", url: "/admin/publishing", anyPermission: QUEUE_PERMISSION_KEYS, badgeQuery: "publishing.awaiting" },
     ],
   },
   // Site-wide settings (SCR-15) and SEO (SCR-16): three keys, `cms.settings`, `cms.seo` and `cms.redirects`.

@@ -45,9 +45,11 @@ export async function newUser(rootToken, roleKey, { keepTemp = false } = {}) {
   const tmp = cu.body?.data?.temporary_password; if (!tmp) throw new Error(`create user ${roleKey}: ${cu.status} ${cu.body?.code}`);
   const post = (p, b, h = {}) => fetch(ADMIN_BE + '/api/v1' + p, { method: 'POST', headers: { 'content-type': 'application/json', ...h }, body: JSON.stringify(b) }).then((r) => r.json());
   if (keepTemp) return { username, password: tmp, id: cu.body.data.id ?? cu.body.data.user?.id, roleId: role.id };
-  const lg = await post('/login', { username, password: tmp });
-  await post('/auth/users/change-password', { old_password: tmp, new_password: pw }, { authorization: 'Bearer ' + lg.data.access });
-  const token = (await post('/login', { username, password: pw })).data.access;
+  // 20 login attempts per minute per address: a refused login (429, no `data`) waits for the next minute bucket and tries again
+  const login = async (body) => { for (let i = 0; i < 8; i++) { const r = await post('/login', body); if (r?.data?.access) return r.data.access; await new Promise((x) => setTimeout(x, 9000)); } throw new Error('login refused for ' + body.username); };
+  const lgAccess = await login({ username, password: tmp });
+  await post('/auth/users/change-password', { old_password: tmp, new_password: pw }, { authorization: 'Bearer ' + lgAccess });
+  const token = await login({ username, password: pw });
   return { username, password: pw, token, id: cu.body.data.id ?? cu.body.data.user?.id, roleId: role.id };
 }
 
@@ -72,4 +74,10 @@ export const alerts = (page) => page.evaluate(() => [...document.querySelectorAl
 export const mainText = (page) => page.evaluate(() => (document.querySelector('main') || document.body).innerText.replace(/\s+/g, ' '));
 /** Waits for a toast / any element text to appear. */
 export const seeText = (page, re, timeout = 8000) => page.getByText(re).first().waitFor({ timeout });
-export { apiLogin as rootToken };
+/** The administrator's token. The backend allows 20 login attempts per minute per address (fixed minute buckets); a spec that starts right after a login-heavy one
+ * (45, 70) can be refused with 429, so wait for the next bucket and retry (at most about 70 s) instead of crashing the whole spec. */
+export async function rootToken() {
+  for (let i = 0; i < 8; i++) {
+    try { return await apiLogin(); } catch (e) { if (i === 7) throw e; await new Promise((r) => setTimeout(r, 9000)); }
+  }
+}

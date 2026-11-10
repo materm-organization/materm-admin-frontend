@@ -19,6 +19,7 @@ import {
   unpublishForm,
 } from "@/mocks/mock-forms";
 import { getMockDb } from "@/mocks/mock-db";
+import { publishingQueue, queueFails } from "@/mocks/mock-publishing-queue";
 import { MockHttpError, fail } from "@/mocks/mock-core";
 import { withIdempotency } from "@/mocks/mock-pages";
 import {
@@ -146,4 +147,13 @@ const dashboardHandlers: HttpHandler[] = [
   })),
 ];
 
-export const formsApiHandlers: HttpHandler[] = [...formHandlers, ...submissionHandlers, ...dashboardHandlers];
+// SCR-39: the publishing queue (computed from the same db as the D1 engines).
+const queueHandlers: HttpHandler[] = [
+  http.get(P("/publishing/queue"), guard(({ request }) => {
+    const db = getMockDb();
+    if (queueFails(db)) throw fail(500, "INTERNAL_ERROR", "An internal error occurred.");
+    return ok(publishingQueue(db, searchOf(request)), { headers: NO_STORE });
+  })),
+];
+
+export const formsApiHandlers: HttpHandler[] = [...formHandlers, ...submissionHandlers, ...dashboardHandlers, ...queueHandlers];

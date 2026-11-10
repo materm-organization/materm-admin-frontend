@@ -12,6 +12,7 @@
 // the cards that are in the answer.
 import { DEFAULT_LOCALE_CODE, MOCK_ACTIVE_LOCALE_CODES, MOCK_USER, keyOf, type MockDb, type StoredRevision } from "@/mocks/mock-core";
 import { formDraftRow, formWorking, formsState } from "@/mocks/mock-forms";
+import { queueCounts } from "@/mocks/mock-publishing-queue";
 import { newCount } from "@/mocks/mock-submissions";
 import type { DashboardActivityItem, DashboardContentCount, DashboardDraftItem, DashboardEntityType, DashboardSummary } from "@/types/dashboard";
 import type { UserRef } from "@/types/media";
@@ -178,7 +179,10 @@ function missingAlt(db: MockDb): number {
 
 export function dashboardSummary(db: MockDb): DashboardSummary {
   const state = stateOf(db);
+  const queue = queueCounts(db);
   const all: Omit<DashboardSummary, "generated_at"> = {
+    in_review: { count: queue.in_review },
+    scheduled_7d: { count: queue.scheduled_7d },
     my_drafts: myDrafts(db),
     submissions_new: { count: newCount(db) },
     failed_jobs: { count: state.failedJobs },

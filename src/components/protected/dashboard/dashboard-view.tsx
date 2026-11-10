@@ -1,6 +1,6 @@
 "use client";
 
-import { ActivityIcon, ArrowRightIcon, CheckCircle2Icon, ClockIcon, FileEditIcon, ImageOffIcon, InboxIcon, LanguagesIcon, LayersIcon, LayoutDashboardIcon, ServerCogIcon, TriangleAlertIcon } from "lucide-react";
+import { ActivityIcon, ArrowRightIcon, CalendarClockIcon, ClipboardCheckIcon, CheckCircle2Icon, ClockIcon, FileEditIcon, ImageOffIcon, InboxIcon, LanguagesIcon, LayersIcon, LayoutDashboardIcon, ServerCogIcon, TriangleAlertIcon } from "lucide-react";
 import Link from "next/link";
 import { useFormatter, useTranslations } from "next-intl";
 import type { ReactNode } from "react";
@@ -223,8 +223,10 @@ export function DashboardView() {
     );
   }
 
-  const hasKpi = Boolean(data.submissions_new || data.failed_jobs || data.media_missing_alt);
+  const hasKpi = Boolean(data.in_review || data.scheduled_7d || data.submissions_new || data.failed_jobs || data.media_missing_alt);
   const kpis = [
+    data.in_review && { testId: "card-in-review", count: data.in_review.count, label: t("review.label", { count: data.in_review.count }), href: href("/admin/publishing?tab=awaiting_review"), open: t("review.open") },
+    data.scheduled_7d && { testId: "card-scheduled-7d", count: data.scheduled_7d.count, label: t("scheduledSoon.label", { count: data.scheduled_7d.count }), href: href("/admin/publishing?tab=scheduled"), open: t("scheduledSoon.open") },
     data.submissions_new && { testId: "card-submissions-new", count: data.submissions_new.count, label: t("messages.label", { count: data.submissions_new.count }), href: href("/admin/forms/submissions?status=new"), open: t("messages.open") },
     data.failed_jobs && { testId: "card-failed-jobs", count: data.failed_jobs.count, label: t("jobs.label", { count: data.failed_jobs.count }), href: href("/admin/system"), open: t("jobs.open") },
     data.media_missing_alt && { testId: "card-missing-alt", count: data.media_missing_alt.count, label: t("alt.label", { count: data.media_missing_alt.count }), href: href("/admin/media?missing_alt=true"), open: t("alt.open") },
@@ -262,6 +264,33 @@ export function DashboardView() {
 
         {hasKpi && !allClear ? (
           <section aria-label={t("sections.glance")} className={KPI_GRID}>
+            {data.in_review ? (
+              <DashCard
+                testId="card-in-review"
+                className="h-full"
+                tone={data.in_review.count > 0 ? "primary" : "calm"}
+                badge={data.in_review.count > 0 ? attention : undefined}
+                title={t("review.title")}
+                icon={<ClipboardCheckIcon />}
+                footer={<CardLink href={href("/admin/publishing?tab=awaiting_review")}>{t("review.open")}</CardLink>}
+              >
+                <KpiNumber value={data.in_review.count} label={t("review.label", { count: data.in_review.count })} />
+                {data.in_review.count === 0 ? <AllClear text={t("allClear")} /> : null}
+              </DashCard>
+            ) : null}
+
+            {data.scheduled_7d ? (
+              <DashCard
+                testId="card-scheduled-7d"
+                className="h-full"
+                title={t("scheduledSoon.title")}
+                icon={<CalendarClockIcon />}
+                footer={<CardLink href={href("/admin/publishing?tab=scheduled")}>{t("scheduledSoon.open")}</CardLink>}
+              >
+                <KpiNumber value={data.scheduled_7d.count} label={t("scheduledSoon.label", { count: data.scheduled_7d.count })} />
+              </DashCard>
+            ) : null}
+
             {data.submissions_new ? (
               <DashCard
                 testId="card-submissions-new"

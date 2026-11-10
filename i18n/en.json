@@ -226,7 +226,9 @@
     "authors": "Authors",
     "webhooks": "Webhooks",
     "collections": "Collections",
-    "sections": "Shared sections"
+    "sections": "Shared sections",
+    "publishing": "Publishing queue",
+    "awaitingReview": "{count, plural, one {# item awaiting review} other {# items awaiting review}}"
   },
   "breadcrumb": {
     "forms": "Forms",
@@ -253,7 +255,8 @@
     "authors": "Authors",
     "webhooks": "Webhooks",
     "collections": "Collections",
-    "sections": "Shared sections"
+    "sections": "Shared sections",
+    "publishing": "Publishing queue"
   },
   "dashboard": {
     "title": "Dashboard",
@@ -331,7 +334,17 @@
       "glance": "At a glance",
       "details": "Details"
     },
-    "updated": "Updated {when}"
+    "updated": "Updated {when}",
+    "review": {
+      "title": "Awaiting review",
+      "label": "{count, plural, one {page or post is waiting for a review} other {pages and posts are waiting for a review}}",
+      "open": "Open the queue"
+    },
+    "scheduledSoon": {
+      "title": "Scheduled this week",
+      "label": "{count, plural, one {publication is due in the next 7 days or overdue} other {publications are due in the next 7 days or overdue}}",
+      "open": "Open the schedule"
+    }
   },
   "forms": {
     "list": {
@@ -5399,6 +5412,82 @@
           "close": "Close"
         }
       }
+    }
+  },
+  "publishingQueue": {
+    "title": "Publishing queue",
+    "description": "What waits for a review, what is booked for later and what has changes that are not on the website yet.",
+    "tabsLabel": "Queue",
+    "tabs": {
+      "awaiting_review": "Awaiting review",
+      "scheduled": "Scheduled",
+      "unpublished_changes": "Unpublished changes"
+    },
+    "filters": {
+      "kind": "Kind",
+      "kindSummary": "{count} kinds selected",
+      "clear": "Clear kind filter"
+    },
+    "kinds": {
+      "pages": "Page",
+      "posts": "Post",
+      "albums": "Album",
+      "faq-groups": "FAQ group",
+      "forms": "Form",
+      "collection-entries": "Collection entry",
+      "shared-sections": "Shared section"
+    },
+    "columns": {
+      "title": "Title",
+      "kind": "Kind",
+      "status": "Status",
+      "when": "Who and when",
+      "scheduled": "Scheduled for",
+      "actions": "Actions"
+    },
+    "open": "Open",
+    "openLabel": "Open {title}",
+    "approveHint": "Open to approve or reject",
+    "submittedBy": "Submitted by {name}, {when}",
+    "submittedAt": "Submitted {when}",
+    "submittedUnknown": "Submission not on record",
+    "editedBy": "Edited by {name}, {when}",
+    "editedAt": "Edited {when}",
+    "someone": "someone",
+    "scheduledFor": "{when}",
+    "noTime": "No time on record",
+    "action": {
+      "publish": "Publishes the item",
+      "apply_revision": "Publishes the edited version"
+    },
+    "failedAfter": "The server gave up after {attempts, plural, one {# attempt} other {# attempts}}.",
+    "failedReason": "Reason: {reason}",
+    "overdueNote": "The time has passed and the item is not published yet.",
+    "empty": {
+      "awaiting_review": "Nothing is waiting for a review.",
+      "scheduled": "Nothing is scheduled for the next 30 days.",
+      "unpublished_changes": "No published item has changes that are not on the website."
+    },
+    "emptyHint": {
+      "awaiting_review": "When an author submits a page or post for review, it appears here.",
+      "scheduled": "Schedule a page, post, album or entry from its editor.",
+      "unpublished_changes": "Edits to a published item wait here until they are published."
+    },
+    "loading": "Loading the queue",
+    "showing": "Showing {shown} of {count}",
+    "calendar": {
+      "title": "Next 30 days",
+      "description": "Times are shown in Asia/Vientiane. Items whose time has passed sit in today.",
+      "view": "Calendar view",
+      "days30": "30 days",
+      "week": "Week",
+      "overdue": "Overdue",
+      "failed": "Failed",
+      "more": "+{count} more",
+      "day": "{date}: {count, plural, =0 {nothing scheduled} one {# scheduled item} other {# scheduled items}}",
+      "unplaced": "{count, plural, one {# item has} other {# items have}} no time on record and {count, plural, one {is} other {are}} only in the list.",
+      "later": "{count, plural, one {# item is} other {# items are}} scheduled after this window.",
+      "truncated": "The calendar shows only the {shown} rows loaded for this page of {count}."
     }
   }
 }

@@ -108,6 +108,8 @@ export const API_ENDPOINTS = {
     SUBMIT_REVIEW: (base: string) => `${base}/submit-review`,
     REJECT: (base: string) => `${base}/reject`,
     SCHEDULE: (base: string) => `${base}/schedule`,
+    // SCR-39 (doc/05 12.12): the queue of awaiting review / scheduled / unpublished changes. Signed-in users; the server leaves out what the caller can not read.
+    QUEUE: "/publishing/queue",
   },
   // Preview links (doc/05 section 12.9): `base` = the entity's URL like PUBLISHING (`/pages/12`); a revoke names only the link.
   PREVIEW_LINKS: {

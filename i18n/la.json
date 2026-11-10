@@ -226,7 +226,9 @@
     "authors": "ຜູ້ຂຽນ",
     "webhooks": "Webhook",
     "collections": "ຊຸດເນື້ອຫາ",
-    "sections": "ສ່ວນທີ່ໃຊ້ຮ່ວມກັນ"
+    "sections": "ສ່ວນທີ່ໃຊ້ຮ່ວມກັນ",
+    "publishing": "ຄິວການເຜີຍແຜ່",
+    "awaitingReview": "{count, plural, other {ລໍຖ້າກວດທານ # ລາຍການ}}"
   },
   "breadcrumb": {
     "forms": "ແບບຟອມ",
@@ -253,7 +255,8 @@
     "authors": "ຜູ້ຂຽນ",
     "webhooks": "Webhook",
     "collections": "ຊຸດເນື້ອຫາ",
-    "sections": "ສ່ວນທີ່ໃຊ້ຮ່ວມກັນ"
+    "sections": "ສ່ວນທີ່ໃຊ້ຮ່ວມກັນ",
+    "publishing": "ຄິວການເຜີຍແຜ່"
   },
   "dashboard": {
     "title": "ພາບລວມ",
@@ -331,7 +334,17 @@
       "glance": "ພາບລວມດ່ວນ",
       "details": "ລາຍລະອຽດ"
     },
-    "updated": "ອັບເດດ {when}"
+    "updated": "ອັບເດດ {when}",
+    "review": {
+      "title": "ລໍຖ້າກວດທານ",
+      "label": "{count, plural, other {ໜ້າເວັບ ແລະ ບົດຄວາມທີ່ລໍຖ້າການກວດທານ}}",
+      "open": "ເປີດຄິວ"
+    },
+    "scheduledSoon": {
+      "title": "ຕັ້ງເວລາໄວ້ໃນອາທິດນີ້",
+      "label": "{count, plural, other {ການເຜີຍແຜ່ທີ່ຈະຮອດກຳນົດໃນ 7 ມື້ຂ້າງໜ້າ ຫຼື ເກີນເວລາແລ້ວ}}",
+      "open": "ເປີດຕາຕະລາງເວລາ"
+    }
   },
   "forms": {
     "list": {
@@ -5399,6 +5412,82 @@
           "close": "ປິດ"
         }
       }
+    }
+  },
+  "publishingQueue": {
+    "title": "ຄິວການເຜີຍແຜ່",
+    "description": "ສິ່ງທີ່ລໍຖ້າການກວດທານ, ສິ່ງທີ່ຕັ້ງເວລາໄວ້ ແລະ ສິ່ງທີ່ມີການແກ້ໄຂທີ່ຍັງບໍ່ຂຶ້ນເວັບໄຊ.",
+    "tabsLabel": "ຄິວ",
+    "tabs": {
+      "awaiting_review": "ລໍຖ້າກວດທານ",
+      "scheduled": "ຕັ້ງເວລາໄວ້",
+      "unpublished_changes": "ການແກ້ໄຂທີ່ຍັງບໍ່ເຜີຍແຜ່"
+    },
+    "filters": {
+      "kind": "ປະເພດ",
+      "kindSummary": "ເລືອກ {count} ປະເພດ",
+      "clear": "ລ້າງຕົວກອງປະເພດ"
+    },
+    "kinds": {
+      "pages": "ໜ້າເວັບ",
+      "posts": "ບົດຄວາມ",
+      "albums": "ອັນລະບັ້ມ",
+      "faq-groups": "ກຸ່ມຄຳຖາມທີ່ພົບເລື້ອຍ",
+      "forms": "ແບບຟອມ",
+      "collection-entries": "ລາຍການໃນຊຸດເນື້ອຫາ",
+      "shared-sections": "ສ່ວນທີ່ໃຊ້ຮ່ວມກັນ"
+    },
+    "columns": {
+      "title": "ຫົວຂໍ້",
+      "kind": "ປະເພດ",
+      "status": "ສະຖານະ",
+      "when": "ໃຜ ແລະ ເມື່ອໃດ",
+      "scheduled": "ຕັ້ງເວລາເຜີຍແຜ່ເມື່ອ",
+      "actions": "ຄຳສັ່ງ"
+    },
+    "open": "ເປີດ",
+    "openLabel": "ເປີດ {title}",
+    "approveHint": "ເປີດເພື່ອອະນຸມັດ ຫຼື ສົ່ງກັບຄືນ",
+    "submittedBy": "ສົ່ງໂດຍ {name}, {when}",
+    "submittedAt": "ສົ່ງເມື່ອ {when}",
+    "submittedUnknown": "ບໍ່ມີບັນທຶກການສົ່ງ",
+    "editedBy": "ແກ້ໄຂໂດຍ {name}, {when}",
+    "editedAt": "ແກ້ໄຂເມື່ອ {when}",
+    "someone": "ບໍ່ຮູ້ຊື່",
+    "scheduledFor": "{when}",
+    "noTime": "ບໍ່ມີເວລາບັນທຶກໄວ້",
+    "action": {
+      "publish": "ຈະເຜີຍແຜ່ລາຍການນີ້",
+      "apply_revision": "ຈະເຜີຍແຜ່ສະບັບທີ່ແກ້ໄຂ"
+    },
+    "failedAfter": "ເຊີບເວີຍອມແພ້ຫຼັງຈາກລອງ {attempts} ຄັ້ງ.",
+    "failedReason": "ເຫດຜົນ: {reason}",
+    "overdueNote": "ເກີນເວລາທີ່ຕັ້ງໄວ້ແລ້ວ ແຕ່ຍັງບໍ່ໄດ້ເຜີຍແຜ່.",
+    "empty": {
+      "awaiting_review": "ບໍ່ມີລາຍການລໍຖ້າການກວດທານ.",
+      "scheduled": "ບໍ່ມີລາຍການຕັ້ງເວລາໄວ້ໃນ 30 ມື້ຂ້າງໜ້າ.",
+      "unpublished_changes": "ບໍ່ມີລາຍການທີ່ເຜີຍແຜ່ແລ້ວ ທີ່ມີການແກ້ໄຂຍັງບໍ່ຂຶ້ນເວັບໄຊ."
+    },
+    "emptyHint": {
+      "awaiting_review": "ເມື່ອຜູ້ຂຽນສົ່ງໜ້າເວັບ ຫຼື ບົດຄວາມໃຫ້ກວດທານ ມັນຈະຂຶ້ນທີ່ນີ້.",
+      "scheduled": "ຕັ້ງເວລາເຜີຍແຜ່ໜ້າເວັບ, ບົດຄວາມ, ອັນລະບັ້ມ ຫຼື ລາຍການ ຈາກໜ້າແກ້ໄຂຂອງມັນ.",
+      "unpublished_changes": "ການແກ້ໄຂລາຍການທີ່ເຜີຍແຜ່ແລ້ວ ຈະລໍຖ້າຢູ່ທີ່ນີ້ຈົນກວ່າຈະເຜີຍແຜ່."
+    },
+    "loading": "ກຳລັງໂຫຼດຄິວ",
+    "showing": "ສະແດງ {shown} ຈາກ {count}",
+    "calendar": {
+      "title": "30 ມື້ຂ້າງໜ້າ",
+      "description": "ເວລາສະແດງຕາມເຂດ Asia/Vientiane. ລາຍການທີ່ເກີນເວລາແລ້ວຈະຢູ່ໃນມື້ນີ້.",
+      "view": "ມຸມມອງປະຕິທິນ",
+      "days30": "30 ມື້",
+      "week": "ອາທິດ",
+      "overdue": "ເກີນເວລາ",
+      "failed": "ລົ້ມເຫຼວ",
+      "more": "ແລະ ອີກ {count}",
+      "day": "{date}: {count, plural, =0 {ບໍ່ມີລາຍການຕັ້ງເວລາ} other {ມີ # ລາຍການຕັ້ງເວລາໄວ້}}",
+      "unplaced": "{count, plural, other {# ລາຍການບໍ່ມີເວລາບັນທຶກໄວ້ ແລະ ມີຢູ່ໃນລາຍການເທົ່ານັ້ນ}}.",
+      "later": "{count, plural, other {# ລາຍການຕັ້ງເວລາໄວ້ຫຼັງຊ່ວງນີ້}}.",
+      "truncated": "ປະຕິທິນສະແດງສະເພາະ {shown} ແຖວທີ່ໂຫຼດມາໃນໜ້ານີ້ ຈາກທັງໝົດ {count}."
     }
   }
 }

@@ -32,6 +32,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { useCan } from "@/hooks/use-permission";
+import { useAwaitingReviewCount } from "@/hooks/use-publishing-queue";
 import { useSubmissionsSummary } from "@/hooks/use-submissions";
 import { PERMISSION_ACTIONS, PERMISSION_KEYS } from "@/lib/constants/permissions";
 import { cn } from "@/lib/utils";
@@ -54,19 +55,40 @@ export function isNavActive(pathname: string, url: string): boolean {
   return pathname === url || pathname.startsWith(`${url}/`);
 }
 
-// The count next to the "Messages" entry (doc/07 section 2.1): `GET /submissions/summary` every minute, only for a person who may read
-// the inbox; hidden at 0 and while the number is unknown (loading, error), `99+` over 99.
-function NavBadge({ query }: { query: NonNullable<NavMainSubConfig["badgeQuery"]> }) {
+// The count next to an entry (doc/07 section 2.1), hidden at 0 and while the number is unknown (loading, error), `99+` over 99.
+// "Messages": `GET /submissions/summary` every minute, only for a person who may read the inbox.
+function SubmissionsBadge() {
   const t = useTranslations("nav");
   const allowed = useCan(PERMISSION_KEYS.FORMS_SUBMISSIONS, PERMISSION_ACTIONS.READ);
   const summary = useSubmissionsSummary(allowed);
   const count = summary.data?.new ?? 0;
   if (!allowed || count <= 0) return null;
+  return <CountBadge query="submissions.new" count={count} label={t("newMessages", { count })} />;
+}
+
+// "Publishing queue" (SCR-39): the pages and posts awaiting review, only for a person who may review one of them (`review` on cms.pages or
+// cms.blog); a person who can not review has nothing to act on in that tab, so no number.
+function AwaitingBadge() {
+  const t = useTranslations("nav");
+  const canReviewPages = useCan(PERMISSION_KEYS.CMS_PAGES, PERMISSION_ACTIONS.REVIEW);
+  const canReviewPosts = useCan(PERMISSION_KEYS.CMS_BLOG, PERMISSION_ACTIONS.REVIEW);
+  const canReview = canReviewPages || canReviewPosts;
+  const awaiting = useAwaitingReviewCount(canReview);
+  const count = awaiting.data ?? 0;
+  if (!canReview || count <= 0) return null;
+  return <CountBadge query="publishing.awaiting" count={count} label={t("awaitingReview", { count })} />;
+}
+
+function CountBadge({ query, count, label }: { query: string; count: number; label: string }) {
   return (
-    <Badge variant="default" className="ms-auto px-1.5 py-0 text-[10px] font-semibold tabular-nums" data-testid="nav-badge" data-query={query} aria-label={t("newMessages", { count })}>
+    <Badge variant="default" className="ms-auto px-1.5 py-0 text-[10px] font-semibold tabular-nums" data-testid="nav-badge" data-query={query} aria-label={label}>
       {count > 99 ? "99+" : count}
     </Badge>
   );
+}
+
+function NavBadge({ query }: { query: NonNullable<NavMainSubConfig["badgeQuery"]> }) {
+  return query === "publishing.awaiting" ? <AwaitingBadge /> : <SubmissionsBadge />;
 }
 
 export function NavMain({ items }: { items: NavMainGroupConfig[] }) {

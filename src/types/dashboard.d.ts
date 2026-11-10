@@ -47,5 +47,9 @@ export type DashboardSummary = {
   // PROPOSED: the latest audit rows (`ops.audit:read`).
   recent_activity?: DashboardActivityItem[];
   // PROPOSED: the outbox relay (`ops.system:read`), the same member names as `GET /system/status` `outbox`.
+  // Phase C of the publishing workflow (`modules/publishing`): the pages and posts waiting for a review (the caller must be able to read one of
+  // them) and the scheduled publications due within 7 days or overdue. Optional: the server sends a card only when the caller may see it.
+  in_review?: { count: number };
+  scheduled_7d?: { count: number };
   relay?: { pending: number; failed: number; last_success_at: string | null; oldest_pending_at: string | null };
 };

@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { PUBLISHABLE_RESOURCES, type PublishableResource } from "@/lib/publishable-resources";
 import { revisionsQueryKey } from "@/lib/revision-resources";
+import { invalidatePublishingQueue } from "@/hooks/use-publishing-queue";
 import { PublishingAPI } from "@/services/publishing.api";
 
 // The three commands of the publish engine for one entity (doc/05 section 12.7). After a command the entity's lists and
@@ -12,6 +13,8 @@ function useRefresh(resource: PublishableResource, id: number | string) {
   return () => {
     void queryClient.invalidateQueries({ queryKey: [PUBLISHABLE_RESOURCES[resource].listPath] });
     void queryClient.invalidateQueries({ queryKey: revisionsQueryKey(resource, id) });
+    // SCR-39: the queue and the two dashboard cards that count it.
+    invalidatePublishingQueue(queryClient);
   };
 }
 
