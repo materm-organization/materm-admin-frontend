@@ -95,11 +95,14 @@ export function useIssueTranslator(): (issue: Issue) => string {
       for (const [k, v] of Object.entries(params)) {
         flat[k] = Array.isArray(v) ? (v as string[]).join(", ") : (v as string | number);
       }
-      if (tForm.has(key)) {
+      // `<code>_generic`: the wording for when the parameters are not known (a "Go to field" jump carries only the code).
+      const candidates = Object.keys(flat).length === 0 ? [`${key}_generic`, key] : [key, `${key}_generic`];
+      for (const candidate of candidates) {
+        if (!tForm.has(candidate)) continue;
         try {
-          return tForm(key, flat);
+          return tForm(candidate, flat);
         } catch {
-          /* a parameter the server did not send: fall through */
+          /* a parameter the server did not send: try the next wording */
         }
       }
       const fieldKey = `fields.${issue.code}`;

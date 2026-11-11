@@ -28,6 +28,8 @@ import { useMediaUpload } from "@/hooks/use-media-upload";
 import { useCan } from "@/hooks/use-permission";
 import { isNoPermissionError } from "@/lib/api-error";
 import { PERMISSION_ACTIONS, PERMISSION_KEYS } from "@/lib/constants/permissions";
+import { MEDIA_KINDS } from "@/lib/media";
+import { matchesAccept, VIDEO_MIME } from "@/lib/media-upload";
 import { cn } from "@/lib/utils";
 import type { MediaAssetOption } from "@/types/cms";
 
@@ -48,7 +50,8 @@ export type MediaPickerProps = {
   // `single`: a click picks the image and closes. `multiple`: clicks toggle (up to `max`), "Add" confirms.
   mode?: "single" | "multiple";
   max?: number;
-  // Mime filter, e.g. `image/*` (sent as `mime` to the API).
+  // Mime filter, e.g. `image/*` (sent as `mime` to the API). Video is opt-in: `video/mp4` (or `image/*,video/mp4`) lets
+  // the picker list, upload and filter MP4 files; every existing caller passes images or nothing and sees no video.
   accept?: string;
   // Crop preview of every tile: `hero`, `430:562` ... (the field's `ui:options.ratio`).
   ratio?: string;
@@ -98,6 +101,7 @@ function PickerContent({
   const [page, setPage] = useState(1);
   const gridRef = useRef<HTMLUListElement>(null);
   const multiple = mode === "multiple";
+  const allowsVideo = matchesAccept({ name: "x.mp4", type: VIDEO_MIME }, accept) && Boolean(accept);
   const limit = max ?? Number.POSITIVE_INFINITY;
 
   // An editor that already knows the default language (the schema form) passes it: no extra request.
@@ -112,10 +116,11 @@ function PickerContent({
       page,
       folderId: folder === ALL ? undefined : folder === ROOT ? ("root" as const) : Number(folder),
       includeSubfolders: folder !== ALL && folder !== ROOT ? true : undefined,
-      kind: kind === ALL ? undefined : kind,
+      // A picker that did not opt into video never lists one (a post cover, an og image, an author avatar ... are image slots).
+      kind: kind === ALL ? (allowsVideo ? undefined : MEDIA_KINDS.filter((k) => k !== "video").join(",")) : kind,
       mime: accept || undefined,
     }),
-    [debounced, folder, kind, page, accept]
+    [debounced, folder, kind, page, accept, allowsVideo]
   );
   const { data, isLoading, isError, error, refetch } = useMediaPage(query, true);
 
@@ -220,7 +225,9 @@ function PickerContent({
     buttons[Math.min(buttons.length - 1, Math.max(0, next))]?.focus();
   };
 
-  const rows = data?.items ?? [];
+  // Defence in depth for an `accept` filter: the API filters by `mime`, but a row of another kind (an image picker must never
+  // offer a video) is dropped here too. `brand` (SVG) rows carry an image mime and stay.
+  const rows = (data?.items ?? []).filter((a) => (allowsVideo || a.kind !== "video") && (!accept || !a.mime_type || matchesAccept({ name: a.filename, type: a.mime_type }, accept)));
   const totalPages = data?.totalPages ?? 1;
   const noPermission = isError && isNoPermissionError(error);
   const folderOptions = folders.data ?? [];
@@ -268,6 +275,8 @@ function PickerContent({
               <SelectItem value={ALL}>{t("kindAll")}</SelectItem>
               <SelectItem value="image">{t("kindImage")}</SelectItem>
               <SelectItem value="brand">{t("kindBrand")}</SelectItem>
+              {/* Video is opt-in: only a caller whose `accept` names video/mp4 (release 3: a hero background) sees it. */}
+              {allowsVideo ? <SelectItem value="video">{t("kindVideo")}</SelectItem> : null}
             </SelectContent>
           </Select>
         </div>
@@ -326,7 +335,7 @@ function PickerContent({
               {rows.map((asset) => {
                 const current = selectedIds.includes(asset.id);
                 const marked = multiple ? selectedSet.includes(asset.id) : current;
-                const noAlt = !asset.is_decorative && !(asset.alt?.[altLocale] ?? "").trim();
+                const noAlt = asset.kind !== "video" && !asset.is_decorative && !(asset.alt?.[altLocale] ?? "").trim();
                 const notReady = Boolean(asset.status && asset.status !== "ready");
                 return (
                   <li key={asset.id}>

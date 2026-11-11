@@ -15,6 +15,7 @@ import type { MediaAssetOption } from "@/types/cms";
 
 import { useIssuesUnder, useFieldLabel, useSchemaFormContext } from "../context";
 import { useMediaAsset } from "../data/provider";
+import { getByPointer } from "../pointer";
 import { isPlainObject } from "../schema-walker";
 import type { FieldNode } from "../types";
 import { setLocaleValue } from "../value-ops";
@@ -41,11 +42,14 @@ export function MediaField({
   altEditable: boolean;
 }) {
   const t = useTranslations("schemaForm.media");
-  const { locale, defaultLocale } = useSchemaFormContext();
+  const { locale, defaultLocale, rootValue } = useSchemaFormContext();
   const label = useFieldLabel(node);
   const issues = useIssuesUnder(pointer);
   const [pickerOpen, setPickerOpen] = useState(false);
   const decorativeId = useId();
+  // Convention: a sibling `<name>_video` (the hero's `background_video`) turns this image into the video's poster / still.
+  const sibling = node.name === "*" ? undefined : getByPointer(rootValue, `${pointer}_video`);
+  const isPoster = isPlainObject(sibling) && typeof sibling.media_id === "number";
 
   const image = isPlainObject(value) ? value : undefined;
   const mediaId = typeof image?.media_id === "number" ? image.media_id : undefined;
@@ -123,6 +127,11 @@ export function MediaField({
               </Button>
             )}
           </div>
+          {isPoster && (
+            <p className="text-xs text-muted-foreground" data-slot="poster-hint">
+              {t("posterHint")}
+            </p>
+          )}
           {hasAltControls && (
           <div className="flex items-center gap-2">
             <Switch

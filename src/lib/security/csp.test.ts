@@ -74,6 +74,16 @@ describe("media origins (img-src)", () => {
     expect(buildContentSecurityPolicy({ nonce: "n" })).toContain("img-src 'self' data: blob:;");
   });
 
+  it("media-src is 'self', blob: and the media origins only (no API origin, no wildcard)", () => {
+    const csp = buildContentSecurityPolicy({ nonce: "n", apiOrigin: "https://api.example.com", mediaOrigins: ["http://localhost:3001", "https://files.example.com"] });
+    const directive = (name: string) => csp.split("; ").find((d) => d.startsWith(`${name} `));
+    expect(directive("media-src")).toBe("media-src 'self' blob: http://localhost:3001 https://files.example.com");
+    expect(buildContentSecurityPolicy({ nonce: "n", apiOrigin: "https://api.example.com" })).toContain("media-src 'self' blob:;");
+    expect(csp).not.toContain("unsafe-eval");
+    expect(directive("script-src")).not.toContain("files.example.com");
+    expect(directive("default-src")).toBe("default-src 'self'");
+  });
+
   it("reads origins from the env value: trims, de-duplicates, keeps http(s) origins only", () => {
     expect(mediaOriginsFromEnv("http://localhost:3001, https://files.example.com/media/x , http://localhost:3001")).toEqual([
       "http://localhost:3001",

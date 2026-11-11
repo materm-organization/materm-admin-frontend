@@ -18,6 +18,16 @@ up() {
     || { echo "scratch infra is down: (cd ../materm-admin-backend && make testdb-up)"; return 1; }
   "$X/01-prepare.sh" || return 1
   W="$(cat "$X/.work-path")"
+  # video support (release 2): the portal backend / frontend changes are not committed yet and the harness clones HEAD, so overlay their
+  # WORKING TREES too (never .git, env files, config.yaml, node_modules, build output) and rebuild the portal backend binary 01-prepare built.
+  # OVERLAY_PORTAL=0 tests HEAD only. (The admin backend working tree is overlaid by 01-prepare itself.)
+  if [ "${OVERLAY_PORTAL:-1}" = 1 ]; then
+    for p in materm-web-portal-backend materm-web-portal-frontend; do
+      rsync -a --exclude .git --exclude node_modules --exclude .next --exclude '.env*' --exclude config.yaml --exclude logs --exclude bin "$FE/../$p/" "$W/src/$p/"
+      echo "$p overlay=worktree" >> "$X/results/shas.txt"
+    done
+    (cd "$W/src/materm-web-portal-backend" && go build -o "$W/bin/portal-backend" ./cmd/server) || return 1
+  fi
   # overlay the working tree of this repo (uncommitted fixes) onto the HEAD clone; never env files, node_modules, build output
   rsync -a --exclude .git --exclude node_modules --exclude .next --exclude '.env*' --exclude 'tests/e2e/results' "$FE/" "$W/src/materm-admin-frontend/"
   "$X/02-backends.sh" && "$X/03-frontends.sh" && "$X/04-start-frontends.sh" || return 1

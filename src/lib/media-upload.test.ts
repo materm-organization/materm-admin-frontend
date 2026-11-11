@@ -1,9 +1,16 @@
 import { describe, expect, it } from "vitest";
 
-import { MAX_FILE_BYTES, MAX_SVG_BYTES, acceptAttribute, checkFile, guessMime, isAutoRetryable, mapUploadError } from "@/lib/media-upload";
+import { MAX_VIDEO_BYTES, MAX_FILE_BYTES, MAX_SVG_BYTES, acceptAttribute, checkFile, guessMime, isAutoRetryable, mapUploadError } from "@/lib/media-upload";
 import { apiError, networkError } from "@/test/api-error";
 
 const file = (name: string, type: string, size = 1000) => ({ name, type, size });
+
+describe("checkFile: MP4 video", () => {
+  it("allows up to 50 MB and refuses more", () => {
+    expect(checkFile(file("a.mp4", "video/mp4", MAX_VIDEO_BYTES), { allowSvg: false })).toBeNull();
+    expect(checkFile(file("a.mp4", "", MAX_VIDEO_BYTES + 1), { allowSvg: false })?.kind).toBe("videoTooLarge");
+  });
+});
 
 describe("checkFile (client convenience check)", () => {
   it("accepts the allowed types within their size", () => {

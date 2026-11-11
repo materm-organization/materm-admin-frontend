@@ -14,6 +14,8 @@
 //    `src/proxy.ts`, cached); `NEXT_PUBLIC_MEDIA_ORIGINS` (comma separated origins) is an optional extra list and
 //    is no longer needed. A picture whose origin is not listed is blocked by the
 //    browser and the media screens show their placeholder tile instead.
+//  - `media-src 'self' blob: <media origins>`: the `<video>` of the media sheet plays the file from the media origin (the
+//    same origins as `img-src`, no API origin); `blob:` is for a local preview of a chosen file before it is uploaded.
 //  - `connect-src 'self' <API origin>`: the browser may only call this app and the backend.
 //  - `frame-src 'none'`: preview opens in a new tab (decision Q-07-5); add the portal origin when an iframe
 //    preview is built.
@@ -70,6 +72,7 @@ export function buildContentSecurityPolicy({ nonce, isDev = false, apiOrigin, me
     `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${isDev ? " 'unsafe-eval'" : ""}`,
     "style-src 'self' 'unsafe-inline'",
     `img-src 'self' data: blob:${api}${media}`,
+    `media-src 'self' blob:${media}`,
     "font-src 'self' data:",
     `connect-src 'self'${api}${isDev ? " ws: wss:" : ""}`,
     "worker-src 'self' blob:",

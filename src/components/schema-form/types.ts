@@ -7,6 +7,7 @@ export type FieldKind =
   | "localized-text"
   | "richtext"
   | "image"
+  | "media-video"
   | "link"
   | "entity"
   | "object"

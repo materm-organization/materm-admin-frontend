@@ -12,8 +12,120 @@ import type { MediaAssetDetail, MediaKind } from "@/types/media";
 
 export const MOCK_MAX_FILE_BYTES = 20 * 1024 * 1024;
 export const MOCK_MAX_SVG_BYTES = 1024 * 1024;
+// Video support, release 1 (admin backend b307bed, pkg/mediafile/video.go): MP4 only, 50 MiB, 35 s, 1920x1080, 40 Mbit/s.
+export const MOCK_MAX_VIDEO_BYTES = 50 * 1024 * 1024;
+export const MOCK_MAX_VIDEO_MS = 35_000;
+export const MOCK_ALLOWED_MIME = ["image/jpeg", "image/png", "image/webp", "image/avif", "image/gif", "image/svg+xml", "application/pdf", "video/mp4"];
+
+// Knob for tests: the next `n` uploads answer 503 `upload_slots_busy` with `Retry-After: 3` (the two video slots are taken).
+let slotsBusy = 0;
+export function setUploadSlotsBusy(n: number) {
+  slotsBusy = n;
+}
 
 export type SniffedFile = { mime: string; kind: MediaKind };
+
+const VIDEO_BRANDS = ["isom", "iso2", "mp41", "mp42", "avc1", "M4V "];
+const ascii = (b: Uint8Array, i: number, n = 4) => String.fromCharCode(...b.slice(i, i + n));
+// ftyp first, a video major brand, and no AVIF brand anywhere (AVIF is its own type).
+function isMp4(b: Uint8Array): boolean {
+  if (b.length < 16 || ascii(b, 4) !== "ftyp") return false;
+  const size = new DataView(b.buffer, b.byteOffset).getUint32(0);
+  if (size < 16 || size > b.length || (size - 16) % 4 !== 0 || !VIDEO_BRANDS.includes(ascii(b, 8))) return false;
+  for (let i = 16; i + 4 <= size; i += 4) if (["avif", "avis"].includes(ascii(b, i))) return false;
+  return true;
+}
+
+type Box = { type: string; start: number; end: number };
+function boxesOf(b: Uint8Array, from: number, to: number, strict: boolean): Box[] | null {
+  const dv = new DataView(b.buffer, b.byteOffset, b.byteLength);
+  const out: Box[] = [];
+  let off = from;
+  while (off < to) {
+    if (to - off < 8) return strict ? null : out;
+    let size = dv.getUint32(off);
+    let header = 8;
+    if (size === 1) {
+      size = Number(dv.getBigUint64(off + 8));
+      header = 16;
+    } else if (size === 0) size = to - off;
+    if (size < header || off + size > to) return null;
+    out.push({ type: ascii(b, off + 4), start: off + header, end: off + size });
+    off += size;
+  }
+  return out;
+}
+
+export type MockMp4 = { durationMs: number; width: number; height: number };
+// The 422 of a refused MP4, as the real server words it (`errors[0] = {in:"body", path:"/file", code, message, params}`).
+function videoRefusal(code: string, message: string, params?: Record<string, string | number>) {
+  return validationFailed([{ in: "body", path: "/file", code, message, params }]);
+}
+const damaged = (why: string) => videoRefusal("damaged", `The video file is damaged or is not a plain MP4 (${why}).`);
+
+// The rules of `inspectMP4` in the same order: structure, fast start, codec (inside the tracks), dimensions, duration, bit rate.
+export function inspectMp4(b: Uint8Array): MockMp4 {
+  const top = boxesOf(b, 0, b.length, true);
+  if (!top) throw damaged("boxes do not add up to the file");
+  const moovs = top.filter((t) => t.type === "moov");
+  const mdatAt = top.findIndex((t) => t.type === "mdat");
+  if (moovs.length !== 1) throw damaged(`${moovs.length} moov boxes, expected 1`);
+  if (mdatAt < 0) throw damaged("no mdat box (no media data)");
+  if (mdatAt < top.findIndex((t) => t.type === "moov")) {
+    throw videoRefusal(
+      "faststart_required",
+      "The video index (moov) is after the video data, so it cannot start playing before it is fully downloaded. Export the video again with fast start enabled (for example ffmpeg -movflags +faststart)."
+    );
+  }
+  const dv = new DataView(b.buffer, b.byteOffset, b.byteLength);
+  const moov = boxesOf(b, moovs[0].start, moovs[0].end, false) ?? [];
+  let durationMs = 0;
+  let size: { width: number; height: number } | null = null;
+  for (const m of moov) {
+    if (m.type === "mvhd") {
+      const v = b[m.start];
+      const ts = dv.getUint32(m.start + (v === 1 ? 20 : 12));
+      const dur = v === 1 ? Number(dv.getBigUint64(m.start + 24)) : dv.getUint32(m.start + 16);
+      if (!ts || !dur) throw damaged("no duration");
+      durationMs = Math.ceil((dur * 1000) / ts);
+      if (durationMs > MOCK_MAX_VIDEO_MS) {
+        throw videoRefusal("duration_too_long", `The video is ${(durationMs / 1000).toFixed(1)} seconds long; at most 35 seconds is accepted.`, { duration_ms: durationMs, max_ms: MOCK_MAX_VIDEO_MS });
+      }
+    } else if (m.type === "trak" && !size) {
+      const kids = boxesOf(b, m.start, m.end, false) ?? [];
+      const mdia = kids.find((k) => k.type === "mdia");
+      const hdlr = mdia ? (boxesOf(b, mdia.start, mdia.end, false) ?? []).find((k) => k.type === "hdlr") : undefined;
+      if (!hdlr || ascii(b, hdlr.start + 8) !== "vide") continue;
+      const tkhd = kids.find((k) => k.type === "tkhd");
+      if (!tkhd) throw damaged("video track without tkhd");
+      const v = b[tkhd.start];
+      const wAt = tkhd.start + (v === 1 ? 88 : 76);
+      let width = dv.getUint32(wAt) >>> 16;
+      let height = dv.getUint32(wAt + 4) >>> 16;
+      const mat = tkhd.start + (v === 1 ? 52 : 40);
+      if (dv.getUint32(mat) === 0 && dv.getUint32(mat + 16) === 0 && dv.getUint32(mat + 4) !== 0 && dv.getUint32(mat + 12) !== 0) [width, height] = [height, width];
+      const mdiaKids = boxesOf(b, mdia!.start, mdia!.end, false) ?? [];
+      const minf = mdiaKids.find((k) => k.type === "minf");
+      const stbl = minf ? (boxesOf(b, minf.start, minf.end, false) ?? []).find((k) => k.type === "stbl") : undefined;
+      const stsd = stbl ? (boxesOf(b, stbl.start, stbl.end, false) ?? []).find((k) => k.type === "stsd") : undefined;
+      if (!stsd) throw damaged("video track without a sample description");
+      const codec = ascii(b, stsd.start + 12);
+      if (codec !== "avc1" && codec !== "avc3") {
+        throw videoRefusal("codec_unsupported", `The video codec "${codec}" is not supported; export it as H.264 (AVC) in an MP4 file.`, { codec });
+      }
+      size = { width, height };
+    }
+  }
+  if (!durationMs) throw damaged("no mvhd box");
+  if (!size) throw damaged("no video track");
+  if (size.width > 1920 || size.height > 1080) {
+    throw videoRefusal("dimensions_too_large", `The video is ${size.width}x${size.height} pixels; at most 1920x1080 is accepted.`, { width: size.width, height: size.height, max_width: 1920, max_height: 1080 });
+  }
+  if (b.length * 8000 > 40_000_000 * durationMs) {
+    throw videoRefusal("bitrate_too_high", "The video bit rate is above 40 Mbit/s. Export it again with a lower bit rate.", { max_bits_per_second: 40_000_000 });
+  }
+  return { durationMs, ...size };
+}
 
 // Magic bytes of the allowed types (FR-MEDIA-02); `null` = not allowed (415).
 export function sniff(bytes: Uint8Array): SniffedFile | null {
@@ -24,6 +136,7 @@ export function sniff(bytes: Uint8Array): SniffedFile | null {
   if (at(0, "RIFF") && at(8, "WEBP")) return { mime: "image/webp", kind: "image" };
   if (at(4, "ftyp") && (at(8, "avif") || at(8, "avis"))) return { mime: "image/avif", kind: "image" };
   if (at(0, "%PDF")) return { mime: "application/pdf", kind: "document" };
+  if (isMp4(bytes)) return { mime: "video/mp4", kind: "video" };
   const head = new TextDecoder().decode(bytes.slice(0, 512)).toLowerCase();
   if (head.includes("<svg")) return { mime: "image/svg+xml", kind: "brand" };
   return null;
@@ -98,13 +211,25 @@ async function sha256(bytes: Uint8Array): Promise<string> {
   return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 
-// Type by magic bytes, size by type, checksum.
+const tooLarge = (reason: string) =>
+  fail(413, "PAYLOAD_TOO_LARGE", "The file is larger than the library accepts.", {
+    details: { reason, max_bytes: MOCK_MAX_FILE_BYTES, max_svg_bytes: MOCK_MAX_SVG_BYTES, max_video_bytes: MOCK_MAX_VIDEO_BYTES, max_megapixels: 40 },
+  });
+
+// Slots, type by magic bytes, size by type, the MP4 rules, checksum. The order of the real service: a file part over 50 MiB is
+// refused first (`max_video_bytes`, whatever it is), then the sniff (415), then the limit of the sniffed type, then the MP4 rules.
 async function inspect(file: UploadedFile) {
+  if (file.bytes.byteLength > MOCK_MAX_VIDEO_BYTES) throw tooLarge("max_video_bytes");
+  if (slotsBusy > 0 && isMp4(file.bytes)) {
+    slotsBusy -= 1;
+    throw fail(503, "SERVICE_UNAVAILABLE", "The server is busy. Try again in a moment.", { details: { reason: "upload_slots_busy" } }, { "Retry-After": "3" });
+  }
   const sniffed = sniff(file.bytes);
-  if (!sniffed) throw fail(415, "UNSUPPORTED_MEDIA_TYPE", "This file type is not allowed.");
-  const limit = sniffed.mime === "image/svg+xml" ? MOCK_MAX_SVG_BYTES : MOCK_MAX_FILE_BYTES;
-  if (file.bytes.byteLength > limit) throw fail(413, "PAYLOAD_TOO_LARGE", "The file is too large.", { details: { max_bytes: limit } });
-  return { sniffed, bytes: file.bytes.byteLength, checksum: await sha256(file.bytes) };
+  if (!sniffed) throw fail(415, "UNSUPPORTED_MEDIA_TYPE", "The file type is not allowed or the file is damaged.", { details: { reason: "unsupported", allowed: MOCK_ALLOWED_MIME } });
+  const limit = sniffed.mime === "image/svg+xml" ? MOCK_MAX_SVG_BYTES : sniffed.mime === "video/mp4" ? MOCK_MAX_VIDEO_BYTES : MOCK_MAX_FILE_BYTES;
+  if (file.bytes.byteLength > limit) throw tooLarge(sniffed.mime === "video/mp4" ? "max_video_bytes" : "file too large");
+  const video = sniffed.mime === "video/mp4" ? inspectMp4(file.bytes) : null;
+  return { sniffed, bytes: file.bytes.byteLength, checksum: await sha256(file.bytes), video };
 }
 
 function newPublicId(n: number) {
@@ -126,7 +251,7 @@ export async function uploadAsset(db: MockDb, request: Request) {
       throw validationFailed([{ in: "body", path: "/folder_id", code: "unknown_reference" }]);
     }
   }
-  const { sniffed, bytes, checksum } = await inspect(file);
+  const { sniffed, bytes, checksum, video } = await inspect(file);
 
   const existing = db.assets.find((a) => !a.deleted_at && a.checksum_sha256 === checksum);
   if (existing && !allowDuplicate) {
@@ -148,9 +273,9 @@ export async function uploadAsset(db: MockDb, request: Request) {
     original_filename: file.name,
     mime_type: sniffed.mime,
     bytes,
-    width: null,
-    height: null,
-    duration_ms: null,
+    width: video?.width ?? null,
+    height: video?.height ?? null,
+    duration_ms: video?.durationMs ?? null,
     focal: null,
     is_decorative: false,
     dominant_color: null,
@@ -180,13 +305,20 @@ export async function replaceAssetFile(db: MockDb, id: string, request: Request)
   requireIfMatch(request.headers.get("If-Match"), etagOf(asset.updated_at));
   const { file } = await parseUploadForm(request, []);
   if (asset.deleted_at) throw fail(409, "INVALID_STATE", "The file is in the trash.", { details: { reason: "trashed" } });
-  const { sniffed, bytes, checksum } = await inspect(file);
+  const { sniffed, bytes, checksum, video } = await inspect(file);
+  // A video replaces only a video (and the reverse): 422 at /file with the kind the row expects.
+  if ((sniffed.kind === "video") !== (asset.kind === "video")) {
+    throw validationFailed([{ in: "body", path: "/file", code: "kind_mismatch", params: { expected_kind: asset.kind } }]);
+  }
 
   const stamp = tick(db);
   asset.original_filename = file.name;
   asset.mime_type = sniffed.mime;
   asset.kind = sniffed.kind;
   asset.bytes = bytes;
+  asset.width = video?.width ?? asset.width;
+  asset.height = video?.height ?? asset.height;
+  asset.duration_ms = video ? video.durationMs : asset.duration_ms;
   asset.checksum_sha256 = checksum;
   asset.url = tileUrl(asset.id, `${file.name} v2`);
   asset.updated_at = stamp;

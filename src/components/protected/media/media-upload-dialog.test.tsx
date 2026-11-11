@@ -54,6 +54,18 @@ describe("Media upload dialog (FR-MEDIA-01/02/12)", () => {
     expect(screen.queryByRole("button", { name: "Upload files" })).not.toBeInTheDocument();
   });
 
+  it("mentions MP4 video and its limits (50 MB, 35 s, 1920x1080, fast start) and accepts mp4 files", async () => {
+    const { dialog, input } = await openDialog();
+    expect(within(dialog).getByText("Add pictures, PDFs and MP4 videos to the media library.")).toBeInTheDocument();
+    const text = dialog.textContent ?? "";
+    expect(text).toMatch(/MP4/);
+    expect(text).toMatch(/50 MB/);
+    expect(text).toMatch(/35 seconds/);
+    expect(text).toMatch(/1920x1080/);
+    expect(text).toMatch(/fast-start/);
+    expect(input.accept).toContain("video/mp4");
+  });
+
   it("SVG is accepted only with media.library:update (accept list and the file row)", async () => {
     me.current = { id: 6, roleID: 2, permissions: grant(["read", "create"]) };
     const { user, dialog, input } = await openDialog();
@@ -103,7 +115,7 @@ describe("Media upload dialog (FR-MEDIA-01/02/12)", () => {
     await user.upload(input, [fake, png("good.png", 3)]);
     expect(await within(dialog).findByText("1 of 2 done, 1 failed")).toBeInTheDocument();
     const rows = within(dialog).getAllByRole("listitem");
-    expect(within(rows[0]).getByText("This file type is not allowed.")).toBeInTheDocument();
+    expect(within(rows[0]).getByText("This file type is not allowed. Use JPEG, PNG, WebP, AVIF, GIF, PDF or MP4.")).toBeInTheDocument();
     expect(within(rows[0]).queryByRole("button", { name: /Retry/ })).not.toBeInTheDocument();
     expect(rows[1]).toHaveAttribute("data-status", "done");
   });

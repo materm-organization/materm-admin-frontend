@@ -5,7 +5,16 @@
 //   queued -> uploading -> done                      (asset created)
 //                       -> duplicate                 (same checksum: "use existing file" -> done, "upload anyway" -> queued)
 //                       -> failed                    (`Retry` -> queued; 429 / 503 / network are retried automatically a few times)
-import { isAutoRetryable, mapUploadError, MAX_FILES_PER_BATCH, UPLOAD_CONCURRENCY, type UploadError } from "@/lib/media-upload";
+import {
+  guessMime,
+  isAutoRetryable,
+  mapUploadError,
+  MAX_FILES_PER_BATCH,
+  UPLOAD_CONCURRENCY,
+  VIDEO_CONCURRENCY,
+  VIDEO_MIME,
+  type UploadError,
+} from "@/lib/media-upload";
 import type { MediaAsset, MediaAssetDetail, MediaDuplicateSummary, MediaUploadResult } from "@/types/media";
 
 export type UploadStatus = "queued" | "uploading" | "done" | "failed" | "duplicate";
@@ -45,7 +54,12 @@ export type QueueOptions = {
   fetchExisting?: (id: number) => Promise<MediaAsset | MediaAssetDetail>;
   // Client-side convenience check (`checkFile`): an error here puts the file straight to `failed` (not retryable).
   precheck?: (file: File, context: UploadContext) => UploadError | null;
+  // Async best-effort check run when a file STARTS (before any byte is sent): the MP4 pre-check (`probeMp4`). A returned
+  // error puts the file to `failed` (not retryable); `null` = send it.
+  probe?: (file: File) => Promise<UploadError | null>;
   concurrency?: number;
+  // Videos at the same time (default 1); they also count toward `concurrency`.
+  videoConcurrency?: number;
   maxFiles?: number;
   // Automatic retries of 429 / 503 / network errors per file.
   maxAutoRetries?: number;
@@ -64,12 +78,14 @@ export class UploadQueue {
   private seq = 0;
   private context: UploadContext = { folderId: null, allowSvg: false };
   private readonly concurrency: number;
+  private readonly videoConcurrency: number;
   private readonly maxFiles: number;
   private readonly maxAutoRetries: number;
   private readonly retryDelay: (attempt: number, retryAfter: number | undefined) => number;
 
   constructor(private readonly options: QueueOptions) {
     this.concurrency = options.concurrency ?? UPLOAD_CONCURRENCY;
+    this.videoConcurrency = options.videoConcurrency ?? VIDEO_CONCURRENCY;
     this.maxFiles = options.maxFiles ?? MAX_FILES_PER_BATCH;
     this.maxAutoRetries = options.maxAutoRetries ?? 2;
     this.retryDelay = options.retryDelay ?? defaultRetryDelay;
@@ -122,15 +138,24 @@ export class UploadQueue {
     return { added: accepted.length, skipped: files.length - accepted.length };
   }
 
-  // Starts queued files while there is a free slot.
+  private static isVideo(file: File) {
+    return guessMime(file) === VIDEO_MIME;
+  }
+
+  // Starts queued files while there is a free slot. A video waits for the running video (one at a time) without
+  // holding back the images behind it.
   private pump() {
-    let running = this.items.filter((i) => i.status === "uploading").length;
+    const uploading = this.items.filter((i) => i.status === "uploading");
+    let running = uploading.length;
+    let videos = uploading.filter((i) => UploadQueue.isVideo(i.file)).length;
     for (const item of this.items) {
       if (running >= this.concurrency) break;
-      if (item.status === "queued" && !this.timers.has(item.id)) {
-        running += 1;
-        void this.run(item.id);
-      }
+      if (item.status !== "queued" || this.timers.has(item.id)) continue;
+      const video = UploadQueue.isVideo(item.file);
+      if (video && videos >= this.videoConcurrency) continue;
+      running += 1;
+      if (video) videos += 1;
+      void this.run(item.id);
     }
   }
 
@@ -141,6 +166,14 @@ export class UploadQueue {
     this.controllers.set(id, controller);
     this.patch(id, { status: "uploading", progress: 0, error: undefined });
     try {
+      // No await when there is nothing to wait for (the upload starts in the same tick, as before).
+      const probing = this.options.probe?.(item.file);
+      const blocked = probing ? await probing : null;
+      if (controller.signal.aborted || !this.get(id)) return;
+      if (blocked) {
+        this.patch(id, { status: "failed", progress: 0, error: blocked });
+        return;
+      }
       const result = await this.options.upload(item.file, {
         allowDuplicate: item.allowDuplicate,
         signal: controller.signal,

@@ -132,13 +132,15 @@ describe("getBackendMediaOrigin", () => {
 describe("final CSP header", () => {
   const imgSrc = (csp: string) => csp.split("; ").find((d) => d.startsWith("img-src "));
 
-  it("carries the backend media origin in img-src only", async () => {
+  it("carries the backend media origin in img-src and media-src only", async () => {
     resetMediaOriginCache();
     vi.stubGlobal("fetch", vi.fn(async () => ok("http://localhost:3310")));
     const media = await getBackendMediaOrigin(BASE, () => 0);
     const csp = buildContentSecurityPolicy({ nonce: "n", apiOrigin: "http://localhost:8080", mediaOrigins: media ? [media] : [] });
     expect(imgSrc(csp)).toBe("img-src 'self' data: blob: http://localhost:8080 http://localhost:3310");
-    expect(csp.match(/localhost:3310/g)).toHaveLength(1);
+    expect(csp.split("; ").find((d) => d.startsWith("media-src "))).toBe("media-src 'self' blob: http://localhost:3310");
+    expect(csp.match(/localhost:3310/g)).toHaveLength(2); // img-src + media-src, nothing else (not connect-src, not script-src)
+    expect(csp.split("; ").find((d) => d.startsWith("connect-src "))).not.toContain("3310");
     vi.unstubAllGlobals();
   });
 

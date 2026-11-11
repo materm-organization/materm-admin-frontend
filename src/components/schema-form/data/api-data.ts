@@ -110,6 +110,7 @@ export function toMediaOption(row: Row): MediaAssetOption | undefined {
     focal: focal && typeof focal.x === "number" && typeof focal.y === "number" ? { x: focal.x, y: focal.y } : null,
     is_decorative: typeof row.is_decorative === "boolean" ? row.is_decorative : undefined,
     usage_count: typeof row.usage_count === "number" ? row.usage_count : undefined,
+    ...(typeof row.duration_ms === "number" ? { duration_ms: row.duration_ms } : {}),
   };
 }
 

@@ -42,6 +42,16 @@ export function schemaTypeOf(schema: JsonSchema): string | undefined {
   return Array.isArray(t) ? t.find((x) => x !== "null") : t;
 }
 
+// `{type: object, properties: {media_id: {x-ref: media_assets, x-media-kind: video}}}` and nothing else.
+function isVideoPlacement(root: JsonSchema, schema: JsonSchema): boolean {
+  const properties = schema.properties;
+  if (!properties) return false;
+  const names = Object.keys(properties);
+  if (names.length !== 1 || names[0] !== "media_id") return false;
+  const id = resolveSchema(root, properties.media_id).schema;
+  return id["x-ref"] === "media_assets" && id["x-media-kind"] === "video";
+}
+
 const WIDGET_ENTITY: Record<string, EntityKind> = {
   "post-picker": "post",
   "album-picker": "album",
@@ -72,11 +82,20 @@ function readOptions(ui: UiSchemaNode | undefined): FieldOptions {
   };
 }
 
+// `ui:order` first; a property it does not name stays next to the property that precedes it in the schema (so a field added to
+// a schema after its `ui_schema` was written, like `background_video`, appears beside `background`); with no placed
+// predecessor it goes to the end.
 function orderedNames(properties: Record<string, JsonSchema>, ui: UiSchemaNode | undefined): string[] {
   const all = Object.keys(properties);
   const order = Array.isArray(ui?.["ui:order"]) ? (ui?.["ui:order"] as string[]) : [];
-  const first = order.filter((name) => name in properties);
-  return [...first, ...all.filter((name) => !first.includes(name))];
+  const result = order.filter((name) => name in properties);
+  all.forEach((name, index) => {
+    if (result.includes(name)) return;
+    const predecessor = all.slice(0, index).reverse().find((n) => result.includes(n));
+    if (predecessor === undefined) result.push(name);
+    else result.splice(result.indexOf(predecessor) + 1, 0, name);
+  });
+  return result;
 }
 
 type CompileContext = { root: JsonSchema; warnings: string[] };
@@ -146,6 +165,10 @@ function compileNode(
   // 2. well-known defs (also when ui_schema does not say so)
   if (widget === "media-picker" || defName === "image") return setKind("image");
   if (widget === "link-picker" || defName === "link") return setKind("link");
+
+  // 2b. an optional video placement `{media_id}` whose only property is a `media_assets` reference annotated `x-media-kind: video`
+  // (generic: any object of that shape, not only `hero_brand.background_video`)
+  if (isVideoPlacement(ctx.root, schema)) return setKind("media-video");
 
   // 3. references to other rows
   const entityKind = (widget && WIDGET_ENTITY[widget]) || TABLE_ENTITY[String(schema["x-ref"] ?? "")];

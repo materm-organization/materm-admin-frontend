@@ -118,6 +118,8 @@ export type MediaAssetOption = {
   focal?: { x: number; y: number } | null;
   is_decorative?: boolean;
   usage_count?: number;
+  // Videos only (ms).
+  duration_ms?: number | null;
 };
 
 // A folder of the media library as the MediaPicker lists it (flat, ordered by path).

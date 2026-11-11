@@ -1644,7 +1644,14 @@
     }
   },
   "sectionEditor": {
-    "types": {}
+    "types": {
+      "hero_brand": {
+        "fields": {
+          "background": "Background photo",
+          "background_video": "Background video (optional)"
+        }
+      }
+    }
   },
   "schemaForm": {
     "requiredBeforePublish": " (required before publishing)",
@@ -1679,7 +1686,9 @@
       "forbidden": "This is not allowed here.",
       "no_match": "The value does not match any allowed form.",
       "too_deep": "The content is nested too deeply.",
-      "too_many_issues": "There are more problems than are listed."
+      "too_many_issues": "There are more problems than are listed.",
+      "kind_mismatch": "{expected_kind, select, video {{actual_kind, select, image {This file is a photo; pick a video here.} other {This file is not a video; pick a video here.}}} other {This file is a video; pick a photo here.}}",
+      "kind_mismatch_generic": "This file is not the right kind for this field."
     },
     "media": {
       "none": "No image",
@@ -1694,7 +1703,8 @@
       "pickerDescription": "Pick one of the images in the media library.",
       "search": "Search by file name",
       "loadError": "The media library could not be loaded.",
-      "empty": "No images found."
+      "empty": "No images found.",
+      "posterHint": "A background video is set. This photo is shown first and is used as the poster and when the video cannot play."
     },
     "link": {
       "clear": "Clear link",
@@ -1749,6 +1759,20 @@
       "collapse": "Collapse {item}",
       "expand": "Expand {item}",
       "issues": "{count, plural, one {# problem} other {# problems}}"
+    },
+    "mediaVideo": {
+      "none": "No background video",
+      "choose": "Choose video",
+      "change": "Change",
+      "remove": "Remove",
+      "help": "Plays muted on a loop behind the title. The background photo above is shown first and is used as the poster and when the video cannot play.",
+      "pickerTitle": "Choose a video",
+      "pickerDescription": "Pick an MP4 video from the media library, or upload a new one.",
+      "search": "Search by file name",
+      "missing": "Video #{id} was not found",
+      "notReady": "({status})",
+      "changeLabel": "Change video",
+      "removeLabel": "Remove video"
     }
   },
   "richText": {
@@ -1800,7 +1824,9 @@
     "thumb": {
       "noUrl": "No preview (file address not configured)",
       "failed": "The picture could not be loaded",
-      "noPreview": "No preview"
+      "noPreview": "No preview",
+      "video": "Video",
+      "videoFailed": "The video could not be played"
     },
     "picker": {
       "title": "Choose an image",
@@ -1830,7 +1856,8 @@
       "addSelected": "Add selected",
       "notReady": "Not ready",
       "noAlt": "No alt text",
-      "upload": "Upload new"
+      "upload": "Upload new",
+      "kindVideo": "Videos"
     },
     "title": "Media library",
     "description": "Browse the images used on the website, describe them in every language and see where they are used. Uploading comes later.",
@@ -2003,11 +2030,11 @@
     "upload": {
       "button": "Upload files",
       "title": "Upload files",
-      "description": "Add pictures and PDFs to the media library.",
+      "description": "Add pictures, PDFs and MP4 videos to the media library.",
       "dropzone": "Drag files here, or choose them",
       "dropzoneActive": "Drop the files to add them",
       "choose": "Choose files",
-      "hint": "JPEG, PNG, WebP, AVIF, GIF or PDF, up to 20 MB each. At most {max} files at a time.",
+      "hint": "JPEG, PNG, WebP, AVIF, GIF or PDF, up to 20 MB each. MP4 video (H.264): up to 50 MB, up to 35 seconds, up to 1920x1080, fast-start (web-optimised) required. At most {max} files at a time.",
       "hintSvg": "SVG files can be up to 1 MB.",
       "folder": "Saved in: {folder}",
       "noFolder": "no folder",
@@ -2040,7 +2067,7 @@
         "uploadAnyway": "Upload anyway"
       },
       "errors": {
-        "unsupported": "This file type is not allowed.",
+        "unsupported": "This file type is not allowed. Use JPEG, PNG, WebP, AVIF, GIF, PDF or MP4.",
         "tooLarge": "The file is too large.",
         "svgNotAllowed": "You are not allowed to upload SVG files.",
         "notAccepted": "This kind of file is not accepted here.",
@@ -2050,8 +2077,18 @@
         "forbidden": "You do not have permission to upload.",
         "invalid": "The server did not accept this file.",
         "network": "The connection was lost.",
-        "unknown": "The upload failed."
-      }
+        "unknown": "The upload failed.",
+        "videoTooLarge": "The video is too large: at most {max}.",
+        "faststartRequired": "The video cannot start playing before it is fully downloaded (fast start is missing). Export it again with \"optimize for web\" or ffmpeg -movflags +faststart.",
+        "durationTooLong": "The video is {seconds} s long; at most {max} s is accepted.",
+        "durationLimit": "The video is longer than {max} s.",
+        "dimensionsTooLarge": "The video is {width}x{height} pixels; at most {maxWidth}x{maxHeight} is accepted.",
+        "codecUnsupported": "The video codec {codec} is not supported. Export it as H.264 (AVC) in an MP4 file.",
+        "bitrateTooHigh": "The video bit rate is above {maxMbit} Mbit/s. Export it again with a lower bit rate.",
+        "damaged": "The video file is damaged or is not a plain MP4.",
+        "kindMismatch": "The new file must be the same kind as the current one (a video can only be replaced by a video)."
+      },
+      "videoSlow": "Uploading a video ({size}) can take a few minutes. Please keep this page open."
     },
     "sheet": {
       "title": "Media file",
@@ -2089,7 +2126,8 @@
         "altOptional": "Not required for a decorative image.",
         "altHelp": "Describe the picture for people who cannot see it.",
         "caption": "Caption",
-        "credit": "Credit"
+        "credit": "Credit",
+        "videoNoAlt": "A video is a decorative background, so it needs no alt text."
       },
       "readOnly": "You can look at this file but not change it.",
       "translateOnly": "You can edit the text in each language, but not the folder, the focal point or the decorative flag.",
@@ -2115,7 +2153,8 @@
           "file_service": "File service"
         },
         "created": "Added",
-        "updated": "Last changed"
+        "updated": "Last changed",
+        "duration": "Duration"
       },
       "usage": {
         "title": "Where this file is used",
@@ -2165,7 +2204,8 @@
         "cancel": "Cancel",
         "uploading": "Uploading {percent}%",
         "done": "The file was replaced.",
-        "fileLabel": "New file"
+        "fileLabel": "New file",
+        "videoHint": "Only an MP4 video can replace a video: H.264, up to 50 MB, up to 35 seconds, up to 1920x1080, fast-start (web-optimised) required."
       }
     }
   },
@@ -2978,7 +3018,8 @@
       "layout_hint": "Layout hint",
       "caption_title": "Caption title",
       "caption_description": "Caption text",
-      "shared_section_id": "Shared section"
+      "shared_section_id": "Shared section",
+      "background_video": "Background video"
     },
     "issues": {
       "recipients_required": "Add at least one active To recipient who gets every topic (Recipients tab).",
@@ -3023,7 +3064,8 @@
       "faq_group_empty": "The group has no visible question. The FAQ section would be empty.",
       "reference_not_published_shared": "The shared section is not published yet. Publish it, hide this section or detach it.",
       "unknown_reference_shared": "The shared section no longer exists or is in the trash. Detach or delete this section.",
-      "template_violation_shared_in_required_slot": "A shared section cannot fill a section that the page template requires."
+      "template_violation_shared_in_required_slot": "A shared section cannot fill a section that the page template requires.",
+      "kind_mismatch": "{expected_kind, select, video {{actual_kind, select, image {This file is a photo; pick a video here.} other {This file is not a video; pick a video here.}}} other {This file is a video; pick a photo here.}}"
     },
     "sectionTypes": {
       "hero_brand": "Hero (brand)",

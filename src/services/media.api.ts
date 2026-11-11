@@ -4,6 +4,7 @@ import { axiosInstance } from "@/lib/axios";
 import { API_ENDPOINTS } from "@/lib/constants/api-endpoints";
 import { ifMatch, ifMatchHeaders, withEtag } from "@/lib/etag";
 import { idempotencyKeyHeaders } from "@/lib/idempotency";
+import { guessMime, VIDEO_MIME } from "@/lib/media-upload";
 import type { ApiResponse, ApiResponsePagination } from "@/types/api";
 import type {
   CreateMediaFolderPayload,
@@ -77,8 +78,8 @@ export const MediaAPI = {
     try {
       const response = await axiosInstance.post<ApiResponse<MediaAssetDetail>>(API_ENDPOINTS.MEDIA.UPLOADS, body, {
         params: options.allowDuplicate ? { allow_duplicate: true } : undefined,
-        // 20 MB over a slow link: the default 30 s is too short.
-        timeout: UPLOAD_TIMEOUT_MS,
+        // 20 MB over a slow link: the default 30 s is too short; a 50 MiB video gets the server's 5 minutes.
+        timeout: uploadTimeoutFor(file),
         signal: options.signal,
         onUploadProgress: (event) => options.onProgress?.(event.total ? Math.min(100, Math.round((event.loaded / event.total) * 100)) : undefined),
       });
@@ -103,7 +104,7 @@ export const MediaAPI = {
     return withEtag(
       await axiosInstance.post<ApiResponse<MediaAssetDetail>>(API_ENDPOINTS.MEDIA.ASSET_FILE(id), body, {
         ...ifMatch(etag, { required: true }),
-        timeout: UPLOAD_TIMEOUT_MS,
+        timeout: uploadTimeoutFor(file),
         signal: options.signal,
         onUploadProgress: (event) => options.onProgress?.(event.total ? Math.min(100, Math.round((event.loaded / event.total) * 100)) : undefined),
       })
@@ -168,6 +169,9 @@ export function toUtcMicros(value: string): string {
 }
 
 const UPLOAD_TIMEOUT_MS = 120_000;
+// The backend lets a video upload run up to 5 minutes (UploadReadTimeout / videoUploadBudget).
+const VIDEO_UPLOAD_TIMEOUT_MS = 300_000;
+const uploadTimeoutFor = (file: Pick<File, "name" | "type">) => (guessMime(file) === VIDEO_MIME ? VIDEO_UPLOAD_TIMEOUT_MS : UPLOAD_TIMEOUT_MS);
 
 export type UploadOptions = {
   folderId?: number | null;

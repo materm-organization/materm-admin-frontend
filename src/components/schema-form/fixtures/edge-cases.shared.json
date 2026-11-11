@@ -20,6 +20,141 @@
    "expect": []
   },
   {
+   "id": "hero-video-valid-publish",
+   "comment": "optional background video next to the required poster image",
+   "section_type": "hero_brand",
+   "mode": "publish",
+   "default_locale": "la",
+   "props": {
+    "title": {
+     "la": "Title"
+    },
+    "background": {
+     "media_id": 1,
+     "decorative": true
+    },
+    "background_video": {
+     "media_id": 2
+    }
+   },
+   "expect": []
+  },
+  {
+   "id": "hero-video-without-poster-draft",
+   "comment": "a draft may hold the video before the poster is chosen",
+   "section_type": "hero_brand",
+   "mode": "draft",
+   "props": {
+    "background_video": {
+     "media_id": 2
+    }
+   },
+   "expect": []
+  },
+  {
+   "id": "hero-video-without-poster-publish",
+   "comment": "the poster image stays required for publish, the video alone does not do",
+   "section_type": "hero_brand",
+   "mode": "publish",
+   "default_locale": "la",
+   "props": {
+    "title": {
+     "la": "Title"
+    },
+    "background_video": {
+     "media_id": 2
+    }
+   },
+   "expect": [
+    {
+     "path": "/background",
+     "code": "required"
+    }
+   ]
+  },
+  {
+   "id": "hero-video-no-alt-member",
+   "comment": "video is decorative: no alt, no decorative flag, no other member",
+   "section_type": "hero_brand",
+   "mode": "draft",
+   "props": {
+    "background_video": {
+     "media_id": 2,
+     "alt": {
+      "la": "x"
+     },
+     "decorative": true
+    }
+   },
+   "expect": [
+    {
+     "path": "/background_video/alt",
+     "code": "unknown_field"
+    },
+    {
+     "path": "/background_video/decorative",
+     "code": "unknown_field"
+    }
+   ]
+  },
+  {
+   "id": "hero-video-missing-media-id-publish",
+   "comment": "a video object needs media_id",
+   "section_type": "hero_brand",
+   "mode": "publish",
+   "default_locale": "la",
+   "props": {
+    "title": {
+     "la": "Title"
+    },
+    "background": {
+     "media_id": 1,
+     "decorative": true
+    },
+    "background_video": {}
+   },
+   "expect": [
+    {
+     "path": "/background_video/media_id",
+     "code": "required"
+    }
+   ]
+  },
+  {
+   "id": "hero-video-media-id-zero",
+   "comment": "media_id is at least 1",
+   "section_type": "hero_brand",
+   "mode": "draft",
+   "props": {
+    "background_video": {
+     "media_id": 0
+    }
+   },
+   "expect": [
+    {
+     "path": "/background_video/media_id",
+     "code": "out_of_range"
+    }
+   ]
+  },
+  {
+   "id": "hero-video-media-id-string",
+   "comment": "media_id is an integer",
+   "section_type": "hero_brand",
+   "mode": "draft",
+   "props": {
+    "background_video": {
+     "media_id": "2"
+    }
+   },
+   "expect": [
+    {
+     "path": "/background_video/media_id",
+     "code": "invalid_type"
+    }
+   ]
+  },
+  {
    "id": "hero-empty-draft",
    "comment": "draft saves an empty object (required is not enforced)",
    "section_type": "hero_brand",

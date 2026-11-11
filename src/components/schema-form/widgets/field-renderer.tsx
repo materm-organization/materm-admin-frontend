@@ -19,6 +19,7 @@ import { JsonFallbackField } from "./json-fallback-field";
 import { LinkField } from "./link-field";
 import { LocalizedTextField } from "./localized-text-field";
 import { MediaField } from "./media-field";
+import { MediaVideoField } from "./media-video-field";
 import { RichTextField } from "./rich-text-field";
 import { BooleanField, DateField, DateTimeSchemaField, EnumArrayField, EnumField, NumberField, StringField } from "./scalar-fields";
 
@@ -47,6 +48,8 @@ export const FieldRenderer = memo(function FieldRenderer({
       return <RichTextField {...props} />;
     case "image":
       return <MediaField {...props} altEditable={!disabled} />;
+    case "media-video":
+      return <MediaVideoField {...props} />;
     case "link":
       return <LinkField {...props} />;
     case "entity":

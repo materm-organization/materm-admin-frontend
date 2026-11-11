@@ -12,7 +12,8 @@ import { Spinner } from "@/components/ui/spinner";
 import { useMutationReplaceMediaFile } from "@/hooks/use-media";
 import { isConflictError } from "@/lib/api-error";
 import { formatBytes } from "@/lib/media";
-import { acceptAttribute, checkFile, mapUploadError, type UploadError } from "@/lib/media-upload";
+import { checkFile, errorTextParams, guessMime, mapUploadError, replaceAcceptAttribute, VIDEO_MIME, type UploadError } from "@/lib/media-upload";
+import { probeMp4 } from "@/lib/mp4-probe";
 
 // FR-MEDIA-08: "Replace file" of the asset sheet (`media.library:update`, `If-Match` = the asset's ETag). The id and
 // every place the file is used stay; 409 `CONFLICT_LOCK_VERSION` goes to the sheet's ConflictDialog (`onConflict`).
@@ -20,12 +21,15 @@ export function ReplaceFileDialog({
   open,
   onOpenChange,
   assetId,
+  kind,
   etag,
   onConflict,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   assetId: number;
+  // The kind of the row being replaced: a video is replaced only by a video (server: 422 `kind_mismatch`).
+  kind?: string;
   etag: string | undefined;
   onConflict: () => void;
 }) {
@@ -38,10 +42,32 @@ export function ReplaceFileDialog({
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState<UploadError | null>(null);
 
+  const [checking, setChecking] = useState(false);
+  const chosenRef = useRef<File | null>(null);
+  const isVideoRow = kind === "video";
+
   const choose = (next: File | null) => {
+    chosenRef.current = next;
     setFile(next);
     setProgress(0);
-    setError(next ? checkFile(next, { allowSvg: true }) : null);
+    setChecking(false);
+    if (!next) {
+      setError(null);
+      return;
+    }
+    const isVideoFile = guessMime(next) === VIDEO_MIME;
+    const local: UploadError | null =
+      isVideoFile !== isVideoRow ? { kind: "kindMismatch", retryable: false } : checkFile(next, { allowSvg: true });
+    setError(local);
+    if (!local && isVideoFile) {
+      // The MP4 pre-check (best effort); a late answer for a file the user has already replaced is ignored.
+      setChecking(true);
+      void probeMp4(next).then((found) => {
+        if (chosenRef.current !== next) return;
+        setChecking(false);
+        if (found) setError(found);
+      });
+    }
   };
 
   const submit = async () => {
@@ -76,16 +102,18 @@ export function ReplaceFileDialog({
             id={inputId}
             ref={inputRef}
             type="file"
-            accept={acceptAttribute(true)}
+            accept={replaceAcceptAttribute(kind, true)}
             disabled={pending}
             onChange={(e) => choose(e.target.files?.[0] ?? null)}
             className="block w-full text-sm file:mr-3 file:rounded-md file:border file:bg-background file:px-3 file:py-1.5 file:text-sm"
           />
+          {isVideoRow ? <p className="text-xs text-muted-foreground">{t("videoHint")}</p> : null}
           {file ? (
             <p className="text-xs text-muted-foreground">
               {t("chosen", { name: file.name })} · {formatBytes(file.size)}
             </p>
           ) : null}
+          {pending && isVideoRow ? <p className="text-xs text-muted-foreground">{tUpload("videoSlow", { size: file ? formatBytes(file.size) : "" })}</p> : null}
           {pending ? (
             <div className="space-y-1" role="status" aria-live="polite">
               <Progress value={progress} aria-label={t("uploading", { percent: progress })} />
@@ -94,7 +122,7 @@ export function ReplaceFileDialog({
           ) : null}
           {error ? (
             <p role="alert" className="text-sm text-destructive">
-              {tUpload(`errors.${error.kind}`)}
+              {tUpload(`errors.${error.kind}`, errorTextParams(error))}
             </p>
           ) : null}
         </div>
@@ -102,7 +130,7 @@ export function ReplaceFileDialog({
           <Button type="button" variant="outline" disabled={pending} onClick={() => onOpenChange(false)}>
             {t("cancel")}
           </Button>
-          <Button type="button" disabled={!file || Boolean(error && !error.retryable) || pending} onClick={() => void submit()}>
+          <Button type="button" disabled={!file || checking || Boolean(error && !error.retryable) || pending} onClick={() => void submit()}>
             {pending ? <Spinner aria-hidden /> : null}
             {t("submit")}
           </Button>

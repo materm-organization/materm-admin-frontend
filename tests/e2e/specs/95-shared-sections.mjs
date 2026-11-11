@@ -30,7 +30,7 @@ const gotoShared = (pg = page) => open(pg, `/admin/sections/${sid}`);
 let sid; let pA; let pB; let secA; let secB;
 
 // A page the publish engine accepts: a hero with a Lao title and an image with alt text, and a Lao SEO title. Built through the API (the UI path is spec 30).
-const mediaId = (await api(root, 'GET', '/media/assets?limit=24')).body.data.find((m) => m.kind !== 'brand')?.id;
+const mediaId = (await api(root, 'GET', '/media/assets?limit=24')).body.data.find((m) => m.kind === 'image')?.id;
 async function newPage(label) {
   const c = await api(root, 'POST', '/pages', { template: 'standard', path: `/e2e-sh-${label}-${TAG}`, translations: { la: { title: `E2E shared page ${label} ${TAG}` } } });
   eq(c.status, 201, 'create page ' + label);

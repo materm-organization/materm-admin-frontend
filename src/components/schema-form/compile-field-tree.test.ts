@@ -30,7 +30,7 @@ describe("compileFieldTree", () => {
 
   it("orders properties by ui:order, the rest in schema order", () => {
     const hero = treeOf("hero_brand").root;
-    expect(hero.children.map((c) => c.name)).toEqual(["title", "description", "cta", "background", "show_logo", "animate_in"]);
+    expect(hero.children.map((c) => c.name)).toEqual(["title", "description", "cta", "background", "background_video", "show_logo", "animate_in"]);
     const about = treeOf("about_blocks").root;
     expect(about.children[0].item?.children.map((c) => c.name)).toEqual([
       "date_label", "title", "body", "image", "image_side", "layout", "image_ratio",

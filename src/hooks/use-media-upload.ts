@@ -4,7 +4,8 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useSyncExternalStore } from "react";
 
 import { API_ENDPOINTS } from "@/lib/constants/api-endpoints";
-import { checkFile, matchesAccept } from "@/lib/media-upload";
+import { checkFile, guessMime, matchesAccept, VIDEO_MIME } from "@/lib/media-upload";
+import { probeMp4 } from "@/lib/mp4-probe";
 import { UploadQueue, type UploadItem } from "@/lib/media-upload-queue";
 import { MediaAPI } from "@/services/media.api";
 
@@ -22,6 +23,7 @@ export function useMediaUpload({ folderId, allowSvg, accept }: { folderId: numbe
       new UploadQueue({
         upload: (file, { allowDuplicate, signal, onProgress, context }) =>
           MediaAPI.UploadFile(file, { folderId: context.folderId, allowDuplicate, signal, onProgress }),
+        probe: (file) => (guessMime(file) === VIDEO_MIME ? probeMp4(file) : Promise.resolve(null)),
         fetchExisting: async (id) => (await MediaAPI.GetAsset(id)).data.data,
         precheck: (file, context) =>
           matchesAccept(file, context.accept)

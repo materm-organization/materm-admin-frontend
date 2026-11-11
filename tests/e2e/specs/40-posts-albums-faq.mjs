@@ -12,7 +12,7 @@ t.page = E.page;
 const toast = (pg, re) => pg.locator('[data-sonner-toast]').filter({ hasText: re }).first().waitFor({ timeout: 10000 });
 const body = (text) => ({ type: 'doc', content: [{ type: 'lead', content: [{ type: 'text', text }] }, { type: 'paragraph', content: [{ type: 'text', text }] }] });
 const idem = () => ({ 'idempotency-key': crypto.randomUUID() });
-const mediaIds = (await api(root, 'GET', '/media/assets?limit=24')).body.data.filter((m) => m.kind !== 'brand').map((m) => m.id);
+const mediaIds = (await api(root, 'GET', '/media/assets?limit=24')).body.data.filter((m) => m.kind === 'image').map((m) => m.id);
 const TITLE = 'E2E post ' + TAG;
 let postId, slug;
 

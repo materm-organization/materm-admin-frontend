@@ -19,6 +19,7 @@
 // INVENTED (marked in the seed): pages 6 - 10, the history of page 9, the albums, and the section ids.
 import { computeCompleteness } from "@/components/schema-form/completeness";
 import { walkSchemaValue } from "@/components/schema-form/schema-walker";
+import type { JsonSchema } from "@/types/cms";
 import { SECTION_TYPE_FIXTURES } from "@/components/schema-form/fixtures";
 import pageBlog from "@/components/schema-form/fixtures/examples/page.blog.json";
 import pageContact from "@/components/schema-form/fixtures/examples/page.contact.json";
@@ -914,6 +915,38 @@ function templateViolations(
   return errors;
 }
 
+// The media kind rule (video support, doc/05 kind_mismatch): a `media_id` at a schema node annotated `x-media-kind: video` takes only a
+// video; every other media slot refuses a video. `relPointer` is the pointer inside the props (`/background_video/media_id`).
+function expectedMediaKind(root: JsonSchema, relPointer: string): "video" | "image" {
+  let node: JsonSchema | undefined = root;
+  const deref = (n: JsonSchema | undefined): JsonSchema | undefined => {
+    let cur = n;
+    for (let i = 0; i < 8 && cur && typeof cur.$ref === "string"; i++) {
+      const { $ref, ...siblings } = cur;
+      let target: unknown = root;
+      for (const seg of ($ref as string).slice(2).split("/")) target = (target as Record<string, unknown> | undefined)?.[seg];
+      cur = target && typeof target === "object" ? ({ ...(target as JsonSchema), ...siblings } as JsonSchema) : undefined;
+    }
+    return cur;
+  };
+  for (const seg of relPointer.split("/").filter(Boolean)) {
+    node = deref(node);
+    if (!node) return "image";
+    node = /^\d+$/.test(seg) ? (node.items as JsonSchema | undefined) : (node.properties?.[seg] as JsonSchema | undefined);
+  }
+  node = deref(node);
+  return node?.["x-media-kind"] === "video" ? "video" : "image";
+}
+
+// `kind_mismatch` params of an asset in a slot, or null when the kind fits.
+function mediaKindMismatch(db: MockDb, schema: JsonSchema | undefined, relPointer: string, id: number): { expected_kind: string; actual_kind: string } | null {
+  const asset = db.assets.find((a) => a.id === id && !a.deleted_at);
+  if (!asset || !schema) return null;
+  const expected = expectedMediaKind(schema, relPointer);
+  const isVideo = asset.kind === "video";
+  return (expected === "video") !== isVideo ? { expected_kind: expected, actual_kind: asset.kind } : null;
+}
+
 // Draft-level checks of a props object, as `/props/...` field errors.
 export function propsErrors(db: MockDb, typeKey: string, props: Record<string, unknown>): ApiFieldError[] {
   const type = SECTION_TYPE_FIXTURES[typeKey];
@@ -943,6 +976,10 @@ export function propsErrors(db: MockDb, typeKey: string, props: Record<string, u
   });
   deepFind(props, "media_id", "/props", (v, pointer) => {
     if (typeof v === "number" && !db.assets.some((a) => a.id === v && !a.deleted_at)) errors.push({ in: "body", path: pointer, code: "unknown_reference", params: { ref_type: "media_assets", ref_id: v } });
+    else if (typeof v === "number") {
+      const mismatch = mediaKindMismatch(db, type.json_schema, pointer.slice("/props".length), v);
+      if (mismatch) errors.push({ in: "body", path: pointer, code: "kind_mismatch", params: mismatch });
+    }
   });
   deepFind(props, "page_id", "/props", (v, pointer) => {
     const target = typeof v === "number" ? db.pages.find((p) => p.id === v) : undefined;
@@ -1481,6 +1518,10 @@ export function validateForPublish(db: MockDb, root: MockPageRoot): { blockers: 
       if (typeof v !== "number") return;
       const asset = db.assets.find((a) => a.id === v && !a.deleted_at);
       if (!asset) refs.push(issue(pointer, "unknown_reference", { ...params, ref_type: "media_assets", ref_id: v }));
+      else {
+        const mismatch = mediaKindMismatch(db, type?.json_schema, pointer.slice(`${base}/props`.length), v);
+        if (mismatch) refs.push(issue(pointer, "kind_mismatch", { ...params, ...mismatch }));
+      }
     });
     const hiddenBlockers: PublishIssue[] = [];
     deepFind(s.props, "album_id", `${base}/props`, (v, pointer) => {

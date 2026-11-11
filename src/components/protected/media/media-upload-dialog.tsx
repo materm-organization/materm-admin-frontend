@@ -13,7 +13,7 @@ import { useMediaUpload } from "@/hooks/use-media-upload";
 import { useCan } from "@/hooks/use-permission";
 import { PERMISSION_ACTIONS, PERMISSION_KEYS } from "@/lib/constants/permissions";
 import { formatBytes } from "@/lib/media";
-import { MAX_FILES_PER_BATCH, acceptAttribute, matchesAccept } from "@/lib/media-upload";
+import { MAX_FILES_PER_BATCH, VIDEO_MIME, acceptAttribute, errorTextParams, guessMime, matchesAccept } from "@/lib/media-upload";
 import type { UploadItem } from "@/lib/media-upload-queue";
 import { cn } from "@/lib/utils";
 
@@ -181,6 +181,7 @@ function UploadRow({ item, queue }: { item: UploadItem; queue: Queue }) {
   const t = useTranslations("media.upload");
   const name = item.file.name;
   const waiting = item.status === "queued" && item.attempts > 0;
+  const isVideo = guessMime(item.file) === VIDEO_MIME;
 
   let statusText: string;
   if (item.status === "uploading") statusText = t("status.uploading", { percent: item.progress });
@@ -209,9 +210,12 @@ function UploadRow({ item, queue }: { item: UploadItem; queue: Queue }) {
             <Progress value={item.progress} className="mt-2" aria-label={t("progress", { name })} />
           ) : null}
           {item.status === "failed" && item.error ? (
-            <p className="mt-1 text-xs text-destructive">{t(`errors.${item.error.kind}`)}</p>
+            <p className="mt-1 text-xs text-destructive">{t(`errors.${item.error.kind}`, errorTextParams(item.error))}</p>
           ) : null}
-          {waiting && item.error ? <p className="mt-1 text-xs text-muted-foreground">{t(`errors.${item.error.kind}`)}</p> : null}
+          {waiting && item.error ? <p className="mt-1 text-xs text-muted-foreground">{t(`errors.${item.error.kind}`, errorTextParams(item.error))}</p> : null}
+          {isVideo && item.status === "uploading" ? (
+            <p className="mt-1 text-xs text-muted-foreground">{t("videoSlow", { size: formatBytes(item.file.size) })}</p>
+          ) : null}
           {item.status === "duplicate" ? (
             <div className="mt-1 space-y-2">
               <p className="text-xs">{t("duplicate.message", { name: duplicateName })}</p>

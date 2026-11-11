@@ -112,6 +112,52 @@ function seedUsages(): Record<number, MediaUsage[]> {
   };
 }
 
+// Video support (release 1): ONE MP4, OPT-IN (`addSeedVideo(db)`; the 24 `static/` rows and every count that depends on them stay as they were) uploaded through the file service (id 25, 12.5 s, 1280x720, not used anywhere,
+// no alt text on purpose: a video must never be flagged "alt missing"). The url is a still tile: nothing plays in the mock.
+export const SEED_VIDEO_ID = 25;
+function seedVideoAsset(): MediaAssetDetail {
+  const stamp = micros(Date.UTC(2026, 10, 10, 8, 0, 0), 125);
+  return {
+    id: SEED_VIDEO_ID,
+    public_id: `0192d3a4-7c1e-7b52-9d0a-${String(SEED_VIDEO_ID).padStart(12, "0")}`,
+    folder_id: null,
+    kind: "video",
+    status: "ready",
+    error_message: null,
+    source: "file_service",
+    original_filename: "forest-loop.mp4",
+    mime_type: "video/mp4",
+    bytes: 4_820_113,
+    width: 1280,
+    height: 720,
+    duration_ms: 12_500,
+    focal: null,
+    is_decorative: false,
+    dominant_color: null,
+    blurhash: null,
+    checksum_sha256: "a1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7e8f90",
+    url: tileUrl(SEED_VIDEO_ID, "forest-loop.mp4", 1280, 720),
+    translations: {},
+    usage_count: 0,
+    created_by: null,
+    updated_by: null,
+    created_at: stamp,
+    updated_at: stamp,
+    deleted_at: null,
+    purge_at: null,
+    folder: null,
+    variants: [],
+  };
+}
+
+export function addSeedVideo(db: { assets: MediaAssetDetail[] }): MediaAssetDetail {
+  const existing = db.assets.find((a) => a.id === SEED_VIDEO_ID);
+  if (existing) return existing;
+  const video = seedVideoAsset();
+  db.assets.push(video);
+  return video;
+}
+
 function seedAsset(row: (typeof SEED_MEDIA)[number], index: number): MediaAssetDetail {
   const filename = row.storage_key.split("/").pop() ?? String(row.media_id);
   const folderDef = FOLDER_DEFS.slice().reverse().find((f) => f.match(row.storage_key));

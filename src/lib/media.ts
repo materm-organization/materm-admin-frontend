@@ -38,15 +38,26 @@ export const MEDIA_SORT_OPTIONS = [
 ] as const;
 
 export const MEDIA_SORT_FIELDS = ["created_at", "original_filename", "bytes", "updated_at", "deleted_at"] as const;
+// `duration_ms` -> "m:ss" (a clip is at most 35 s, but a longer one older than the limit still reads well: 1:05:07).
+export function formatDuration(ms: number | null | undefined): string {
+  if (ms === null || ms === undefined || !Number.isFinite(ms) || ms < 0) return "";
+  const total = Math.max(0, Math.round(ms / 1000));
+  const h = Math.floor(total / 3600);
+  const m = Math.floor((total % 3600) / 60);
+  const sec = String(total % 60).padStart(2, "0");
+  return h > 0 ? `${h}:${String(m).padStart(2, "0")}:${sec}` : `${m}:${sec}`;
+}
+
 export const MEDIA_KINDS = ["image", "brand", "video", "audio", "document", "other"] as const;
 
 // "Missing alt" as the API defines it (doc/05 11.6 `missing_alt`): not decorative and the default language's
 // alt text is empty.
 export function isMissingAlt(
-  asset: Pick<MediaAsset, "is_decorative" | "translations">,
+  asset: Pick<MediaAsset, "is_decorative" | "translations"> & { kind?: string },
   defaultLocale: string
 ): boolean {
-  if (asset.is_decorative) return false;
+  // A video is a decorative background: alt text is optional and never asked for.
+  if (asset.is_decorative || asset.kind === "video") return false;
   return !(asset.translations[defaultLocale]?.alt ?? "").trim();
 }
 

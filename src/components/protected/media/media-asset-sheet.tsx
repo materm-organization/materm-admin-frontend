@@ -24,6 +24,7 @@ import {
 } from "@/components/protected/media/asset-draft";
 import { FocalPointPicker } from "@/components/protected/media/focal-point-picker";
 import { MediaThumb } from "@/components/protected/media/media-thumb";
+import { MediaVideoPlayer } from "@/components/protected/media/media-video-player";
 import { ReplaceFileDialog } from "@/components/protected/media/replace-file-dialog";
 import { UsageList } from "@/components/protected/media/usage-list";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -62,7 +63,7 @@ import { useUnsavedChangesGuard } from "@/hooks/use-unsaved-changes-guard";
 import { isConflictError, isNoPermissionError, parseApiError } from "@/lib/api-error";
 import { translateFieldError } from "@/lib/api-error-messages";
 import { PERMISSION_ACTIONS, PERMISSION_KEYS } from "@/lib/constants/permissions";
-import { formatBytes } from "@/lib/media";
+import { formatBytes, formatDuration } from "@/lib/media";
 import type { ApiFieldError } from "@/types/api";
 import type { Locale } from "@/types/locales";
 import type { MediaAssetDetail, MediaInUseDetails, SaveLiveWarning } from "@/types/media";
@@ -213,6 +214,7 @@ function AssetEditor({
   const creditId = useId();
 
   const trashed = Boolean(asset.deleted_at);
+  const isVideo = asset.kind === "video";
   // `update` (or `update_own` on an upload of mine) edits everything; `translate` only alt / caption / credit.
   const canUpdate = useCan(PERMISSION_KEYS.MEDIA_LIBRARY, PERMISSION_ACTIONS.UPDATE, { ownerId: asset.created_by?.id });
   const canTranslate = useCan(PERMISSION_KEYS.MEDIA_LIBRARY, PERMISSION_ACTIONS.TRANSLATE);
@@ -244,11 +246,11 @@ function AssetEditor({
   const completeness = useMemo(() => {
     const map: Record<string, LocaleBadge> = {};
     for (const code of localeCodes) {
-      const filled = draft.is_decorative || (draft.translations[code]?.alt ?? "").trim() !== "";
+      const filled = isVideo || draft.is_decorative || (draft.translations[code]?.alt ?? "").trim() !== "";
       map[code] = { missing: filled ? 0 : 1, total: 1, status: filled ? "complete" : "missing" };
     }
     return map;
-  }, [draft, localeCodes]);
+  }, [draft, localeCodes, isVideo]);
 
   const setTranslation = (patch: Partial<AssetDraft["translations"][string]>) => {
     setFieldErrors({});
@@ -385,6 +387,7 @@ function AssetEditor({
         <SheetDescription>
           {asset.mime_type} · {formatBytes(asset.bytes)}
           {asset.width && asset.height ? ` · ${asset.width}×${asset.height}` : ""}
+          {isVideo && asset.duration_ms ? ` · ${formatDuration(asset.duration_ms)}` : ""}
         </SheetDescription>
       </SheetHeader>
 
@@ -416,6 +419,8 @@ function AssetEditor({
                 onChange={(focal) => setDraft((d) => ({ ...d, focal }))}
                 disabled={!canEditStructure}
               />
+            ) : isVideo ? (
+              <MediaVideoPlayer asset={asset} label={filename} />
             ) : (
               <div className="aspect-video max-w-xl overflow-hidden rounded-md border">
                 <MediaThumb asset={asset} alt={filename} fill={false} />
@@ -444,38 +449,43 @@ function AssetEditor({
                   />
                 ) : null}
               </div>
-              <div className="flex items-center gap-2">
-                <Switch
-                  id={decorativeId}
-                  checked={draft.is_decorative}
-                  disabled={!canEditStructure}
-                  onCheckedChange={(checked) => setDraft((d) => ({ ...d, is_decorative: checked }))}
-                />
-                <Label htmlFor={decorativeId} className="font-normal">
-                  {t("text.decorative")}
-                </Label>
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor={altId}>{t("text.alt")}</Label>
-                <Input
-                  id={altId}
-                  lang={activeLocale}
-                  maxLength={MAX_ALT}
-                  value={current.alt}
-                  disabled={!canEditText}
-                  aria-invalid={fieldErrors[`${activeLocale}.alt`] ? true : undefined}
-                  onChange={(e) => setTranslation({ alt: e.target.value })}
-                />
-                <div className="flex justify-between text-xs text-muted-foreground">
-                  <span>{draft.is_decorative ? t("text.altOptional") : t("text.altHelp")}</span>
-                  <span>
-                    {current.alt.length}/{MAX_ALT}
-                  </span>
+              {isVideo ? <p className="text-xs text-muted-foreground">{t("text.videoNoAlt")}</p> : null}
+              {!isVideo ? (
+                <>
+                <div className="flex items-center gap-2">
+                  <Switch
+                    id={decorativeId}
+                    checked={draft.is_decorative}
+                    disabled={!canEditStructure}
+                    onCheckedChange={(checked) => setDraft((d) => ({ ...d, is_decorative: checked }))}
+                  />
+                  <Label htmlFor={decorativeId} className="font-normal">
+                    {t("text.decorative")}
+                  </Label>
                 </div>
-                {fieldErrors[`${activeLocale}.alt`] ? (
-                  <p role="alert" className="text-sm text-destructive">{fieldErrors[`${activeLocale}.alt`]}</p>
-                ) : null}
-              </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor={altId}>{t("text.alt")}</Label>
+                  <Input
+                    id={altId}
+                    lang={activeLocale}
+                    maxLength={MAX_ALT}
+                    value={current.alt}
+                    disabled={!canEditText}
+                    aria-invalid={fieldErrors[`${activeLocale}.alt`] ? true : undefined}
+                    onChange={(e) => setTranslation({ alt: e.target.value })}
+                  />
+                  <div className="flex justify-between text-xs text-muted-foreground">
+                    <span>{draft.is_decorative ? t("text.altOptional") : t("text.altHelp")}</span>
+                    <span>
+                      {current.alt.length}/{MAX_ALT}
+                    </span>
+                  </div>
+                  {fieldErrors[`${activeLocale}.alt`] ? (
+                    <p role="alert" className="text-sm text-destructive">{fieldErrors[`${activeLocale}.alt`]}</p>
+                  ) : null}
+                </div>
+                </>
+              ) : null}
               <div className="space-y-1.5">
                 <Label htmlFor={captionId}>{t("text.caption")}</Label>
                 <Textarea
@@ -532,7 +542,7 @@ function AssetEditor({
               {fieldErrors.folder_id ? <p role="alert" className="text-sm text-destructive">{fieldErrors.folder_id}</p> : null}
             </section>
 
-            {altMissingWarning ? (
+            {altMissingWarning && !isVideo ? (
               <Alert>
                 <TriangleAlertIcon />
                 <AlertTitle>{t("warning.altMissing.title")}</AlertTitle>
@@ -555,6 +565,12 @@ function AssetEditor({
                     <dd>
                       {asset.width} × {asset.height}
                     </dd>
+                  </>
+                ) : null}
+                {isVideo && asset.duration_ms ? (
+                  <>
+                    <dt className="text-muted-foreground">{t("file.duration")}</dt>
+                    <dd>{formatDuration(asset.duration_ms)}</dd>
                   </>
                 ) : null}
                 <dt className="text-muted-foreground">{t("file.checksum")}</dt>
@@ -690,6 +706,7 @@ function AssetEditor({
         open={replaceOpen}
         onOpenChange={setReplaceOpen}
         assetId={asset.id}
+        kind={asset.kind}
         etag={etag}
         onConflict={() => setConflictOpen(true)}
       />
