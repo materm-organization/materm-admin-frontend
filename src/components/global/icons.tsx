@@ -15,8 +15,8 @@ export const Icons = {
       <Image
         src="/brand/materm-logo-dark.svg"
         alt=""
-        width={285}
-        height={245}
+        width={286}
+        height={230}
         unoptimized
         priority
         className="block size-full object-contain dark:hidden"
@@ -24,8 +24,8 @@ export const Icons = {
       <Image
         src="/brand/materm-logo-white.svg"
         alt=""
-        width={285}
-        height={245}
+        width={286}
+        height={230}
         unoptimized
         priority
         className="hidden size-full object-contain dark:block"
